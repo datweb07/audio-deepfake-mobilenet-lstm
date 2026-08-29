@@ -41,5 +41,9 @@ def predict_features(
     return classify_probability(probability, load_threshold() if threshold is None else threshold)
 
 
-def predict_audio(model: tf.keras.Model, audio_path: str) -> PredictionResult:
-    return predict_features(model, process_audio_file(audio_path))
+def predict_audio(
+    model: tf.keras.Model,
+    audio_path: str,
+    threshold: float | None = None,
+) -> PredictionResult:
+    return predict_features(model, process_audio_file(audio_path), threshold=threshold)

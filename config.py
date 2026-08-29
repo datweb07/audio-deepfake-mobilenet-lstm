@@ -14,15 +14,27 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 OUTPUTS_DIR = os.path.join(BASE_DIR, "outputs")
 PLOTS_DIR = os.path.join(OUTPUTS_DIR, "plots")
 LOGS_DIR = os.path.join(OUTPUTS_DIR, "logs")
+CHECKPOINTS_DIR = os.path.join(OUTPUTS_DIR, "checkpoints")
+LEGACY_MODELS_DIR = os.path.join(OUTPUTS_DIR, "legacy_models")
+LEGACY_TRAINING_DIR = os.path.join(OUTPUTS_DIR, "legacy_training")
 
-PHASE1_MODEL_PATH = os.path.join(MODELS_DIR, "best_model_phase1.keras")
-PHASE2_MODEL_PATH = os.path.join(MODELS_DIR, "best_model_phase2.keras")
-LEGACY_PHASE1_MODEL_PATH = os.path.join(MODELS_DIR, "best_model_phase1.h5")
-LEGACY_PHASE2_MODEL_PATH = os.path.join(MODELS_DIR, "best_model_phase2.h5")
+MODEL_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.keras")
+TRAINING_CHECKPOINT_PATH = os.path.join(CHECKPOINTS_DIR, "lava_mobilenetv3_lstm_best.keras")
 THRESHOLD_PATH = os.path.join(MODELS_DIR, "best_threshold.txt")
 MODEL_METADATA_PATH = os.path.join(MODELS_DIR, "model_metadata.json")
+TRAINING_HISTORY_PATH = os.path.join(PLOTS_DIR, "training_history.png")
 
-for directory in (MODELS_DIR, OUTPUTS_DIR, PLOTS_DIR, LOGS_DIR, REAL_DIR, FAKE_DIR):
+for directory in (
+    MODELS_DIR,
+    OUTPUTS_DIR,
+    PLOTS_DIR,
+    LOGS_DIR,
+    CHECKPOINTS_DIR,
+    LEGACY_MODELS_DIR,
+    LEGACY_TRAINING_DIR,
+    REAL_DIR,
+    FAKE_DIR,
+):
     os.makedirs(directory, exist_ok=True)
 
 
@@ -68,11 +80,14 @@ if abs(TRAIN_RATIO + VAL_RATIO + TEST_RATIO - 1.0) > 1e-9:
 
 # Training
 BATCH_SIZE = 16
-PHASE1_EPOCHS = 50
-PHASE2_EPOCHS = 50
-PHASE1_LR = 1e-4
-PHASE2_LR = 1e-5
-FINE_TUNE_LAST_LAYERS = 20
+WARMUP_EPOCHS = 50
+FINETUNE_EPOCHS = 50
+WARMUP_LR = 1e-4
+FINETUNE_LR = 1e-5
+FINETUNE_LAYERS = 20
+EARLY_STOPPING_PATIENCE = 10
+LR_REDUCTION_PATIENCE = 4
+MIN_LEARNING_RATE = 1e-7
 LSTM_UNITS = 128
 DENSE_UNITS = 64
 DROPOUT_RATE = 0.4

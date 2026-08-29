@@ -8,7 +8,7 @@ Specification source: `prompt.docx`
 
 Implementation source code sau sửa đã đúng pipeline TensorFlow/Keras `MobileNetV3Small + LSTM`, giữ chronology của 6 Mel segments và thống nhất `REAL=0`, `FAKE=1`, output=`P(FAKE)`. Ba repo reference không bị chỉnh sửa và không tham gia runtime.
 
-Project source hiện sẵn sàng để train lại, evaluate, predict và chạy Streamlit. Tuy nhiên, hai model `.h5` và threshold đang có là artifact trước audit. Chúng được tạo với preprocessing scale sai đối với lớp `Rescaling` tích hợp trong MobileNetV3Small. Dry-run artifact cũ sau sửa cho ROC-AUC `0.5000` và dự đoán toàn bộ test sample thành FAKE tại threshold `0.1`. Vì vậy artifact hiện hữu không đạt điều kiện production; bắt buộc chạy lại `python train.py` để tạo `.keras` và threshold mới.
+Project source hiện dùng contract “một detector, một production model”: `models/lava_mobilenetv3_lstm.keras`. Warm-up và fine-tuning là hai stage nội bộ của một lệnh `python train.py`; một checkpoint validation xuyên suốt lifecycle chọn global-best weights. Checkpoint `.keras` tốt nhất của lần train đã audit được save/load-verify sang contract mới và threshold được calibrate lại trên validation (`0.38`). Các model/plot stage cũ đã được chuyển vào `outputs/legacy_models/` và `outputs/legacy_training/`, không còn là runtime dependency.
 
 ## Workspace map
 
@@ -42,13 +42,13 @@ Project source hiện sẵn sàng để train lại, evaluate, predict và chạ
 | tf.data shuffle/batch/prefetch | FIXED | `_PrefetchDataset`, shuffle train-only, batch, AUTOTUNE prefetch | `src/dataset.py` | Không reuse generator cũ |
 | Validation/test không augmentation | PASS | `training=False` cho cả val/test | `train.py`, `evaluate.py` | Specification |
 | Class weight từ train-only | PASS | `get_class_weights(train_data[1])` | `train.py`, `src/dataset.py` | Audio reference idea |
-| Phase 1 frozen backbone | PASS | Backbone trainable=False; 369,281 trainable params trong dry-run | `src/model.py`, `train.py` | Transfer-learning pattern |
-| Phase 2 partial unfreeze + recompile | FIXED | Last 20 layers considered, compile lại với LR `1e-5` | `src/model.py`, `train.py` | Hybrid notebook fine-tune idea |
-| BatchNormalization handling | FIXED | 0 BN layer trainable trong phase 2 | `src/model.py` | Keras fine-tuning practice |
-| Checkpoint contract | FIXED | Phase 1/2 lưu full model `.keras`; save/load smoke test thành công | `src/metrics.py`, `train.py` | Callback ideas từ references |
+| Warm-up backbone freeze | PASS | Backbone trainable=False; 369,281 trainable params trong smoke test | `src/model.py`, `train.py` | Transfer-learning pattern |
+| Internal fine-tuning transition | PASS | Last 20 layers considered, compile lại với LR `1e-5` | `src/model.py`, `train.py` | Hybrid notebook fine-tune idea |
+| BatchNormalization handling | PASS | 0 BN layer trainable trong fine-tuning | `src/model.py` | Keras fine-tuning practice |
+| Checkpoint contract | PASS | Một global `val_loss` checkpoint xuyên suốt lifecycle; chỉ xuất một final `.keras` | `src/metrics.py`, `train.py` | Callback ideas từ references |
 | Threshold tune trên validation | PASS | Search F1 từ validation raw probabilities và persist atomically | `train.py`, `src/metrics.py` | Root pre-audit implementation |
 | Test không tham gia tuning | PASS | Evaluate chỉ load persisted threshold | `evaluate.py` | Specification |
-| Metrics đầy đủ và ROC-AUC raw | PASS | Accuracy/Precision/Recall/F1/AUC/confusion/report; AUC dùng probability | `evaluate.py` | Audio evaluation reference, mở rộng |
+| Metrics đầy đủ và ROC-AUC raw | PASS | Accuracy/Precision/Recall/F1/Macro-F1/AUC/EER/confusion/report | `evaluate.py` | Audio evaluation reference, mở rộng |
 | Predict CLI contract | FIXED | Có prediction, confidence, raw P(FAKE), threshold | `predict.py`, `src/inference.py` | Audio reference CLI |
 | Streamlit contract | FIXED | Upload, playback, waveform, Mel, result, confidence, probability, threshold | `app.py` | Audio reference Streamlit |
 | Không bịa per-segment prediction | PASS | UI chỉ mô tả segment chronology, không đưa class từng segment | `app.py` | Specification |
@@ -56,9 +56,9 @@ Project source hiện sẵn sàng để train lại, evaluate, predict và chạ
 | Requirements production | FIXED | Pin TensorFlow/NumPy/librosa/OpenCV headless/matplotlib/Streamlit/sklearn/soundfile/setuptools<81 | `requirements.txt` | Reference requirements chỉ đối chiếu |
 | Matplotlib non-interactive | PASS | `Agg` được set trước `pyplot` | `src/utils.py`, `app.py` | Specification |
 | CPU/GPU behavior | PASS | Không CUDA hard-code; TensorFlow tự phát hiện GPU, CPU fallback | `train.py` | Specification |
-| Config centralization | FIXED | Paths, audio, image, split, seed, phases, threshold đều tập trung | `config.py` | Specification |
+| Config centralization | FIXED | Paths, audio, image, split, seed, lifecycle stages, threshold đều tập trung | `config.py` | Specification |
 | Reproducibility | FIXED | Python, NumPy, TensorFlow và sklearn cùng seed 42 | `train.py`, `src/dataset.py`, `config.py` | Specification |
-| Existing trained artifact validity | FAIL | Legacy `.h5` + threshold 0.1 cho AUC 0.5 sau corrected preprocessing | `models/` | Không áp dụng |
+| Production artifact contract | PASS | Một final model load-verified + validation threshold; không legacy fallback | `models/`, `src/artifacts.py` | Single-detector contract |
 
 ## Verification đã chạy
 
@@ -72,18 +72,18 @@ Project source hiện sẵn sàng để train lại, evaluate, predict và chạ
 | tf.data batch | `(2,6,224,224,3)` + `(2,)`; `_PrefetchDataset` |
 | ImageNet model build | PASS; backbone output 576 |
 | Tensor trace | `(B,6,224,224,3) -> (B,6,576) -> (B,128) -> (B,1)` |
-| Phase transition | Trainable params `369,281 -> 646,481`; BN trainable `0` |
+| Lifecycle transition | Trainable params `369,281 -> 646,481`; BN trainable `0` |
 | Forward pass | PASS trên CPU |
 | Tiny training step | PASS |
 | `.keras` save/load/forward | PASS; temporary checkpoint đã được xóa |
-| Threshold loader | PASS; hiện đọc legacy `0.1` |
-| Predict REAL | Chạy thành công; kết quả legacy không đáng tin |
-| Predict FAKE | Chạy thành công; kết quả legacy không đáng tin |
+| Threshold loader | PASS; đọc validation-calibrated threshold `0.38` |
+| Predict REAL | PASS với production model; output đủ Prediction/Confidence/P(FAKE)/Threshold |
+| Predict FAKE | PASS với production model; output đủ Prediction/Confidence/P(FAKE)/Threshold |
 | Evaluate smoke | Chạy thành công; legacy AUC `0.5000`, TN=0, FP=2, FN=0, TP=8 |
 | Streamlit import/model load | PASS |
 | Streamlit server startup | PASS tại port 8501; tiến trình test đã dừng |
 
-Không chạy full training 100 epoch theo đúng scope dry-run. Không có checkpoint production mới được tạo giả từ tiny training step.
+Không chạy full training theo đúng scope smoke test. Tiny training chỉ dùng temporary directory và không thay production weights; production artifact hiện tại được migrate từ checkpoint `.keras` đã train, sau khi architecture/save/load và validation calibration đều thành công.
 
 ## Source provenance report
 
@@ -93,10 +93,10 @@ Không chạy full training 100 epoch theo đúng scope dry-run. Không có chec
 | Mel voice-band features | `deepfake-audio-detection` | `train_model_v2.py` | `src/preprocessing.py` | Giữ 128 Mel, 20-8,000 Hz, FFT 2048, hop 512; tách thành 6 temporal images và scale đúng MobileNetV3 |
 | Training-only augmentation | `deepfake-audio-detection` | `train_model_v2.py` | `src/augmentation.py`, `src/dataset.py` | Shift/pitch/noise/volume, chỉ sau file split và chỉ trên train |
 | REAL/FAKE labels | `deepfake-audio-detection` | `train_model_v2.py` | `config.py`, `src/dataset.py`, `src/inference.py` | Chuẩn hóa thành contract duy nhất REAL=0/FAKE=1/P(FAKE) |
-| Callbacks và plots | `deepfake-audio-detection` + hybrid reference | `train_model_v2.py`, notebook cells 6-9 | `src/metrics.py`, `src/utils.py` | Đồng bộ monitor, `.keras`, Agg backend, phase-specific artifacts |
+| Callbacks và plots | `deepfake-audio-detection` + hybrid reference | `train_model_v2.py`, notebook cells 6-9 | `src/metrics.py`, `src/utils.py` | Một global-best checkpoint và một lifecycle history plot |
 | Streamlit audio UX | `deepfake-audio-detection` | `app.py` | `app.py` | Reuse ý tưởng upload/playback/plots; bắt buộc dùng shared preprocessing/inference và threshold |
 | Spatial-temporal concept | Hybrid MobileNet-LSTM reference | `deepfake-det.ipynb` cell 4 | `src/model.py` | Thay sequence length 1 của reference bằng 6 Mel segments thật và TimeDistributed backbone |
-| Two-phase fine-tuning | Hybrid MobileNet-LSTM reference | `deepfake-det.ipynb` cell 13 | `src/model.py`, `train.py` | Partial unfreeze, compile lại, LR thấp, freeze toàn bộ BN |
+| Warm-up-then-fine-tune lifecycle | Hybrid MobileNet-LSTM reference | `deepfake-det.ipynb` cell 13 | `src/model.py`, `train.py` | Một run; partial unfreeze, compile lại, LR thấp, freeze toàn bộ BN |
 | MobileNetV3 architecture | `mobilenetv3.pytorch` + Keras Applications | `mobilenetv3.py` | `src/model.py` | Đối chiếu MobileNetV3Small; thay toàn bộ PyTorch/.pth bằng `tf.keras.applications.MobileNetV3Small(weights="imagenet")` |
 
 Không có source code PyTorch nào được copy vào runtime. CNN cũ, MFCC, rolloff, ZCR, image/video pipeline và Physics Layer chỉ được tham khảo hoặc chủ động không reuse vì không thuộc baseline cuối.

@@ -13,8 +13,9 @@ import streamlit as st
 import tensorflow as tf
 
 import config
+from src.artifacts import load_production_model
 from src.inference import predict_features
-from src.metrics import resolve_model_path
+from src.metrics import load_threshold
 from src.preprocessing import create_mel_spectrogram_db, load_audio, process_audio_file, segment_audio
 
 
@@ -22,21 +23,19 @@ st.set_page_config(page_title="Audio Deepfake Detection", page_icon="🎙️", l
 
 
 @st.cache_resource
-def load_model() -> tuple[tf.keras.Model, str]:
-    model_path = resolve_model_path()
-    return tf.keras.models.load_model(model_path), model_path
+def load_model() -> tuple[tf.keras.Model, float]:
+    """Load the one production detector and its validation-calibrated threshold."""
+    return load_production_model(compile=False), load_threshold()
 
 
 def main() -> None:
     st.title("MobileNetV3Small + LSTM Audio Deepfake Detector")
     st.caption("REAL=0, FAKE=1; the model output is P(FAKE).")
     try:
-        model, model_path = load_model()
-    except (FileNotFoundError, OSError, ValueError) as exc:
+        model, threshold = load_model()
+    except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
         st.warning(str(exc))
         return
-    if model_path.endswith(".h5"):
-        st.warning("Legacy pre-audit model loaded. Retrain to create a corrected .keras artifact.")
 
     uploaded = st.file_uploader(
         "Upload audio",
@@ -54,7 +53,7 @@ def main() -> None:
             temporary_path = handle.name
         audio = load_audio(temporary_path)
         features = process_audio_file(temporary_path)
-        result = predict_features(model, features)
+        result = predict_features(model, features, threshold=threshold)
     except Exception as exc:
         st.error(f"Could not process audio: {exc}")
         return

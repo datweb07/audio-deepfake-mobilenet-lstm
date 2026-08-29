@@ -59,22 +59,28 @@ python train.py
 
 Training gồm:
 
-1. Phase 1: đóng băng toàn bộ MobileNetV3Small, train LSTM và classifier với learning rate `1e-4`.
-2. Phase 2: mở một phần cuối backbone, giữ toàn bộ BatchNormalization frozen, compile lại và fine-tune với learning rate `1e-5`.
-3. Dùng validation probabilities để tìm threshold tối ưu theo F1 và lưu threshold.
+1. Một warm-up stage nội bộ: đóng băng MobileNetV3Small và train LSTM/classifier với learning rate `1e-4`.
+2. Pipeline tự động khôi phục best validation state, mở phần cuối backbone, giữ BatchNormalization frozen, compile lại và fine-tune với learning rate `1e-5`.
+3. Một checkpoint `val_loss` dùng xuyên suốt toàn lifecycle chọn global-best weights; checkpoint chỉ là artifact tạm trong `outputs/checkpoints/`.
+4. Global-best model được save/load-verify rồi xuất thành đúng một production model.
+5. Validation probabilities của final model được dùng để calibrate threshold theo F1. Test set không tham gia training, early stopping, checkpoint selection hay calibration.
 
-Artifacts mới:
+Public artifacts:
 
 ```text
-models\best_model_phase1.keras
-models\best_model_phase2.keras
+models\lava_mobilenetv3_lstm.keras
 models\best_threshold.txt
 models\model_metadata.json
-outputs\plots\training_history_phase1.png
-outputs\plots\training_history_phase2.png
+outputs\plots\training_history.png
 ```
 
-Các file `.h5` cũ được giữ lại để không làm mất dữ liệu, nhưng được xem là legacy. Chúng được train trước khi sửa đúng input scale của MobileNetV3, vì vậy phải retrain để có kết quả đáng tin cậy.
+Warm-up và fine-tuning là hai stage của **một training run**, không phải hai detector. Sau khi production model mới save/load thành công, các model stage cũ được chuyển sang `outputs\legacy_models\`; runtime không có fallback sang các artifact này.
+
+Nếu production model chưa tồn tại, evaluate, predict và UI đều báo:
+
+```text
+Production model not found. Run: python train.py
+```
 
 ## 4. Evaluate
 
@@ -84,7 +90,7 @@ Chỉ chạy sau khi đã train lại:
 python evaluate.py
 ```
 
-Script dùng test split độc lập và threshold đã tune trên validation. Output gồm Accuracy, Precision, Recall, F1, ROC-AUC từ raw `P(FAKE)`, confusion matrix và classification report.
+Script dùng test split độc lập và threshold đã tune trên validation. Output gồm Accuracy, Precision, Recall, F1, Macro F1, ROC-AUC từ raw `P(FAKE)`, EER, confusion matrix và classification report.
 
 ## 5. Predict
 
@@ -107,9 +113,18 @@ Mở `http://localhost:8501`. UI hỗ trợ upload/playback, waveform, Mel spect
 
 1. Thay nội dung `data\REAL` và `data\FAKE`.
 2. Chạy lại `python train.py`.
-3. Các checkpoint `.keras`, metadata, plots và threshold sẽ được cập nhật.
+3. Final production model, metadata, một lifecycle plot và threshold sẽ được cập nhật.
 4. Split được regenerate deterministic từ danh sách file mới.
 5. Chạy `python evaluate.py`, sau đó smoke-test `predict.py` và Streamlit.
 
 Không dùng threshold cũ với model mới và không dùng model cũ với preprocessing mới.
 
+## 8. Production artifact contract cho LAVA
+
+Mỗi detector chỉ được xuất một final artifact có thể so sánh/deploy. Với detector hiện tại, contract là:
+
+```text
+MobileNetV3Small-LSTM -> models\lava_mobilenetv3_lstm.keras
+```
+
+Các architecture tương lai cũng phải dùng cùng nguyên tắc “one detector -> one final artifact”. Warm-up, fine-tuning, pruning hoặc calibration là chi tiết nội bộ của training algorithm, không tạo thêm production-model choices cho UI hay benchmark runner.

@@ -40,16 +40,15 @@ def build_hybrid_model(weights: str | None = "imagenet") -> tuple[Model, Model]:
     return model, backbone
 
 
-def configure_backbone_for_phase(backbone: Model, phase: int) -> None:
-    """Configure frozen Phase 1 or partial fine-tuning Phase 2 safely."""
-    if phase == 1:
-        backbone.trainable = False
-        return
-    if phase != 2:
-        raise ValueError("phase must be 1 or 2")
+def freeze_backbone_for_warmup(backbone: Model) -> None:
+    """Freeze the ImageNet backbone while the temporal/classifier head warms up."""
+    backbone.trainable = False
 
+
+def unfreeze_backbone_for_finetuning(backbone: Model) -> None:
+    """Unfreeze only the configured tail while keeping BatchNormalization frozen."""
     backbone.trainable = True
-    cutoff = max(0, len(backbone.layers) - config.FINE_TUNE_LAST_LAYERS)
+    cutoff = max(0, len(backbone.layers) - config.FINETUNE_LAYERS)
     for index, layer in enumerate(backbone.layers):
         layer.trainable = index >= cutoff
         if isinstance(layer, tf.keras.layers.BatchNormalization):

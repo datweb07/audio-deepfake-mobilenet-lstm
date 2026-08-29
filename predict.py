@@ -5,18 +5,19 @@ from __future__ import annotations
 import argparse
 import os
 
-import tensorflow as tf
-
+import config
+from src.artifacts import load_production_model
 from src.inference import predict_audio
-from src.metrics import resolve_model_path
+from src.metrics import load_threshold
 
 
 def main(audio_path: str) -> None:
     if not os.path.isfile(audio_path):
         raise FileNotFoundError(f"Audio file not found: {audio_path}")
-    model_path = resolve_model_path()
-    model = tf.keras.models.load_model(model_path)
-    result = predict_audio(model, audio_path)
+    model = load_production_model(compile=False)
+    threshold = load_threshold()
+    result = predict_audio(model, audio_path, threshold=threshold)
+    print(f"Model: {config.MODEL_PATH}")
     print(f"File: {os.path.basename(audio_path)}")
     print(f"Prediction: {result.prediction}")
     print(f"Confidence: {result.confidence * 100:.2f}%")

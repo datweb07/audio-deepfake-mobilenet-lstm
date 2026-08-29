@@ -15,8 +15,9 @@ from sklearn.metrics import (
 )
 
 import config
+from src.artifacts import load_production_model
 from src.dataset import create_tf_dataset, scan_files, split_dataset
-from src.metrics import load_threshold, resolve_model_path
+from src.metrics import compute_eer, load_threshold
 
 
 def collect_predictions(model: tf.keras.Model, dataset: tf.data.Dataset) -> tuple[np.ndarray, np.ndarray]:
@@ -33,9 +34,8 @@ def main() -> None:
     _, _, test_data = split_dataset(real_files, fake_files)
     test_dataset = create_tf_dataset(*test_data, batch_size=config.BATCH_SIZE, training=False)
 
-    model_path = resolve_model_path()
-    print(f"Loading model: {model_path}")
-    model = tf.keras.models.load_model(model_path)
+    print(f"Loading production model: {config.MODEL_PATH}")
+    model = load_production_model(compile=False)
     y_true, probabilities = collect_predictions(model, test_dataset)
     threshold = load_threshold()
     predictions = (probabilities >= threshold).astype(np.int32)
@@ -44,7 +44,9 @@ def main() -> None:
     precision = precision_score(y_true, predictions, pos_label=config.FAKE_LABEL, zero_division=0)
     recall = recall_score(y_true, predictions, pos_label=config.FAKE_LABEL, zero_division=0)
     f1 = f1_score(y_true, predictions, pos_label=config.FAKE_LABEL, zero_division=0)
+    macro_f1 = f1_score(y_true, predictions, average="macro", zero_division=0)
     auc = roc_auc_score(y_true, probabilities)
+    eer, eer_threshold = compute_eer(y_true, probabilities)
     matrix = confusion_matrix(y_true, predictions, labels=[config.REAL_LABEL, config.FAKE_LABEL])
     tn, fp, fn, tp = matrix.ravel()
 
@@ -54,7 +56,9 @@ def main() -> None:
     print(f"Precision: {precision:.4f}")
     print(f"Recall:    {recall:.4f}")
     print(f"F1:        {f1:.4f}")
+    print(f"Macro F1:  {macro_f1:.4f}")
     print(f"ROC-AUC:   {auc:.4f} (computed from raw P(FAKE))")
+    print(f"EER:       {eer:.4f} (interpolated threshold={eer_threshold:.4f})")
     print("\n--- Confusion Matrix (REAL=negative, FAKE=positive) ---")
     print(f"TN={tn} FP={fp}")
     print(f"FN={fn} TP={tp}")
