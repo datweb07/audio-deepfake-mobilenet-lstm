@@ -119,5 +119,13 @@ def compute_eer(labels: Iterable[int], probabilities: Iterable[float]) -> tuple[
     eer = false_positive_rate[left] + weight * (
         false_positive_rate[right] - false_positive_rate[left]
     )
-    threshold = thresholds[left] + weight * (thresholds[right] - thresholds[left])
+    left_threshold, right_threshold = float(thresholds[left]), float(thresholds[right])
+    if np.isfinite(left_threshold) and np.isfinite(right_threshold):
+        threshold = left_threshold + weight * (right_threshold - left_threshold)
+    elif np.isfinite(right_threshold):
+        threshold = right_threshold
+    elif np.isfinite(left_threshold):
+        threshold = left_threshold
+    else:
+        threshold = config.DEFAULT_THRESHOLD
     return float(eer), float(threshold)

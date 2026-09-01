@@ -2,31 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import numpy as np
 import tensorflow as tf
 
 import config
 from src.metrics import load_threshold
 from src.preprocessing import process_audio_file
-
-
-@dataclass(frozen=True)
-class PredictionResult:
-    prediction: str
-    confidence: float
-    probability_fake: float
-    threshold: float
-
-
-def classify_probability(probability_fake: float, threshold: float) -> PredictionResult:
-    probability = float(probability_fake)
-    if not 0.0 <= probability <= 1.0:
-        raise ValueError(f"Model probability outside [0, 1]: {probability}")
-    prediction = config.FAKE_NAME if probability >= threshold else config.REAL_NAME
-    confidence = probability if prediction == config.FAKE_NAME else 1.0 - probability
-    return PredictionResult(prediction, confidence, probability, threshold)
+from src.lava.score_semantics import PredictionResult, classify_probability
 
 
 def predict_features(

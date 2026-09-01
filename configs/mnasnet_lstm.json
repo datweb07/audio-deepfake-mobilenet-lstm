@@ -1,0 +1,8 @@
+{
+  "model": "mnasnet_lstm",
+  "framework": "tensorflow",
+  "variant": "A1-1.0",
+  "pretraining": "not_verified_scratch_experimental",
+  "training_strategy": "warmup_then_finetune",
+  "primary_pretrained_comparison_eligible": false
+}

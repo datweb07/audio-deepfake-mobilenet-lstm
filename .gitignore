@@ -3,6 +3,7 @@ __pycache__/
 *$py.class
 
 .venv/
+.venv-torch/
 venv/
 env/
 
@@ -44,3 +45,10 @@ outputs/
 deepfake-audio-detection/
 enhancing-deepfake-detection-using-mobilenet-lstm-hybrid-model-main/
 mobilenetv3.pytorch/
+ConvNets-TensorFlow2-master/
+efficientnet-master/
+EfficientWord-Net-main/
+mnasnet/
+ShuffleNetV2/
+rawnet2-antispoofing-main/
+aasist-main/

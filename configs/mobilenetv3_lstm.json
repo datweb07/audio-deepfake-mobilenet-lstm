@@ -1,0 +1,8 @@
+{
+  "model": "mobilenetv3_lstm",
+  "framework": "tensorflow",
+  "pretraining": "imagenet_verified",
+  "training_strategy": "warmup_then_finetune",
+  "model_selection": "validation_loss",
+  "threshold_source": "validation_f1"
+}

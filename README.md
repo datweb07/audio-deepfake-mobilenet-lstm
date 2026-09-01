@@ -1,17 +1,32 @@
-# Audio Deepfake Detection - MobileNetV3Small + LSTM
+# LAVA — Deepfake Voice Multi-Detector Foundation
 
-Hệ thống phân loại nhị phân audio với quy ước thống nhất:
+LAVA provides one evaluation contract across TensorFlow lightweight detectors and native PyTorch anti-spoofing references:
 
-- `REAL = 0`
-- `FAKE = 1`
-- đầu ra sigmoid là `P(FAKE)`
-- `P(FAKE) >= threshold` được phân loại là `FAKE`
+- `REAL = 0`, `FAKE = 1`
+- every detector returns a finite `P(FAKE)` in `[0, 1]`
+- `P(FAKE) >= threshold` means `FAKE`
+- every detector has one final model, one validation-calibrated threshold, and one metadata artifact
 
-Pipeline chính là: audio 3 giây -> 6 segment theo đúng thứ tự thời gian -> Mel spectrogram RGB 224x224 -> `TimeDistributed(MobileNetV3Small)` -> LSTM -> sigmoid.
+The repository is a **multi-model software foundation**, not yet a completed six-model scientific benchmark. Only a fully trained detector with a manifest-compatible artifact can be marked `BENCHMARKED`; smoke tests never receive that status.
 
-## 1. Setup
+## Detector registry
 
-Khuyến nghị dùng Python 3.11 và một virtual environment mới. Không cài requirements của ba repo reference.
+| Registry name | Model | Group | Framework | Input | Pretraining policy |
+|---|---|---|---|---|---|
+| `mobilenetv3_lstm` | MobileNetV3Small-LSTM | lightweight | TensorFlow 2.15 | 6 chronological Mel-RGB segments | verified ImageNet |
+| `efficientnet_b0_lstm` | EfficientNet-B0-LSTM | lightweight | TensorFlow 2.15 | same Mel sequence | verified ImageNet |
+| `shufflenetv2_lstm` | ShuffleNetV2-1.0x-LSTM | lightweight | TensorFlow 2.15 | same Mel sequence | scratch experimental; ImageNet weights not verified |
+| `mnasnet_lstm` | MnasNet-A1-1.0-LSTM | lightweight | TensorFlow 2.15 | same Mel sequence | scratch experimental; ImageNet weights not verified |
+| `rawnet2` | RawNet2 | reference | PyTorch, isolated worker | 16 kHz waveform | native scratch protocol |
+| `aasist` | AASIST | reference | PyTorch, isolated worker | 16 kHz waveform and native graph front end | native scratch protocol |
+
+The four lightweight models share duration normalization, 6 chronological segments, Mel generation, `224×224×3` images, `LSTM(128)`, `Dense(64, ReLU)`, `Dropout(0.4)`, and a sigmoid `P(FAKE)` head. Their backbone embedding dimensions are not forced to match: MobileNetV3Small 576, ShuffleNetV2 1024, MnasNet-A1 1280, and EfficientNet-B0 1280. RawNet2 and AASIST retain native waveform architectures and are not converted to Mel-CNN-LSTM variants.
+
+RawNet2 and AASIST both pass shape/forward tests at 48,000 and 64,600 samples. The 48,000-sample path is currently the LAVA common-duration experimental stratum; metadata explicitly marks primary duration-comparison eligibility as false until native-vs-common performance/fidelity experiments have been run.
+
+## Environments
+
+TensorFlow/lightweight environment:
 
 ```powershell
 cd D:\audio-deepfake-mobilenet-lstm
@@ -21,110 +36,151 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Kiểm tra môi trường:
+Isolated PyTorch/reference environment:
 
 ```powershell
-python -m pip check
-python -c "import tensorflow, librosa, cv2, sklearn, streamlit; print(tensorflow.__version__)"
+cd D:\audio-deepfake-mobilenet-lstm
+python -m venv .venv-torch
+.\.venv-torch\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install --no-cache-dir -r requirements-torch.txt
 ```
 
-TensorFlow tự dùng GPU tương thích nếu phát hiện được. Không có GPU thì project vẫn chạy bằng CPU, nhưng training chậm hơn đáng kể.
+Do not install PyTorch into `.venv`. The TensorFlow orchestrator invokes `.venv-torch\Scripts\python.exe` as a JSON worker, so benchmark code does not import both frameworks into one process. Set `LAVA_TORCH_PYTHON` only when the torch interpreter is stored elsewhere.
 
-## 2. Dataset
+## Canonical dataset manifest
 
-Chỉ hai thư mục sau được scan làm dataset production:
+Only `data\REAL` and `data\FAKE` are production inputs. Build and verify the canonical split before training:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m src.lava.data.manifest build
+python -m src.lava.data.manifest check
+```
+
+Artifacts:
 
 ```text
-data\REAL\
-data\FAKE\
+data/manifests/dataset_manifest.csv
+data/manifests/split_manifest.csv
+data/manifests/duplicate_report.csv
+data/manifests/label_conflicts.csv
+data/manifests/manifest_metadata.json
 ```
 
-Định dạng hỗ trợ: `.wav`, `.flac`, `.mp3`, `.ogg`, `.m4a`. Mỗi file được resample về 22,050 Hz, mono và lấy tối đa 3 giây đầu. File ngắn hơn được zero-pad.
+Cross-label byte-identical files are quarantined from every split. For same-label duplicates, the lexicographically first path is retained and all redundant copies are excluded. Therefore duplicate/checksum leakage across train, validation, and test is impossible. Missing speaker/source/generator metadata remains `UNKNOWN`; the only valid current claim is **checksum-group-disjoint split**, not speaker-, generator-, source-, or dataset-disjoint evaluation.
 
-Ba thư mục sau chỉ là nguồn tham khảo, không được scan làm dataset và không được import vào runtime:
+## Train
 
-```text
-deepfake-audio-detection\
-enhancing-deepfake-detection-using-mobilenet-lstm-hybrid-model-main\
-mobilenetv3.pytorch\
-```
-
-Split được tạo lại một cách deterministic với seed 42 theo tỷ lệ 70% train, 15% validation, 15% test. Original files được split trước; augmentation chỉ chạy trên train.
-
-## 3. Train
+The default command remains backward-compatible:
 
 ```powershell
 python train.py
+python train.py --model mobilenetv3_lstm
 ```
 
-Training gồm:
+Other detectors:
 
-1. Một warm-up stage nội bộ: đóng băng MobileNetV3Small và train LSTM/classifier với learning rate `1e-4`.
-2. Pipeline tự động khôi phục best validation state, mở phần cuối backbone, giữ BatchNormalization frozen, compile lại và fine-tune với learning rate `1e-5`.
-3. Một checkpoint `val_loss` dùng xuyên suốt toàn lifecycle chọn global-best weights; checkpoint chỉ là artifact tạm trong `outputs/checkpoints/`.
-4. Global-best model được save/load-verify rồi xuất thành đúng một production model.
-5. Validation probabilities của final model được dùng để calibrate threshold theo F1. Test set không tham gia training, early stopping, checkpoint selection hay calibration.
+```powershell
+python train.py --model efficientnet_b0_lstm
+python train.py --model shufflenetv2_lstm
+python train.py --model mnasnet_lstm
+python train.py --model rawnet2
+python train.py --model aasist
+```
 
-Public artifacts:
+TensorFlow models use one public lifecycle with internal warm-up and fine-tuning, global best selection from validation loss, and threshold calibration from validation scores. Torch models likewise select from validation only. The independent test split is never used for checkpointing, early stopping, scheduling, or threshold calibration.
+
+Run a non-production lifecycle test first:
+
+```powershell
+python train.py --model efficientnet_b0_lstm --smoke-test
+python train.py --model shufflenetv2_lstm --smoke-test
+python train.py --model mnasnet_lstm --smoke-test
+python train.py --model rawnet2 --smoke-test
+python train.py --model aasist --smoke-test
+```
+
+`--smoke-test` performs tiny build/train/save/load verification and never overwrites production artifacts.
+
+## Artifact contract
+
+The existing baseline paths are preserved for compatibility:
 
 ```text
-models\lava_mobilenetv3_lstm.keras
-models\best_threshold.txt
-models\model_metadata.json
-outputs\plots\training_history.png
+models/lava_mobilenetv3_lstm.keras
+models/best_threshold.txt
+models/model_metadata.json
 ```
 
-Warm-up và fine-tuning là hai stage của **một training run**, không phải hai detector. Sau khi production model mới save/load thành công, các model stage cũ được chuyển sang `outputs\legacy_models\`; runtime không có fallback sang các artifact này.
-
-Nếu production model chưa tồn tại, evaluate, predict và UI đều báo:
+Every new detector uses:
 
 ```text
-Production model not found. Run: python train.py
+models/<detector>/model.keras   # TensorFlow
+models/<detector>/model.pt      # PyTorch
+models/<detector>/threshold.json
+models/<detector>/metadata.json
 ```
 
-## 4. Evaluate
+Metadata records the manifest hash, score semantics, pretraining stratum, parameters, seed, framework, hardware summary, and final validation threshold. A clean benchmark refuses artifacts trained on a different or unknown manifest hash.
 
-Chỉ chạy sau khi đã train lại:
+## Evaluate and predict
 
 ```powershell
 python evaluate.py
+python evaluate.py --model efficientnet_b0_lstm
+python evaluate.py --model rawnet2
 ```
 
-Script dùng test split độc lập và threshold đã tune trên validation. Output gồm Accuracy, Precision, Recall, F1, Macro F1, ROC-AUC từ raw `P(FAKE)`, EER, confusion matrix và classification report.
-
-## 5. Predict
+Evaluation always reads the canonical independent test split and reports Accuracy, Precision, Recall, F1, Macro F1, ROC-AUC from raw `P(FAKE)`, EER, confusion matrix, classification report, and threshold.
 
 ```powershell
-python predict.py --audio "data\REAL\biden-original.wav"
-python predict.py --audio "data\FAKE\biden-to-linus.wav"
+python predict.py --audio "data\REAL\11241.wav"
+python predict.py --model efficientnet_b0_lstm --audio "path\to\audio.wav"
+python predict.py --model rawnet2 --audio "path\to\audio.wav"
 ```
 
-Output gồm prediction, confidence của class được chọn, raw `P(FAKE)` và threshold thực tế.
+Prediction output includes model, framework, predicted label, confidence, raw `P(FAKE)`, and threshold.
 
-## 6. Streamlit
+## Benchmark
+
+Clean benchmark, one model or all registered models:
+
+```powershell
+python -m benchmark.runner --models mobilenetv3_lstm --suite clean
+python -m benchmark.runner --models all --suite clean
+```
+
+Efficiency benchmark uses batch size 1, warm-up, repeated timings, and reports mean/median/std/P95 for preprocessing, warm model inference, and end-to-end inference. Cold load/process startup is reported separately and excluded from warm model latency:
+
+```powershell
+python -m benchmark.runner --models all --suite efficiency --warmup 10 --runs 50
+```
+
+Clean per-sample output is written to `outputs/benchmark/clean/<model>/scores.csv`; summaries are aggregated under `outputs/benchmark/`. A run with `--limit` or fewer than 10 efficiency repetitions is diagnostic and receives `SMOKE_TESTED`, never `BENCHMARKED`.
+
+Noise, compression, simulated replay, and unseen-data modules currently expose explicit `NOT_RUN` skeletons. Pareto analysis requires at least two completed models and complete objective columns; otherwise it fails with an insufficiency message instead of inventing a frontier.
+
+## Streamlit
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-Mở `http://localhost:8501`. UI hỗ trợ upload/playback, waveform, Mel spectrogram, REAL/FAKE, confidence, raw `P(FAKE)` và threshold. UI không hiển thị class prediction giả cho từng segment vì classifier chỉ dự đoán toàn sequence.
+The selector shows only detectors with a model, threshold, metadata, and successful load check. Streamlit never trains models. MobileNetV3Small-LSTM remains the default when its artifact is valid.
 
-## 7. Retraining với dataset mới
+## Verification
 
-1. Thay nội dung `data\REAL` và `data\FAKE`.
-2. Chạy lại `python train.py`.
-3. Final production model, metadata, một lifecycle plot và threshold sẽ được cập nhật.
-4. Split được regenerate deterministic từ danh sách file mới.
-5. Chạy `python evaluate.py`, sau đó smoke-test `predict.py` và Streamlit.
+TensorFlow/core suite:
 
-Không dùng threshold cũ với model mới và không dùng model cũ với preprocessing mới.
-
-## 8. Production artifact contract cho LAVA
-
-Mỗi detector chỉ được xuất một final artifact có thể so sánh/deploy. Với detector hiện tại, contract là:
-
-```text
-MobileNetV3Small-LSTM -> models\lava_mobilenetv3_lstm.keras
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py" -v
 ```
 
-Các architecture tương lai cũng phải dùng cùng nguyên tắc “one detector -> one final artifact”. Warm-up, fine-tuning, pruning hoặc calibration là chi tiết nội bộ của training algorithm, không tạo thêm production-model choices cho UI hay benchmark runner.
+Native torch suite:
+
+```powershell
+.\.venv-torch\Scripts\python.exe -m unittest tests.test_rawnet2_shapes tests.test_aasist_shapes tests.test_torch_training_smoke -v
+```
+
+The reference repositories in the workspace are read-only research sources. Production code never imports them at runtime. See `docs/SOURCE_PROVENANCE.md` for the adaptation boundary and licensing notes.

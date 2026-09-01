@@ -19,6 +19,12 @@ from src.preprocessing import load_audio, process_audio_data, process_audio_file
 DatasetSplit = tuple[list[str], list[int]]
 
 
+def load_manifest_split(split: str) -> DatasetSplit:
+    """Load one immutable canonical split shared by every LAVA detector."""
+    from src.lava.data.loader import load_split
+    return load_split(split)
+
+
 def _scan_class(directory: str) -> list[str]:
     root = Path(directory)
     return sorted(

@@ -1,0 +1,13 @@
+{
+  "model": "rawnet2",
+  "framework": "pytorch",
+  "pretraining": "scratch",
+  "sample_rate": 16000,
+  "common_target_samples": 48000,
+  "native_diagnostic_samples": 64600,
+  "duration_fidelity_status": "shape_verified_performance_comparison_pending",
+  "primary_duration_comparison_eligible": false,
+  "optimizer": "adam",
+  "learning_rate": 0.0001,
+  "model_selection": "validation_loss"
+}

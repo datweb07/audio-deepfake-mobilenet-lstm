@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import os
 
 import matplotlib
 
@@ -24,6 +25,9 @@ def merge_histories(histories: Sequence[tf.keras.callbacks.History]) -> dict[str
 def plot_training_history(
     warmup_history: tf.keras.callbacks.History,
     finetune_history: tf.keras.callbacks.History,
+    *,
+    output_path: str | None = None,
+    model_name: str = "MobileNetV3Small-LSTM",
 ) -> str:
     """Save one plot across warm-up and fine-tuning epochs."""
     history = merge_histories((warmup_history, finetune_history))
@@ -54,8 +58,10 @@ def plot_training_history(
         axis.grid(alpha=0.2)
         axis.legend()
 
-    figure.suptitle("MobileNetV3Small-LSTM complete training lifecycle")
+    figure.suptitle(f"{model_name} complete training lifecycle")
     figure.tight_layout()
-    figure.savefig(config.TRAINING_HISTORY_PATH, dpi=160)
+    destination = output_path or config.TRAINING_HISTORY_PATH
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    figure.savefig(destination, dpi=160)
     plt.close(figure)
-    return config.TRAINING_HISTORY_PATH
+    return destination
