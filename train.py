@@ -35,6 +35,7 @@ import argparse
 import os
 import random
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -59,7 +60,18 @@ from src.lava.models.tensorflow.temporal_classifier import (
     unfreeze_backbone,
 )
 from src.lava.training.policy import assert_test_isolation, require_validation_source
-from src.utils import merge_histories, plot_training_history
+from src.lava.training.tensorflow_lifecycle import (
+    batch_normalization_status,
+    finalize_global_selection,
+    initial_lifecycle_state,
+    lifecycle_paths,
+    load_selected_model,
+    mark_interrupted,
+    optimizer_learning_rate,
+    stage_callbacks,
+    write_lifecycle_state,
+)
+from src.utils import plot_training_history
 
 
 def set_reproducible_seed(seed: int = config.RANDOM_SEED) -> None:
@@ -88,22 +100,6 @@ def _balanced_subset(data: tuple[list[str], list[int]], per_class: int) -> tuple
     return selected_paths, selected_labels
 
 
-def _callbacks(checkpoint_path: Path, *, smoke_test: bool) -> list[tf.keras.callbacks.Callback]:
-    return [
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=str(checkpoint_path), monitor="val_loss", save_best_only=True, mode="min", verbose=0
-        ),
-        tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss", patience=1 if smoke_test else config.EARLY_STOPPING_PATIENCE,
-            restore_best_weights=True, mode="min", verbose=0,
-        ),
-        tf.keras.callbacks.ReduceLROnPlateau(
-            monitor="val_loss", factor=0.5, patience=1 if smoke_test else config.LR_REDUCTION_PATIENCE,
-            min_lr=config.MIN_LEARNING_RATE, mode="min", verbose=0,
-        ),
-    ]
-
-
 def _restore_weights(model: tf.keras.Model, checkpoint_path: Path) -> None:
     if not checkpoint_path.is_file():
         raise RuntimeError("Training produced no validation-selected checkpoint")
@@ -129,8 +125,9 @@ def _git_commit() -> str:
 
 
 def _save_metadata(
-    *, detector, threshold: float, threshold_f1: float, best_epoch: int,
-    best_val_loss: float, history_path: str, warmup_epochs: int, finetune_epochs: int,
+    *, detector, threshold: float, threshold_f1: float, history_path: str,
+    warmup_epochs: int, finetune_epochs: int, lifecycle_state: dict[str, Any],
+    checkpoint_directory: Path, bn_status: dict[str, int],
 ) -> None:
     spec = detector.spec
     with MANIFEST_METADATA.open("r", encoding="utf-8") as handle:
@@ -170,15 +167,38 @@ def _save_metadata(
             "warmup_epochs_run": warmup_epochs, "finetune_epochs_run": finetune_epochs,
             "warmup_lr": config.WARMUP_LR, "finetune_lr": config.FINETUNE_LR,
             "finetune_layers": config.FINETUNE_LAYERS, "batch_normalization_frozen": True,
+            "warmup_early_stopping_patience": config.WARMUP_EARLY_STOPPING_PATIENCE,
+            "finetune_early_stopping_patience": config.FINETUNE_EARLY_STOPPING_PATIENCE,
+            "warmup_lr_reduction_patience": config.WARMUP_LR_REDUCTION_PATIENCE,
+            "finetune_lr_reduction_patience": config.FINETUNE_LR_REDUCTION_PATIENCE,
         },
         "selection": {
-            "monitor": "validation_loss", "best_epoch": best_epoch,
-            "best_value": best_val_loss, "test_used": False,
+            "monitor": "validation_loss", "mode": "min",
+            "best_epoch": lifecycle_state["global_best_epoch"],
+            "best_value": lifecycle_state["global_best_val_loss"],
+            "best_stage": lifecycle_state["global_best_stage"],
+            "selection_finalized_after_both_stages": lifecycle_state["selection_finalized"],
+            "global_patience_cutoff": False,
+            "test_used": False,
         },
+        "stage_checkpoints": {
+            "directory": os.path.relpath(checkpoint_directory, config.BASE_DIR),
+            "warmup": "warmup_best.keras",
+            "finetune": "finetune_best.keras",
+            "lifecycle_state": "lifecycle_state.json",
+        },
+        "batch_normalization": bn_status,
         "load_smoke_test": "PASS",
         "training_history": os.path.relpath(history_path, config.BASE_DIR),
     }
     write_json_atomic(spec.metadata_artifact, metadata)
+
+
+def _extract_backbone(model: tf.keras.Model) -> tf.keras.Model:
+    for layer in model.layers:
+        if isinstance(layer, tf.keras.layers.TimeDistributed):
+            return layer.layer
+    raise RuntimeError("Temporal classifier contains no TimeDistributed backbone")
 
 
 def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> dict[str, Any]:
@@ -201,77 +221,181 @@ def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> d
     model = detector.build(weights=build_weights)
     backbone = detector.backbone
     assert backbone is not None
-    checkpoint_path = Path(config.CHECKPOINTS_DIR) / f"{model_name}_best.keras"
-    checkpoint_path.unlink(missing_ok=True)
-    callbacks = _callbacks(checkpoint_path, smoke_test=smoke_test)
 
-    if model_name == "mobilenetv3_lstm":
-        freeze_baseline(backbone)
-        compile_baseline(model, config.WARMUP_LR)
-    else:
-        freeze_backbone(backbone)
-        compile_binary_model(model, config.WARMUP_LR)
-    warmup_history = model.fit(
-        train_dataset, validation_data=validation_dataset, epochs=1 if smoke_test else config.WARMUP_EPOCHS,
-        class_weight=class_weights, callbacks=callbacks, verbose=0 if smoke_test else 1,
+    with MANIFEST_METADATA.open("r", encoding="utf-8") as handle:
+        manifest_metadata = json.load(handle)
+    Path(config.CHECKPOINTS_DIR).mkdir(parents=True, exist_ok=True)
+    smoke_directory = (
+        tempfile.TemporaryDirectory(prefix=f"{model_name}_lifecycle_", dir=config.CHECKPOINTS_DIR)
+        if smoke_test else None
     )
-    _restore_weights(model, checkpoint_path)
-    if model_name == "mobilenetv3_lstm":
-        unfreeze_baseline(backbone)
-        compile_baseline(model, config.FINETUNE_LR)
-    else:
-        unfreeze_backbone(backbone, config.FINETUNE_LAYERS)
-        compile_binary_model(model, config.FINETUNE_LR)
-    warmup_run = len(warmup_history.epoch)
-    finetune_history = model.fit(
-        train_dataset, validation_data=validation_dataset, initial_epoch=warmup_run,
-        epochs=warmup_run + (1 if smoke_test else config.FINETUNE_EPOCHS), class_weight=class_weights,
-        callbacks=callbacks, verbose=0 if smoke_test else 1,
+    paths = lifecycle_paths(model_name, root=smoke_directory.name if smoke_directory else None)
+    paths.directory.mkdir(parents=True, exist_ok=True)
+    for artifact in (paths.warmup_checkpoint, paths.finetune_checkpoint, paths.state):
+        artifact.unlink(missing_ok=True)
+    state = initial_lifecycle_state(
+        model_name,
+        manifest_hash=str(manifest_metadata["manifest_hash"]),
+        seed=config.RANDOM_SEED,
     )
-    _restore_weights(model, checkpoint_path)
-    validation_labels, scores = collect_predictions(model, validation_dataset)
-    require_validation_source("validation")
-    threshold, threshold_f1 = calibrate_threshold(validation_labels, scores)
-    history = merge_histories((warmup_history, finetune_history))
-    validation_losses = np.asarray(history["val_loss"], dtype=np.float64)
+    write_lifecycle_state(paths.state, state)
+    active_stage: str | None = None
 
-    if smoke_test:
-        smoke_path = Path(config.CHECKPOINTS_DIR) / f"{model_name}_smoke.keras"
-        smoke_path.unlink(missing_ok=True)
-        model.save(smoke_path)
-        loaded = tf.keras.models.load_model(smoke_path, compile=False)
-        if loaded.output_shape != (None, 1):
-            raise RuntimeError("Smoke save/load output contract failed")
-        smoke_path.unlink(missing_ok=True)
-        checkpoint_path.unlink(missing_ok=True)
+    try:
+        active_stage = "warmup"
+        if model_name == "mobilenetv3_lstm":
+            freeze_baseline(backbone)
+            compile_baseline(model, config.WARMUP_LR)
+        else:
+            freeze_backbone(backbone)
+            compile_binary_model(model, config.WARMUP_LR)
+        warmup_callbacks = stage_callbacks(
+            stage="warmup",
+            paths=paths,
+            state=state,
+            early_stopping_patience=(1 if smoke_test else config.WARMUP_EARLY_STOPPING_PATIENCE),
+            lr_reduction_patience=(1 if smoke_test else config.WARMUP_LR_REDUCTION_PATIENCE),
+            verbose=0 if smoke_test else 1,
+        )
+        warmup_history = model.fit(
+            train_dataset,
+            validation_data=validation_dataset,
+            epochs=1 if smoke_test else config.WARMUP_EPOCHS,
+            class_weight=class_weights,
+            callbacks=warmup_callbacks,
+            verbose=0 if smoke_test else 1,
+        )
+        _restore_weights(model, paths.warmup_checkpoint)
+
+        active_stage = "finetune"
+        if model_name == "mobilenetv3_lstm":
+            unfreeze_baseline(backbone)
+            compile_baseline(model, config.FINETUNE_LR)
+        else:
+            unfreeze_backbone(backbone, config.FINETUNE_LAYERS)
+            compile_binary_model(model, config.FINETUNE_LR)
+        bn_status = batch_normalization_status(backbone)
+        if bn_status["trainable"] != 0:
+            raise RuntimeError(f"BatchNormalization freeze policy violated: {bn_status}")
+        state["batch_normalization"] = bn_status
+        write_lifecycle_state(paths.state, state)
+        warmup_run = len(warmup_history.epoch)
+        # A new callback set intentionally resets fine-tune stopping and LR scheduling state.
+        finetune_callbacks = stage_callbacks(
+            stage="finetune",
+            paths=paths,
+            state=state,
+            early_stopping_patience=(1 if smoke_test else config.FINETUNE_EARLY_STOPPING_PATIENCE),
+            lr_reduction_patience=(1 if smoke_test else config.FINETUNE_LR_REDUCTION_PATIENCE),
+            verbose=0 if smoke_test else 1,
+        )
+        finetune_history = model.fit(
+            train_dataset,
+            validation_data=validation_dataset,
+            initial_epoch=warmup_run,
+            epochs=warmup_run + (1 if smoke_test else config.FINETUNE_EPOCHS),
+            class_weight=class_weights,
+            callbacks=finetune_callbacks,
+            verbose=0 if smoke_test else 1,
+        )
+        state["finetune_final_lr"] = optimizer_learning_rate(model)
+        write_lifecycle_state(paths.state, state)
+
+        # Only now compare the independently optimized stage-best checkpoints.
+        selection = finalize_global_selection(state, paths)
+        selected_model = load_selected_model(selection)
+        if selected_model.input_shape != model.input_shape or selected_model.output_shape != model.output_shape:
+            raise RuntimeError("Selected checkpoint violates the detector architecture contract")
+        detector.model = selected_model
+        detector.backbone = _extract_backbone(selected_model)
+
+        # Calibration is deliberately downstream of global checkpoint selection.
+        validation_labels, scores = collect_predictions(selected_model, validation_dataset)
+        require_validation_source("validation")
+        threshold, threshold_f1 = calibrate_threshold(validation_labels, scores)
+
+        if smoke_test:
+            smoke_path = paths.directory / "selected_global_best.keras"
+            selected_model.save(smoke_path)
+            loaded = tf.keras.models.load_model(smoke_path, compile=False)
+            if loaded.output_shape != (None, 1):
+                raise RuntimeError("Smoke save/load output contract failed")
+            state["status"] = "SMOKE_COMPLETE"
+            state["production_model_saved"] = False
+            write_lifecycle_state(paths.state, state)
+            return {
+                "status": "SMOKE_TESTED",
+                "model": model_name,
+                "input_shape": list(selected_model.input_shape),
+                "embedding_dimension": int(detector.backbone.output_shape[-1]),
+                "output_shape": list(selected_model.output_shape),
+                "parameter_count": int(selected_model.count_params()),
+                "threshold_smoke_only": threshold,
+                "global_best_stage": selection.stage,
+                "global_best_val_loss": selection.val_loss,
+                "batch_normalization": bn_status,
+                "separate_stage_checkpoints": True,
+            }
+
+        if model_name == "mobilenetv3_lstm":
+            detector.model = save_production_model(selected_model)
+            detector.backbone = _extract_backbone(detector.model)
+            history_path = config.TRAINING_HISTORY_PATH
+        else:
+            detector.save()
+            history_path = os.path.join(config.PLOTS_DIR, model_name, "training_history.png")
+        history_path = plot_training_history(
+            warmup_history,
+            finetune_history,
+            output_path=history_path,
+            model_name=spec.display_name,
+            lifecycle_state=state,
+        )
+        save_detector_threshold(spec, threshold)
+        state["production_model_saved"] = True
+        state["production_model_path"] = str(spec.model_artifact)
+        write_lifecycle_state(paths.state, state)
+        _save_metadata(
+            detector=detector,
+            threshold=threshold,
+            threshold_f1=threshold_f1,
+            history_path=history_path,
+            warmup_epochs=warmup_run,
+            finetune_epochs=len(finetune_history.epoch),
+            lifecycle_state=state,
+            checkpoint_directory=paths.directory,
+            bn_status=bn_status,
+        )
+        if model_name == "mobilenetv3_lstm":
+            archive_legacy_artifacts()
         return {
-            "status": "SMOKE_TESTED", "model": model_name, "input_shape": list(model.input_shape),
-            "embedding_dimension": int(backbone.output_shape[-1]), "output_shape": list(model.output_shape),
-            "parameter_count": int(model.count_params()), "threshold_smoke_only": threshold,
+            "status": "TRAINED",
+            "model": model_name,
+            "artifact": str(spec.model_artifact),
+            "threshold": threshold,
+            "global_best_stage": selection.stage,
+            "global_best_val_loss": selection.val_loss,
+            "lifecycle_state": str(paths.state),
         }
-
-    if model_name == "mobilenetv3_lstm":
-        detector.model = save_production_model(model)
-        detector.backbone = detector.model.get_layer("time_distributed_mobilenetv3small").layer
-        history_path = config.TRAINING_HISTORY_PATH
-    else:
-        detector.model = model
-        detector.save()
-        history_path = os.path.join(config.PLOTS_DIR, model_name, "training_history.png")
-    history_path = plot_training_history(
-        warmup_history, finetune_history, output_path=history_path, model_name=spec.display_name
-    )
-    save_detector_threshold(spec, threshold)
-    _save_metadata(
-        detector=detector, threshold=threshold, threshold_f1=threshold_f1,
-        best_epoch=int(np.argmin(validation_losses)) + 1,
-        best_val_loss=float(np.min(validation_losses)), history_path=history_path,
-        warmup_epochs=warmup_run, finetune_epochs=len(finetune_history.epoch),
-    )
-    checkpoint_path.unlink(missing_ok=True)
-    if model_name == "mobilenetv3_lstm":
-        archive_legacy_artifacts()
-    return {"status": "TRAINED", "model": model_name, "artifact": str(spec.model_artifact), "threshold": threshold}
+    except KeyboardInterrupt:
+        state["finetune_final_lr"] = optimizer_learning_rate(model)
+        mark_interrupted(state, paths, stage=active_stage)
+        print(
+            f"Training interrupted during {active_stage}. Stage checkpoints preserved in {paths.directory}. "
+            "No production model was written."
+        )
+        raise
+    except Exception as exc:
+        state["status"] = "FAILED"
+        state["active_stage"] = None
+        state["failed_stage"] = active_stage
+        state["error_type"] = type(exc).__name__
+        state["production_model_saved"] = False
+        write_lifecycle_state(paths.state, state)
+        raise
+    finally:
+        if smoke_directory is not None:
+            smoke_directory.cleanup()
 
 
 def main(model_name: str = "mobilenetv3_lstm", *, smoke_test: bool = False) -> None:

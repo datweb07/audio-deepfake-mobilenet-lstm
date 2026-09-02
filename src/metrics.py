@@ -6,46 +6,9 @@ import os
 from typing import Iterable
 
 import numpy as np
-import tensorflow as tf
 from sklearn.metrics import f1_score, roc_curve
 
 import config
-
-
-def get_lifecycle_checkpoint() -> tf.keras.callbacks.ModelCheckpoint:
-    """Create the one val-loss checkpoint shared by the complete training run."""
-    return tf.keras.callbacks.ModelCheckpoint(
-        filepath=config.TRAINING_CHECKPOINT_PATH,
-        monitor="val_loss",
-        save_best_only=True,
-        mode="min",
-        verbose=1,
-    )
-
-
-def get_stage_callbacks(
-    lifecycle_checkpoint: tf.keras.callbacks.ModelCheckpoint,
-) -> list[tf.keras.callbacks.Callback]:
-    """Use stage-local stopping/LR control without resetting global model selection."""
-    return [
-        lifecycle_checkpoint,
-        tf.keras.callbacks.EarlyStopping(
-            monitor="val_loss",
-            patience=config.EARLY_STOPPING_PATIENCE,
-            restore_best_weights=True,
-            mode="min",
-            verbose=1,
-        ),
-        tf.keras.callbacks.ReduceLROnPlateau(
-            monitor="val_loss",
-            factor=0.5,
-            patience=config.LR_REDUCTION_PATIENCE,
-            min_lr=config.MIN_LEARNING_RATE,
-            mode="min",
-            verbose=1,
-        ),
-    ]
-
 
 def calibrate_threshold(y_true: Iterable[int], probabilities: Iterable[float]) -> tuple[float, float]:
     labels = np.asarray(list(y_true), dtype=np.int32)

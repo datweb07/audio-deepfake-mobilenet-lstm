@@ -89,7 +89,7 @@ python train.py --model rawnet2
 python train.py --model aasist
 ```
 
-TensorFlow models use one public lifecycle with internal warm-up and fine-tuning, global best selection from validation loss, and threshold calibration from validation scores. Torch models likewise select from validation only. The independent test split is never used for checkpointing, early stopping, scheduling, or threshold calibration.
+TensorFlow models use one public lifecycle with internal warm-up and fine-tuning. Each stage creates fresh, stage-local `EarlyStopping` and `ReduceLROnPlateau` callbacks plus an independent checkpoint under `outputs/checkpoints/<detector>/warmup_best.keras` or `finetune_best.keras`. Temporary fine-tuning degradation is allowed: there is no global-patience cutoff against the warm-up score. Only after both stages finish does the trainer compare their best `val_loss`, load the global winner, calibrate its threshold on validation, and publish one production model. Recovery metadata is written to `outputs/checkpoints/<detector>/lifecycle_state.json`; interruption preserves stage checkpoints and never publishes partial weights. The independent test split is never used for checkpointing, early stopping, scheduling, or threshold calibration.
 
 Run a non-production lifecycle test first:
 

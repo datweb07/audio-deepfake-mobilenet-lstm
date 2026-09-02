@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 import os
+from typing import Any
 
 import matplotlib
 
@@ -28,6 +29,7 @@ def plot_training_history(
     *,
     output_path: str | None = None,
     model_name: str = "MobileNetV3Small-LSTM",
+    lifecycle_state: Mapping[str, Any] | None = None,
 ) -> str:
     """Save one plot across warm-up and fine-tuning epochs."""
     history = merge_histories((warmup_history, finetune_history))
@@ -53,6 +55,25 @@ def plot_training_history(
                 linewidth=1.2,
                 label="Fine-tuning starts",
             )
+        if title == "Binary cross-entropy" and lifecycle_state:
+            for stage, color, marker in (
+                ("warmup", "tab:blue", "o"),
+                ("finetune", "tab:orange", "s"),
+            ):
+                best_epoch = lifecycle_state.get(f"{stage}_best_epoch")
+                best_loss = lifecycle_state.get(f"{stage}_best_val_loss")
+                if best_epoch is not None and best_loss is not None:
+                    axis.scatter(
+                        [best_epoch], [best_loss], color=color, marker=marker, s=45,
+                        zorder=4, label=f"{stage.capitalize()} best",
+                    )
+            global_epoch = lifecycle_state.get("global_best_epoch")
+            global_loss = lifecycle_state.get("global_best_val_loss")
+            if global_epoch is not None and global_loss is not None:
+                axis.scatter(
+                    [global_epoch], [global_loss], color="black", marker="*", s=100,
+                    zorder=5, label="Global best",
+                )
         axis.set_xlabel("Lifecycle epoch")
         axis.set_title(title)
         axis.grid(alpha=0.2)
