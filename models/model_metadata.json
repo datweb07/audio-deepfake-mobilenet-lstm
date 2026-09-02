@@ -1,44 +1,59 @@
 {
-  "model_name": "MobileNetV3Small-LSTM",
-  "architecture": "6 chronological Mel-spectrogram segments -> TimeDistributed(MobileNetV3Small, ImageNet, include_top=False, pooling=avg) -> LSTM(128) -> Dense(64, relu) -> Dropout(0.4) -> Dense(1, sigmoid)",
-  "training_strategy": "warmup_then_finetune",
-  "artifact_provenance": "produced by one complete python train.py lifecycle",
-  "training_schedule": {
-    "warmup_epochs_configured": 50,
-    "warmup_epochs_run": 30,
-    "warmup_learning_rate": 0.0001,
-    "finetune_epochs_configured": 50,
-    "finetune_epochs_run": 14,
-    "finetune_learning_rate": 1e-05,
-    "finetune_backbone_layers": 20,
-    "batch_normalization_frozen_during_finetuning": true
+  "architecture": "6 chronological Mel images -> TimeDistributed(MobilenetV3small) -> LSTM(128) -> Dense(64, relu) -> Dropout(0.4) -> Dense(1, sigmoid)",
+  "detector_name": "mobilenetv3_lstm",
+  "display_name": "MobileNetV3Small-LSTM",
+  "final_threshold": 0.8199999999999996,
+  "framework": "tensorflow",
+  "framework_version": "2.15.0",
+  "git_commit": "e9bfdb47f2567fec3f9dd595b48c51c167ea0e51",
+  "group": "lightweight",
+  "hardware_summary": {
+    "visible_gpus": []
   },
-  "selection": {
-    "monitor": "val_loss",
-    "best_epoch_one_based": 34,
-    "best_val_loss": 0.05859730392694473,
-    "test_set_used_for_selection": false
+  "input_contract": {
+    "audio_duration": 3.0,
+    "input_scale": [
+      0.0,
+      255.0
+    ],
+    "sample_rate": 22050,
+    "shape": [
+      6,
+      224,
+      224,
+      3
+    ]
   },
-  "final_model_path": "models\\lava_mobilenetv3_lstm.keras",
-  "threshold": 0.7199999999999996,
-  "threshold_metric": "validation FAKE-class F1",
-  "threshold_validation_f1": 0.9853061224489796,
-  "threshold_path": "models\\best_threshold.txt",
-  "training_history_path": "outputs\\plots\\training_history.png",
-  "input_shape": [
-    6,
-    224,
-    224,
-    3
-  ],
-  "input_scale": [
-    0.0,
-    255.0
-  ],
   "label_mapping": {
-    "REAL": 0,
-    "FAKE": 1
+    "FAKE": 1,
+    "REAL": 0
   },
-  "probability_semantics": "P(FAKE)",
-  "random_seed": 42
+  "load_smoke_test": "PASS",
+  "parameter_count": 1308401,
+  "pretraining": "imagenet",
+  "pretraining_status": "VERIFIED_IMAGENET",
+  "pretraining_stratum": "imagenet_verified",
+  "primary_pretrained_comparison_eligible": true,
+  "score_semantics": "sigmoid output = P(FAKE)",
+  "selection": {
+    "best_epoch": 100,
+    "best_value": 0.11878538131713867,
+    "monitor": "validation_loss",
+    "test_used": false
+  },
+  "serialized_size": 5916699,
+  "threshold_source": "validation FAKE-class F1",
+  "threshold_validation_f1": 0.9706896551724138,
+  "training_history": "outputs\\plots\\training_history.png",
+  "training_manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "training_schedule": {
+    "batch_normalization_frozen": true,
+    "finetune_epochs_run": 50,
+    "finetune_layers": 20,
+    "finetune_lr": 1e-05,
+    "warmup_epochs_run": 50,
+    "warmup_lr": 0.0001
+  },
+  "training_seed": 42,
+  "training_strategy": "warmup_then_finetune"
 }
