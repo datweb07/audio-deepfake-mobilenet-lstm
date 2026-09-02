@@ -1,0 +1,44 @@
+{
+  "model_name": "MobileNetV3Small-LSTM",
+  "architecture": "6 chronological Mel-spectrogram segments -> TimeDistributed(MobileNetV3Small, ImageNet, include_top=False, pooling=avg) -> LSTM(128) -> Dense(64, relu) -> Dropout(0.4) -> Dense(1, sigmoid)",
+  "training_strategy": "warmup_then_finetune",
+  "artifact_provenance": "produced by one complete python train.py lifecycle",
+  "training_schedule": {
+    "warmup_epochs_configured": 50,
+    "warmup_epochs_run": 30,
+    "warmup_learning_rate": 0.0001,
+    "finetune_epochs_configured": 50,
+    "finetune_epochs_run": 14,
+    "finetune_learning_rate": 1e-05,
+    "finetune_backbone_layers": 20,
+    "batch_normalization_frozen_during_finetuning": true
+  },
+  "selection": {
+    "monitor": "val_loss",
+    "best_epoch_one_based": 34,
+    "best_val_loss": 0.05859730392694473,
+    "test_set_used_for_selection": false
+  },
+  "final_model_path": "models\\lava_mobilenetv3_lstm.keras",
+  "threshold": 0.7199999999999996,
+  "threshold_metric": "validation FAKE-class F1",
+  "threshold_validation_f1": 0.9853061224489796,
+  "threshold_path": "models\\best_threshold.txt",
+  "training_history_path": "outputs\\plots\\training_history.png",
+  "input_shape": [
+    6,
+    224,
+    224,
+    3
+  ],
+  "input_scale": [
+    0.0,
+    255.0
+  ],
+  "label_mapping": {
+    "REAL": 0,
+    "FAKE": 1
+  },
+  "probability_semantics": "P(FAKE)",
+  "random_seed": 42
+}

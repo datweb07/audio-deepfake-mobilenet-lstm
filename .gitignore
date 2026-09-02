@@ -18,7 +18,15 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-data/
+# =========================
+# Dataset
+# =========================
+
+data/*
+
+# Keep reproducibility manifests
+!data/manifests/
+!data/manifests/**
 
 *.wav
 *.mp3
@@ -26,14 +34,17 @@ data/
 *.ogg
 *.m4a
 
-models/
+# =========================
+# Model artifacts
+# =========================
 
-*.h5
-*.keras
-*.pth
-*.pt
-*.ckpt
+models/**/*.h5
+models/**/*.keras
+models/**/*.pth
+models/**/*.pt
+models/**/*.ckpt
 
+# Outputs from experiments
 outputs/
 
 *.log
@@ -41,6 +52,10 @@ outputs/
 *.tmp
 *.temp
 ~*
+
+# =========================
+# Read-only reference repos
+# =========================
 
 deepfake-audio-detection/
 enhancing-deepfake-detection-using-mobilenet-lstm-hybrid-model-main/

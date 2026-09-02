@@ -1,0 +1,41 @@
+{
+  "canonical_duplicate_policy": "retain lexicographically first same-label path; exclude other members",
+  "class_counts": {
+    "FAKE": 8172,
+    "REAL": 10550
+  },
+  "creation_time": "2026-09-02T02:16:31.589700+00:00",
+  "duplicate_groups": 435,
+  "excluded_samples": 490,
+  "included_class_counts": {
+    "FAKE": 7739,
+    "REAL": 10493
+  },
+  "included_samples": 18232,
+  "integrity_version": "lava-integrity-v1",
+  "label_conflict_files": 30,
+  "label_conflict_groups": 14,
+  "label_conflict_policy": "exclude every member from all splits",
+  "manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "metadata_availability": {
+    "dataset_id": "UNKNOWN",
+    "generator_id": "UNKNOWN",
+    "parent_recording_id": "UNKNOWN",
+    "source_id": "UNKNOWN",
+    "speaker_id": "UNKNOWN"
+  },
+  "random_seed": 42,
+  "redundant_duplicate_files": 476,
+  "scanned_samples": 18722,
+  "split_claim": "checksum-group-disjoint only",
+  "split_counts": {
+    "test": 2737,
+    "train": 12762,
+    "validation": 2733
+  },
+  "split_ratios": {
+    "test": 0.15,
+    "train": 0.7,
+    "validation": 0.15
+  }
+}
