@@ -255,8 +255,9 @@ def _save_scratch_metadata(
         "primary_pretrained_comparison_eligible": False,
         "training_policy": spec.training_policy.value,
         "training_strategy": "single_stage_full_end_to_end",
-        "optimizer": "Adam",
-        "initial_lr": config.SCRATCH_LR,
+        "optimizer": lifecycle_state.get("optimizer", "Adam"),
+        "initial_lr": lifecycle_state.get("initial_lr", config.SCRATCH_LR),
+        "optimization_profile": lifecycle_state.get("optimization_profile", {}),
         "scheduler": "reduce_lr_on_plateau",
         "epochs_run": epochs_run,
         "best_epoch": lifecycle_state["global_best_epoch"],
@@ -322,10 +323,19 @@ def _train_scratch_detector(
         f"{backbone_epoch1['trainable']:,} / {backbone_epoch1['total']:,} parameters"
     )
     print(f"BatchNorm trainable: {bn_epoch1['trainable']} / {bn_epoch1['total']}")
-    print(f"Initial LR: {config.SCRATCH_LR:g}")
+    compile_hook = getattr(detector, "compile_for_scratch_training", None)
+    if callable(compile_hook):
+        optimization_profile = dict(compile_hook(model))
+    else:
+        compile_binary_model(model, config.SCRATCH_LR)
+        optimization_profile = {
+            "optimizer": "Adam", "initial_lr": config.SCRATCH_LR,
+            "clipnorm": None, "label_smoothing": 0.0, "weight_decay": 0.0,
+        }
+    print(f"Initial LR: {float(optimization_profile['initial_lr']):g}")
+    print(f"Optimization profile: {optimization_profile}")
 
     # Keras captures trainable variables at compile time, so policy is applied first.
-    compile_binary_model(model, config.SCRATCH_LR)
     smoke_directory = (
         tempfile.TemporaryDirectory(prefix=f"{spec.name}_scratch_", dir=config.CHECKPOINTS_DIR)
         if smoke_test else None
@@ -339,6 +349,9 @@ def _train_scratch_detector(
     state = initial_scratch_state(
         spec.name, manifest_hash=manifest_hash, seed=config.RANDOM_SEED
     )
+    state["optimizer"] = optimization_profile["optimizer"]
+    state["initial_lr"] = optimization_profile["initial_lr"]
+    state["optimization_profile"] = optimization_profile
     state["backbone_epoch1"] = backbone_epoch1
     state["batch_normalization_epoch1"] = bn_epoch1
     write_lifecycle_state(paths.state, state)

@@ -7,7 +7,11 @@
   "pretraining": "not_verified_scratch_experimental",
   "training_strategy": "full_end_to_end_from_epoch_1",
   "optimizer": "adam",
-  "initial_learning_rate": 0.0003,
+  "initial_learning_rate": 0.0001,
+  "gradient_clipnorm": 1.0,
+  "label_smoothing": 0.1,
+  "weight_decay": 0.00001,
+  "batch_norm_momentum": 0.9,
   "scheduler": "reduce_lr_on_plateau",
   "primary_pretrained_comparison_eligible": false
 }

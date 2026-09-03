@@ -8,10 +8,46 @@ import numpy as np
 import tensorflow as tf
 
 import config
-from src.lava.models.tensorflow.mnasnet_lstm import build_backbone, build_model
+from src.lava.models.tensorflow.mnasnet_lstm import (
+    BN_ARGS,
+    MNASNET_CLIPNORM,
+    MNASNET_LABEL_SMOOTHING,
+    MNASNET_LEARNING_RATE,
+    MNASNET_WEIGHT_DECAY,
+    MnasNetLSTMDetector,
+    build_backbone,
+    build_model,
+)
+from src.lava.models.tensorflow.shufflenetv2_lstm import ShuffleNetV2LSTMDetector
 
 
 class MnasNetShapesTest(unittest.TestCase):
+    def test_reference_activation_initialization_and_audio_bn_policy(self) -> None:
+        backbone = build_backbone()
+        self.assertEqual(BN_ARGS["momentum"], 0.9)
+        self.assertIsInstance(backbone.get_layer("stem_relu"), tf.keras.layers.ReLU)
+        self.assertIsNone(backbone.get_layer("stem_relu").max_value)
+        stem = backbone.get_layer("stem_conv")
+        initializer = stem.kernel_initializer.get_config()
+        self.assertEqual(initializer["mode"], "fan_out")
+        self.assertEqual(initializer["distribution"], "untruncated_normal")
+        self.assertAlmostEqual(stem.kernel_regularizer.l2, MNASNET_WEIGHT_DECAY / 2.0)
+
+    def test_mnasnet_only_stability_compile_profile(self) -> None:
+        detector = MnasNetLSTMDetector()
+        model = detector.build(weights=None)
+        profile = detector.compile_for_scratch_training(model)
+        self.assertAlmostEqual(float(model.optimizer.learning_rate.numpy()), MNASNET_LEARNING_RATE)
+        self.assertAlmostEqual(float(model.optimizer.clipnorm), MNASNET_CLIPNORM)
+        self.assertAlmostEqual(
+            float(model.loss.get_config()["label_smoothing"]), MNASNET_LABEL_SMOOTHING
+        )
+        self.assertEqual(profile["weight_decay"], MNASNET_WEIGHT_DECAY)
+        self.assertFalse(
+            hasattr(ShuffleNetV2LSTMDetector(), "compile_for_scratch_training"),
+            "The MnasNet stability recipe must not alter ShuffleNet training",
+        )
+
     def test_stages_se_and_skip(self) -> None:
         backbone = build_backbone()
         self.assertIsNotNone(backbone.get_layer("stage3_block1_se_scale"))

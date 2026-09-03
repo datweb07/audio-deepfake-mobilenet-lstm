@@ -12,7 +12,26 @@ from src.lava.models.tensorflow.specs import MNASNET_SPEC as SPEC
 from src.lava.models.tensorflow.temporal_classifier import build_temporal_classifier
 
 
-BN_ARGS = {"momentum": 0.99, "epsilon": 1e-3}
+# The reference uses 0.99 with ImageNet batches around 1,024. LAVA trains this
+# backbone from scratch with batch 16; 0.90 prevents stale moving statistics from
+# creating the large train/inference probability shift observed in the failed run.
+BN_ARGS = {"momentum": 0.90, "epsilon": 1e-3}
+MNASNET_LEARNING_RATE = 1e-4
+MNASNET_LABEL_SMOOTHING = 0.1
+MNASNET_WEIGHT_DECAY = 1e-5
+MNASNET_CLIPNORM = 1.0
+
+
+def _kernel_initializer() -> tf.keras.initializers.Initializer:
+    """Serializable equivalent of the reference fan-out normal initializer."""
+    return tf.keras.initializers.VarianceScaling(
+        scale=2.0, mode="fan_out", distribution="untruncated_normal"
+    )
+
+
+def _kernel_regularizer() -> tf.keras.regularizers.Regularizer:
+    # Keras L2 omits the reference tf.nn.l2_loss factor of 1/2.
+    return tf.keras.regularizers.L2(MNASNET_WEIGHT_DECAY / 2.0)
 
 
 @dataclass(frozen=True)
@@ -40,7 +59,7 @@ A1_BLOCKS = (
 
 def _bn_relu(x: tf.Tensor, name: str) -> tf.Tensor:
     x = tf.keras.layers.BatchNormalization(name=f"{name}_bn", **BN_ARGS)(x)
-    return tf.keras.layers.ReLU(max_value=6.0, name=f"{name}_relu6")(x)
+    return tf.keras.layers.ReLU(name=f"{name}_relu")(x)
 
 
 def mnas_block(
@@ -58,17 +77,35 @@ def mnas_block(
     input_filters = int(x.shape[-1])
     expanded_filters = input_filters * expansion
     if expansion != 1:
-        x = tf.keras.layers.Conv2D(expanded_filters, 1, padding="same", use_bias=False, name=f"{name}_expand_conv")(x)
+        x = tf.keras.layers.Conv2D(
+            expanded_filters, 1, padding="same", use_bias=False,
+            kernel_initializer=_kernel_initializer(), kernel_regularizer=_kernel_regularizer(),
+            name=f"{name}_expand_conv",
+        )(x)
         x = _bn_relu(x, f"{name}_expand")
-    x = tf.keras.layers.DepthwiseConv2D(kernel, strides=stride, padding="same", use_bias=False, name=f"{name}_depthwise")(x)
+    x = tf.keras.layers.DepthwiseConv2D(
+        kernel, strides=stride, padding="same", use_bias=False,
+        depthwise_initializer=_kernel_initializer(),
+        depthwise_regularizer=_kernel_regularizer(), name=f"{name}_depthwise",
+    )(x)
     x = _bn_relu(x, f"{name}_depthwise")
     if se_ratio is not None:
         reduced = max(1, int(input_filters * se_ratio))
         se = tf.keras.layers.GlobalAveragePooling2D(keepdims=True, name=f"{name}_se_pool")(x)
-        se = tf.keras.layers.Conv2D(reduced, 1, activation="relu", name=f"{name}_se_reduce")(se)
-        se = tf.keras.layers.Conv2D(expanded_filters, 1, activation="sigmoid", name=f"{name}_se_expand")(se)
+        se = tf.keras.layers.Conv2D(
+            reduced, 1, activation="relu", kernel_initializer=_kernel_initializer(),
+            kernel_regularizer=_kernel_regularizer(), name=f"{name}_se_reduce",
+        )(se)
+        se = tf.keras.layers.Conv2D(
+            expanded_filters, 1, activation="sigmoid", kernel_initializer=_kernel_initializer(),
+            kernel_regularizer=_kernel_regularizer(), name=f"{name}_se_expand",
+        )(se)
         x = tf.keras.layers.Multiply(name=f"{name}_se_scale")([x, se])
-    x = tf.keras.layers.Conv2D(output_filters, 1, padding="same", use_bias=False, name=f"{name}_project_conv")(x)
+    x = tf.keras.layers.Conv2D(
+        output_filters, 1, padding="same", use_bias=False,
+        kernel_initializer=_kernel_initializer(), kernel_regularizer=_kernel_regularizer(),
+        name=f"{name}_project_conv",
+    )(x)
     x = tf.keras.layers.BatchNormalization(name=f"{name}_project_bn", **BN_ARGS)(x)
     if skip and stride == 1 and input_filters == output_filters:
         x = tf.keras.layers.Add(name=f"{name}_skip")([identity, x])
@@ -77,7 +114,11 @@ def mnas_block(
 
 def build_backbone() -> tf.keras.Model:
     inputs = tf.keras.layers.Input((*config.IMAGE_SIZE, config.CHANNELS), name="image")
-    x = tf.keras.layers.Conv2D(32, 3, strides=2, padding="same", use_bias=False, name="stem_conv")(inputs)
+    x = tf.keras.layers.Conv2D(
+        32, 3, strides=2, padding="same", use_bias=False,
+        kernel_initializer=_kernel_initializer(), kernel_regularizer=_kernel_regularizer(),
+        name="stem_conv",
+    )(inputs)
     x = _bn_relu(x, "stem")
     for stage_index, spec in enumerate(A1_BLOCKS, start=1):
         for repeat_index in range(spec.repeats):
@@ -91,7 +132,11 @@ def build_backbone() -> tf.keras.Model:
                 skip=spec.skip,
                 name=f"stage{stage_index}_block{repeat_index + 1}",
             )
-    x = tf.keras.layers.Conv2D(1280, 1, padding="same", use_bias=False, name="head_conv")(x)
+    x = tf.keras.layers.Conv2D(
+        1280, 1, padding="same", use_bias=False,
+        kernel_initializer=_kernel_initializer(), kernel_regularizer=_kernel_regularizer(),
+        name="head_conv",
+    )(x)
     x = _bn_relu(x, "head")
     outputs = tf.keras.layers.GlobalAveragePooling2D(name="global_pool")(x)
     return tf.keras.Model(inputs, outputs, name="mnasnet_a1_1_0")
@@ -106,3 +151,26 @@ def build_model(weights: str | None = None) -> tuple[tf.keras.Model, tf.keras.Mo
 class MnasNetLSTMDetector(KerasLightweightDetector):
     def __init__(self) -> None:
         super().__init__(SPEC, build_model)
+
+    def compile_for_scratch_training(self, model: tf.keras.Model) -> dict[str, object]:
+        """Compile only MnasNet with its stability-oriented scratch recipe."""
+        model.compile(
+            optimizer=tf.keras.optimizers.Adam(
+                learning_rate=MNASNET_LEARNING_RATE, clipnorm=MNASNET_CLIPNORM
+            ),
+            loss=tf.keras.losses.BinaryCrossentropy(
+                label_smoothing=MNASNET_LABEL_SMOOTHING
+            ),
+            metrics=[
+                tf.keras.metrics.BinaryAccuracy(name="accuracy"),
+                tf.keras.metrics.AUC(name="auc"),
+            ],
+        )
+        return {
+            "optimizer": "Adam",
+            "initial_lr": MNASNET_LEARNING_RATE,
+            "clipnorm": MNASNET_CLIPNORM,
+            "label_smoothing": MNASNET_LABEL_SMOOTHING,
+            "weight_decay": MNASNET_WEIGHT_DECAY,
+            "batch_norm_momentum": BN_ARGS["momentum"],
+        }
