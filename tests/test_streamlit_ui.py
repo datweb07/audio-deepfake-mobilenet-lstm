@@ -16,6 +16,8 @@ class StreamlitUITest(unittest.TestCase):
         self.assertEqual(list(page.expander), [])
         self.assertEqual(len(page.selectbox), 1)
         self.assertEqual(page.selectbox[0].value, "mobilenetv3_lstm")
+        self.assertIn("RawNet2 (DF-Pretrained, 2021)", page.selectbox[0].options)
+        self.assertIn("AASIST (Official Pretrained, NAVER)", page.selectbox[0].options)
 
 
 if __name__ == "__main__":

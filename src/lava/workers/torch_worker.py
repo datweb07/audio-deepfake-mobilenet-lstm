@@ -60,11 +60,11 @@ def _load(name: str, device: torch.device):
         raise FileNotFoundError(msg)
     if name == "rawnet2_pretrained":
         from src.lava.models.pytorch.rawnet2_pretrained import NATIVE_FAKE_INDEX, load_pretrained, target_samples
-        model = load_pretrained(spec.model_artifact, device)
+        model = load_pretrained(spec.model_artifact.with_name("model.pt"), device)
         return model, NATIVE_FAKE_INDEX, target_samples()
     if name == "aasist_pretrained":
         from src.lava.models.pytorch.aasist_pretrained import NATIVE_FAKE_INDEX, load_pretrained, target_samples
-        model = load_pretrained(spec.model_artifact, device)
+        model = load_pretrained(spec.model_artifact.with_name("model.pt"), device)
         return model, NATIVE_FAKE_INDEX, target_samples()
     checkpoint = torch.load(spec.model_artifact, map_location=device)
     model, fake_index = _build(name)

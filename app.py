@@ -31,14 +31,16 @@ def load_detector(model_name: str):
     script threads on some Windows/Python 3.11 combinations. Session state gives
     the desired rerun persistence without triggering that upstream warning.
     """
-    cache = st.session_state.setdefault("_lava_loaded_detectors", {})
-    if model_name in cache:
-        return cache[model_name]
+    cached = st.session_state.get("_lava_loaded_detector")
+    if cached is not None and cached[0] == model_name:
+        return cached[1], cached[2]
     detector = create(model_name)
     detector.load()
-    loaded = (detector, load_threshold(detector.spec))
-    cache[model_name] = loaded
-    return loaded
+    threshold = load_threshold(detector.spec)
+    # Keep one runtime resident at a time. TensorFlow + two ONNX sessions can
+    # otherwise exceed Streamlit Community Cloud's memory budget.
+    st.session_state["_lava_loaded_detector"] = (model_name, detector, threshold)
+    return detector, threshold
 
 
 def available_specs():
@@ -48,12 +50,6 @@ def available_specs():
         issues = artifact_diagnostics(spec)
         if issues:
             rejected[spec.name] = issues
-            continue
-        try:
-            # Use the same cached load path as inference; do not load every model twice.
-            load_detector(spec.name)
-        except Exception as exc:
-            rejected[spec.name] = [f"load failed: {type(exc).__name__}: {exc}"]
             continue
         available.append(spec)
     for name, reasons in rejected.items():

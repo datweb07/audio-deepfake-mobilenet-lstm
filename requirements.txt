@@ -12,3 +12,4 @@ setuptools==80.9.0
 wheel==0.45.1
 typing_extensions==4.5.0
 protobuf==3.20.3
+onnxruntime==1.17.3

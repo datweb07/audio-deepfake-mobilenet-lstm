@@ -39,13 +39,41 @@ def rawnet2_factory() -> TorchWorkerDetector:
 def aasist_factory() -> TorchWorkerDetector:
     return TorchWorkerDetector(AASIST_SPEC)
 
-RAWNET2_PRETRAINED_SPEC = _spec("rawnet2_pretrained", "RawNet2 (DF-Pretrained, 2021)")
-AASIST_PRETRAINED_SPEC = _spec("aasist_pretrained", "AASIST (Official Pretrained, NAVER)")
+def _onnx_pretrained_spec(name: str, display_name: str) -> DetectorSpec:
+    directory = torch_artifacts(name)[0].parent
+    return DetectorSpec(
+        name=name,
+        display_name=display_name,
+        group="reference",
+        framework="onnxruntime (PyTorch export)",
+        input_type="waveform",
+        sample_rate=16_000,
+        audio_duration=64_600 / 16_000,
+        num_segments=None,
+        model_artifact=directory / "model.onnx",
+        threshold_artifact=directory / "threshold.json",
+        metadata_artifact=directory / "metadata.json",
+        pretraining_status="OFFICIAL_PRETRAINED_ONNX_PARITY_VERIFIED",
+        initialization=Initialization.NATIVE,
+        training_policy=TrainingPolicy.NATIVE_REFERENCE,
+    )
 
 
-def rawnet2_pretrained_factory() -> TorchWorkerDetector:
-    return TorchWorkerDetector(RAWNET2_PRETRAINED_SPEC)
+RAWNET2_PRETRAINED_SPEC = _onnx_pretrained_spec(
+    "rawnet2_pretrained", "RawNet2 (DF-Pretrained, 2021)"
+)
+AASIST_PRETRAINED_SPEC = _onnx_pretrained_spec(
+    "aasist_pretrained", "AASIST (Official Pretrained, NAVER)"
+)
 
 
-def aasist_pretrained_factory() -> TorchWorkerDetector:
-    return TorchWorkerDetector(AASIST_PRETRAINED_SPEC)
+def rawnet2_pretrained_factory():
+    from src.lava.models.onnx_pretrained import OnnxPretrainedDetector
+
+    return OnnxPretrainedDetector(RAWNET2_PRETRAINED_SPEC)
+
+
+def aasist_pretrained_factory():
+    from src.lava.models.onnx_pretrained import OnnxPretrainedDetector
+
+    return OnnxPretrainedDetector(AASIST_PRETRAINED_SPEC)
