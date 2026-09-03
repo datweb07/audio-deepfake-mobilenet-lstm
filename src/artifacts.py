@@ -6,6 +6,7 @@ import os
 import shutil
 from pathlib import Path
 
+import numpy as np
 import tensorflow as tf
 
 import config
@@ -70,11 +71,55 @@ def _load_production_weights(weights_path: str) -> tf.keras.Model:
     return model
 
 
+def _save_numpy_weights(model: tf.keras.Model, weights_path: str) -> None:
+    """Store ordered numeric tensors without Keras layer serialization."""
+    tensors = model.get_weights()
+    payload: dict[str, np.ndarray] = {
+        "format_version": np.asarray([1], dtype=np.int32),
+        "weight_count": np.asarray([len(tensors)], dtype=np.int32),
+    }
+    payload.update({f"weight_{index:04d}": tensor for index, tensor in enumerate(tensors)})
+    np.savez_compressed(weights_path, **payload)
+
+
+def _load_production_numpy_weights(weights_path: str) -> tf.keras.Model:
+    """Restore tensors by validated order/shape, bypassing Keras deserializers."""
+    from src.model import build_hybrid_model
+
+    model, _ = build_hybrid_model(weights=None)
+    expected = model.get_weights()
+    with np.load(weights_path, allow_pickle=False) as archive:
+        version = int(archive["format_version"][0])
+        count = int(archive["weight_count"][0])
+        if version != 1:
+            raise ValueError(f"Unsupported NumPy deployment weights version: {version}")
+        if count != len(expected):
+            raise ValueError(
+                f"NumPy deployment weight count mismatch: expected {len(expected)}, got {count}"
+            )
+        restored = []
+        for index, expected_tensor in enumerate(expected):
+            key = f"weight_{index:04d}"
+            if key not in archive:
+                raise ValueError(f"NumPy deployment weights missing tensor: {key}")
+            tensor = archive[key]
+            if tensor.shape != expected_tensor.shape:
+                raise ValueError(
+                    f"NumPy deployment tensor {key} shape mismatch: "
+                    f"expected {expected_tensor.shape}, got {tensor.shape}"
+                )
+            restored.append(tensor)
+    model.set_weights(restored)
+    validate_model_contract(model)
+    return model
+
+
 def load_production_model(
     *,
     compile: bool = False,
     model_path: str | None = None,
     weights_path: str | None = None,
+    numpy_weights_path: str | None = None,
 ) -> tf.keras.Model:
     """Load MobileNet production weights without silently using legacy checkpoints.
 
@@ -86,10 +131,12 @@ def load_production_model(
     """
     resolved_model_path = model_path or config.MODEL_PATH
     resolved_weights_path = weights_path or config.MODEL_WEIGHTS_PATH
+    resolved_numpy_weights_path = numpy_weights_path or config.MODEL_NUMPY_WEIGHTS_PATH
     model_exists = os.path.isfile(resolved_model_path)
     weights_exist = os.path.isfile(resolved_weights_path)
+    numpy_weights_exist = os.path.isfile(resolved_numpy_weights_path)
 
-    if not model_exists and not weights_exist:
+    if not model_exists and not weights_exist and not numpy_weights_exist:
         raise FileNotFoundError(PRODUCTION_MODEL_NOT_FOUND)
 
     if model_exists:
@@ -98,16 +145,20 @@ def load_production_model(
             validate_model_contract(model)
             return model
         except (ValueError, TypeError, OSError) as archive_error:
-            if not weights_exist:
+            if not numpy_weights_exist and not weights_exist:
                 raise RuntimeError(
                     "Production .keras model could not be loaded and its deployment "
-                    f"weights fallback is missing: {resolved_weights_path}"
+                    f"weights fallbacks are missing: {resolved_numpy_weights_path}, "
+                    f"{resolved_weights_path}"
                 ) from archive_error
             print(
-                "[LAVA] Full-model load failed; using verified MobileNet weights "
+                "[LAVA] Full-model load failed; using serialization-independent "
+                "MobileNet weights "
                 f"fallback ({type(archive_error).__name__}: {archive_error})"
             )
 
+    if numpy_weights_exist:
+        return _load_production_numpy_weights(resolved_numpy_weights_path)
     return _load_production_weights(resolved_weights_path)
 
 
@@ -121,10 +172,13 @@ def save_production_model(model: tf.keras.Model) -> tf.keras.Model:
     validate_model_contract(export_model)
     pending_path = f"{config.MODEL_PATH}.pending.keras"
     pending_weights_path = f"{config.MODEL_WEIGHTS_PATH}.pending.weights.h5"
+    pending_numpy_weights_path = f"{config.MODEL_NUMPY_WEIGHTS_PATH}.pending.npz"
     if os.path.exists(pending_path):
         os.remove(pending_path)
     if os.path.exists(pending_weights_path):
         os.remove(pending_weights_path)
+    if os.path.exists(pending_numpy_weights_path):
+        os.remove(pending_numpy_weights_path)
     try:
         export_model.save(pending_path)
         verified = tf.keras.models.load_model(pending_path, compile=False)
@@ -133,6 +187,14 @@ def save_production_model(model: tf.keras.Model) -> tf.keras.Model:
         weights_verified = _load_production_weights(pending_weights_path)
         if weights_verified.count_params() != export_model.count_params():
             raise ValueError("Weights-only deployment artifact parameter count mismatch")
+        # Export ordered tensors from the freshly rebuilt canonical model, not
+        # from the deserialized/training object. Nested Keras models can expose
+        # a different get_weights() order when their trainable state differs.
+        _save_numpy_weights(weights_verified, pending_numpy_weights_path)
+        numpy_verified = _load_production_numpy_weights(pending_numpy_weights_path)
+        if numpy_verified.count_params() != export_model.count_params():
+            raise ValueError("NumPy deployment artifact parameter count mismatch")
+        os.replace(pending_numpy_weights_path, config.MODEL_NUMPY_WEIGHTS_PATH)
         os.replace(pending_weights_path, config.MODEL_WEIGHTS_PATH)
         os.replace(pending_path, config.MODEL_PATH)
     finally:
@@ -140,6 +202,8 @@ def save_production_model(model: tf.keras.Model) -> tf.keras.Model:
             os.remove(pending_path)
         if os.path.exists(pending_weights_path):
             os.remove(pending_weights_path)
+        if os.path.exists(pending_numpy_weights_path):
+            os.remove(pending_numpy_weights_path)
     return load_production_model(compile=False)
 
 

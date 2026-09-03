@@ -33,7 +33,8 @@ class MobileNetDeploymentFallbackTest(unittest.TestCase):
         restored = load_production_model(
             compile=False,
             model_path="does-not-exist.keras",
-            weights_path=config.MODEL_WEIGHTS_PATH,
+            weights_path="does-not-exist.weights.h5",
+            numpy_weights_path=config.MODEL_NUMPY_WEIGHTS_PATH,
         )
         validate_model_contract(restored)
         self.assertEqual(restored.count_params(), 1_308_401)

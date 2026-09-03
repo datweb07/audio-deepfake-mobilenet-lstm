@@ -23,6 +23,10 @@ MODEL_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.keras")
 # opened but nested MobileNetV3 variables are not restored correctly.  This
 # contains the exact same weights; the architecture is rebuilt from src/model.py.
 MODEL_WEIGHTS_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.weights.h5")
+# Serialization-independent deployment copy. Unlike .keras/.h5, this does not
+# ask Keras to match nested layer variables; tensors are restored by validated
+# architecture order and shape.
+MODEL_NUMPY_WEIGHTS_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.weights.npz")
 THRESHOLD_PATH = os.path.join(MODELS_DIR, "best_threshold.txt")
 MODEL_METADATA_PATH = os.path.join(MODELS_DIR, "model_metadata.json")
 TRAINING_HISTORY_PATH = os.path.join(PLOTS_DIR, "training_history.png")
