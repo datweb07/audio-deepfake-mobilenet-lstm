@@ -350,3 +350,8 @@
     min-height: 94px;
   }
 }
+
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] p {
+  color: var(--ink) !important;
+}

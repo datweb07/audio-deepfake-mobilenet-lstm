@@ -13,11 +13,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+from streamlit_mic_recorder import mic_recorder
 
 import config
 from src.lava.artifacts import artifact_diagnostics, load_threshold
 from src.lava.registry import create, get_spec, specs
 from src.lava.score_semantics import classify_probability
+from src.lava.preprocessing.microphone import (
+    MicrophoneQualityError,
+    prepare_microphone_recording,
+)
 from src.preprocessing import create_mel_spectrogram_db, load_audio, segment_audio
 
 
@@ -147,10 +152,11 @@ def render_sidebar(candidates):
     st.sidebar.markdown('<div class="lava-wordmark">LAVA</div>', unsafe_allow_html=True)
     st.sidebar.markdown('<div class="sidebar-label">Detector</div>', unsafe_allow_html=True)
     default_index = next((i for i, spec in enumerate(candidates) if spec.name == "mobilenetv3_lstm"), 0)
-    selected_name = st.sidebar.selectbox(
-        "Select model", [spec.name for spec in candidates], index=default_index,
-        format_func=lambda name: get_spec(name).display_name, label_visibility="collapsed",
+    detector_names = {spec.display_name: spec.name for spec in candidates}
+    selected_display_name = st.sidebar.selectbox(
+        "Select model", list(detector_names), index=default_index, label_visibility="collapsed",
     )
+    selected_name = detector_names[selected_display_name]
     selected_spec = get_spec(selected_name)
     st.sidebar.markdown('<div class="sidebar-label">Dashboard</div>', unsafe_allow_html=True)
     show_analysis = st.sidebar.toggle("Show signal analysis", value=True)
@@ -200,7 +206,7 @@ def main() -> None:
     st.markdown('<div class="hero-kicker">Audio authenticity intelligence</div>', unsafe_allow_html=True)
     st.markdown('<h1 class="hero-title">Deepfake voice detection, clearly explained.</h1>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="hero-copy">Upload an audio file to inspect its authenticity score, temporal '
+        '<p class="hero-copy">Upload or record audio to inspect its authenticity score, temporal '
         'structure and spectral profile through a single deployment dashboard.</p>',
         unsafe_allow_html=True,
     )
@@ -216,23 +222,81 @@ def main() -> None:
         f'<p class="section-copy">Active detector: {html.escape(selected_spec.display_name)}</p>',
         unsafe_allow_html=True,
     )
-    uploaded = st.file_uploader(
-        "Upload audio", type=[ext.lstrip(".") for ext in config.SUPPORTED_AUDIO_EXTENSIONS],
+    input_method = st.radio(
+        "Input method",
+        ("Upload file", "Record microphone"),
+        horizontal=True,
         label_visibility="collapsed",
     )
-    if uploaded is None:
+    audio_bytes: bytes | None = None
+    audio_name = ""
+    audio_format = "audio/wav"
+    microphone_quality = None
+
+    if input_method == "Upload file":
+        uploaded = st.file_uploader(
+            "Upload audio", type=[ext.lstrip(".") for ext in config.SUPPORTED_AUDIO_EXTENSIONS],
+            label_visibility="collapsed",
+        )
+        if uploaded is not None:
+            audio_bytes = uploaded.getvalue()
+            audio_name = uploaded.name
+            audio_format = uploaded.type or "audio/wav"
+    else:
         st.markdown(
-            '<div class="footer-note">Supported formats: WAV, FLAC, MP3, OGG and M4A. '
-            'Inference runs only after a file is provided.</div>', unsafe_allow_html=True,
+            '<div class="panel"><strong>Microphone capture</strong><br>'
+            'Speak one continuous sentence for 3–5 seconds. Use a quiet room, keep a stable '
+            'distance from the microphone and stop the recording after speaking. The capture '
+            'must pass quality checks before inference.</div>',
+            unsafe_allow_html=True,
+        )
+        recording = mic_recorder(
+            start_prompt="Start recording",
+            stop_prompt="Stop recording",
+            just_once=False,
+            use_container_width=True,
+            format="wav",
+            key="lava_microphone_recorder",
+        )
+        if recording and recording.get("bytes"):
+            try:
+                prepared = prepare_microphone_recording(recording["bytes"])
+            except MicrophoneQualityError as exc:
+                st.warning(str(exc))
+                return
+            audio_bytes = prepared.wav_bytes
+            microphone_quality = prepared.quality
+            audio_name = "Live microphone capture"
+            audio_format = "audio/wav"
+
+    if audio_bytes is None:
+        guidance = (
+            "Supported formats: WAV, FLAC, MP3, OGG and M4A."
+            if input_method == "Upload file"
+            else "Microphone access requires localhost or an HTTPS deployment."
+        )
+        st.markdown(
+            f'<div class="footer-note">{guidance} Inference runs only after audio is provided.</div>',
+            unsafe_allow_html=True,
         )
         return
 
-    st.audio(uploaded)
-    suffix = os.path.splitext(uploaded.name)[1].lower() or ".wav"
+    st.audio(audio_bytes, format=audio_format)
+    if microphone_quality is not None:
+        quality_one, quality_two, quality_three, quality_four = st.columns(4)
+        quality_one.metric("Captured", f"{microphone_quality.original_duration:.1f} s")
+        quality_two.metric("Speech retained", f"{microphone_quality.retained_duration:.1f} s")
+        quality_three.metric("Signal level", f"{microphone_quality.rms_dbfs:.1f} dBFS")
+        quality_four.metric("Clipping", f"{microphone_quality.clipping_ratio * 100:.2f}%")
+        st.caption(
+            "Capture quality passed. No gain normalization, denoising or voice transformation was applied."
+        )
+
+    suffix = os.path.splitext(audio_name)[1].lower() or ".wav"
     temporary_path = ""
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
-            handle.write(uploaded.getvalue())
+            handle.write(audio_bytes)
             temporary_path = handle.name
         with st.spinner("Running detector and signal analysis..."):
             detector, threshold = load_detector(selected_name)
@@ -250,13 +314,13 @@ def main() -> None:
         '<div class="result-panel"><div><div class="result-eyebrow">Detection result</div>'
         f'<div class="result-value">{html.escape(result.prediction)}</div></div>'
         f'<div class="result-model">{html.escape(selected_spec.display_name)}<br>'
-        f'{html.escape(uploaded.name)}</div></div>', unsafe_allow_html=True,
+        f'{html.escape(audio_name)}</div></div>', unsafe_allow_html=True,
     )
     first, second, third, fourth = st.columns(4)
     first.metric("Confidence", f"{result.confidence * 100:.2f}%")
     second.metric("P(FAKE)", f"{result.probability_fake:.4f}")
     third.metric("Threshold", f"{result.threshold:.4f}")
-    fourth.metric("Normalized audio", f"{config.AUDIO_DURATION:.1f} s")
+    fourth.metric("Model input", f"{selected_spec.audio_duration:.1f} s")
 
     st.markdown('<h2 class="section-heading">Decision dashboard</h2>', unsafe_allow_html=True)
     st.markdown(
@@ -298,7 +362,9 @@ def main() -> None:
 
     st.markdown(
         '<div class="footer-note">LAVA reports P(FAKE) under a shared score contract. '
-        'A prediction is model evidence, not proof of authorship or intent.</div>',
+        'A microphone recording can still produce a false positive because devices, rooms and '
+        'codecs differ from training data. A prediction is model evidence, not proof of authorship '
+        'or intent.</div>',
         unsafe_allow_html=True,
     )
 

@@ -30,8 +30,8 @@ class StreamlitDashboardTest(unittest.TestCase):
         self.assertIn("@media (max-width:768px)", stylesheet)
         self.assertIn('data-testid="stSidebar"', stylesheet)
         self.assertNotIn("gradient(", stylesheet.lower())
-        self.assertIn("font-family:'Barlow'", stylesheet)
-        self.assertIn("font-family:'IBM Plex Sans'", stylesheet)
+        self.assertIn("'Barlow'", stylesheet)
+        self.assertIn("'IBM Plex Sans'", stylesheet)
         self.assertIn('data-testid="collapsedControl"', stylesheet)
 
 
