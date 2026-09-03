@@ -40,12 +40,30 @@ class GlobalBestSelection:
     checkpoint: Path
 
 
+@dataclass(frozen=True)
+class ScratchLifecyclePaths:
+    directory: Path
+    best_checkpoint: Path
+    state: Path
+
+
 def lifecycle_paths(detector_name: str, root: str | Path | None = None) -> LifecyclePaths:
     directory = Path(root) if root is not None else Path(config.CHECKPOINTS_DIR) / detector_name
     return LifecyclePaths(
         directory=directory,
         warmup_checkpoint=directory / "warmup_best.keras",
         finetune_checkpoint=directory / "finetune_best.keras",
+        state=directory / "lifecycle_state.json",
+    )
+
+
+def scratch_lifecycle_paths(
+    detector_name: str, root: str | Path | None = None
+) -> ScratchLifecyclePaths:
+    directory = Path(root) if root is not None else Path(config.CHECKPOINTS_DIR) / detector_name
+    return ScratchLifecyclePaths(
+        directory=directory,
+        best_checkpoint=directory / "best.keras",
         state=directory / "lifecycle_state.json",
     )
 
@@ -72,6 +90,28 @@ def initial_lifecycle_state(
         "warmup_lr": config.WARMUP_LR,
         "finetune_initial_lr": config.FINETUNE_LR,
         "finetune_final_lr": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def initial_scratch_state(
+    detector_name: str,
+    *,
+    manifest_hash: str,
+    seed: int,
+) -> dict[str, Any]:
+    return {
+        "detector_name": detector_name,
+        "training_manifest_hash": manifest_hash,
+        "seed": seed,
+        "status": "INITIALIZED",
+        "selection_finalized": False,
+        "best_val_loss": None,
+        "best_epoch": None,
+        "epochs_completed": 0,
+        "initial_lr": config.SCRATCH_LR,
+        "final_lr": None,
+        "training_policy": "full_end_to_end_from_epoch_1",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -169,6 +209,32 @@ class StageStateRecorder(tf.keras.callbacks.Callback):
         write_lifecycle_state(self.paths.state, self.state)
 
 
+class ScratchStateRecorder(tf.keras.callbacks.Callback):
+    def __init__(self, state: MutableMapping[str, Any], paths: ScratchLifecyclePaths) -> None:
+        super().__init__()
+        self.state = state
+        self.paths = paths
+
+    def on_train_begin(self, logs=None) -> None:
+        self.state["status"] = "SCRATCH_RUNNING"
+        write_lifecycle_state(self.paths.state, self.state)
+
+    def on_epoch_end(self, epoch: int, logs=None) -> None:
+        value = (logs or {}).get("val_loss")
+        if value is None:
+            return
+        loss = float(value)
+        if self.state.get("best_val_loss") is None or loss < float(self.state["best_val_loss"]):
+            self.state["best_val_loss"] = loss
+            self.state["best_epoch"] = int(epoch) + 1
+        self.state["epochs_completed"] = int(epoch) + 1
+        write_lifecycle_state(self.paths.state, self.state)
+
+    def on_train_end(self, logs=None) -> None:
+        self.state["status"] = "SCRATCH_COMPLETE"
+        write_lifecycle_state(self.paths.state, self.state)
+
+
 def stage_callbacks(
     *,
     stage: str,
@@ -206,6 +272,65 @@ def stage_callbacks(
             verbose=verbose,
         ),
     ]
+
+
+def scratch_callbacks(
+    *,
+    paths: ScratchLifecyclePaths,
+    state: MutableMapping[str, Any],
+    early_stopping_patience: int,
+    lr_reduction_patience: int,
+    verbose: int,
+) -> list[tf.keras.callbacks.Callback]:
+    paths.directory.mkdir(parents=True, exist_ok=True)
+    return [
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=str(paths.best_checkpoint), monitor="val_loss", save_best_only=True,
+            mode="min", verbose=verbose,
+        ),
+        ScratchStateRecorder(state, paths),
+        tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss", patience=early_stopping_patience,
+            restore_best_weights=True, mode="min", verbose=verbose,
+        ),
+        tf.keras.callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.5, patience=lr_reduction_patience,
+            min_lr=config.MIN_LEARNING_RATE, mode="min", verbose=verbose,
+        ),
+    ]
+
+
+def finalize_scratch_selection(
+    state: MutableMapping[str, Any], paths: ScratchLifecyclePaths
+) -> GlobalBestSelection:
+    if (
+        state.get("best_val_loss") is None
+        or state.get("best_epoch") is None
+        or not paths.best_checkpoint.is_file()
+    ):
+        raise RuntimeError("Scratch training completed without a recoverable best checkpoint")
+    selected = GlobalBestSelection(
+        "scratch", float(state["best_val_loss"]), int(state["best_epoch"]), paths.best_checkpoint
+    )
+    state["global_best_stage"] = "scratch"
+    state["global_best_val_loss"] = selected.val_loss
+    state["global_best_epoch"] = selected.epoch
+    state["selection_finalized"] = True
+    state["status"] = "LIFECYCLE_COMPLETE"
+    write_lifecycle_state(paths.state, state)
+    return selected
+
+
+def mark_scratch_interrupted(
+    state: MutableMapping[str, Any], paths: ScratchLifecyclePaths
+) -> None:
+    state["status"] = "INTERRUPTED"
+    state["selection_finalized"] = False
+    state["production_model_saved"] = False
+    if paths.best_checkpoint.is_file() and state.get("best_val_loss") is not None:
+        state["recovery_best_val_loss"] = state["best_val_loss"]
+        state["recovery_best_epoch"] = state["best_epoch"]
+    write_lifecycle_state(paths.state, state)
 
 
 def finalize_global_selection(
@@ -260,6 +385,12 @@ def optimizer_learning_rate(model: tf.keras.Model) -> float | None:
 
 
 def batch_normalization_status(backbone: tf.keras.Model) -> dict[str, int]:
-    layers = [layer for layer in backbone.layers if isinstance(layer, tf.keras.layers.BatchNormalization)]
+    def walk(container: tf.keras.Model):
+        for layer in container.layers:
+            yield layer
+            if isinstance(layer, tf.keras.Model):
+                yield from walk(layer)
+
+    layers = [layer for layer in walk(backbone) if isinstance(layer, tf.keras.layers.BatchNormalization)]
     trainable = sum(1 for layer in layers if layer.trainable)
     return {"total": len(layers), "trainable": trainable, "frozen": len(layers) - trainable}

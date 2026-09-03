@@ -1,6 +1,8 @@
 {
   "model": "efficientnet_b0_lstm",
   "framework": "tensorflow",
+  "initialization": "imagenet_pretrained",
+  "training_policy": "transfer_learning",
   "pretraining": "imagenet_verified",
   "training_strategy": "warmup_then_finetune",
   "model_selection": "validation_loss",

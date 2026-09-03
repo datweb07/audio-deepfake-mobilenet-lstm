@@ -10,10 +10,15 @@ import tensorflow as tf
 
 from src.lava.training.tensorflow_lifecycle import (
     finalize_global_selection,
+    finalize_scratch_selection,
     initial_lifecycle_state,
+    initial_scratch_state,
     lifecycle_paths,
     load_selected_model,
     mark_interrupted,
+    mark_scratch_interrupted,
+    scratch_callbacks,
+    scratch_lifecycle_paths,
     select_global_best,
     stage_callbacks,
 )
@@ -32,6 +37,36 @@ def _tiny_model(kernel: float = 1.0, bias: float = 0.0) -> tf.keras.Model:
 
 
 class TensorFlowLifecycleTest(unittest.TestCase):
+    def test_scratch_single_stage_checkpoint_selection_and_interrupt_recovery(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            paths = scratch_lifecycle_paths("scratch", root=directory)
+            paths.directory.mkdir(parents=True, exist_ok=True)
+            state = initial_scratch_state("scratch", manifest_hash="test", seed=42)
+            model = _tiny_model()
+            model.compile(optimizer="adam", loss="binary_crossentropy")
+            callbacks = scratch_callbacks(
+                paths=paths, state=state, early_stopping_patience=2,
+                lr_reduction_patience=1, verbose=0,
+            )
+            model.fit(
+                np.asarray([[0.0], [1.0]], dtype=np.float32),
+                np.asarray([[0.0], [1.0]], dtype=np.float32),
+                validation_data=(
+                    np.asarray([[0.0], [1.0]], dtype=np.float32),
+                    np.asarray([[0.0], [1.0]], dtype=np.float32),
+                ),
+                epochs=1, callbacks=callbacks, verbose=0,
+            )
+            selection = finalize_scratch_selection(state, paths)
+            self.assertEqual(selection.stage, "scratch")
+            self.assertTrue(paths.best_checkpoint.is_file())
+            tf.keras.models.load_model(paths.best_checkpoint, compile=False)
+            mark_scratch_interrupted(state, paths)
+            persisted = json.loads(paths.state.read_text(encoding="utf-8"))
+            self.assertEqual(persisted["status"], "INTERRUPTED")
+            self.assertFalse(persisted["production_model_saved"])
+            self.assertTrue(paths.best_checkpoint.is_file())
+
     def test_a_warmup_wins_global_selection(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             paths = lifecycle_paths("model", root=directory)

@@ -46,6 +46,7 @@ import config
 from src.artifacts import archive_legacy_artifacts, save_production_model
 from src.dataset import create_tf_dataset, get_class_weights, load_manifest_split
 from src.lava.artifacts import save_threshold as save_detector_threshold, write_json_atomic
+from src.lava.contracts import TrainingPolicy
 from src.lava.data.manifest import MANIFEST_METADATA
 from src.lava.registry import create, get_spec, names
 from src.metrics import calibrate_threshold
@@ -56,22 +57,35 @@ from src.model import (
 )
 from src.lava.models.tensorflow.temporal_classifier import (
     compile_binary_model,
+    enable_scratch_end_to_end,
     freeze_backbone,
+    parameter_status,
     unfreeze_backbone,
 )
-from src.lava.training.policy import assert_test_isolation, require_validation_source
+from src.lava.training.diagnostics import ValidationDistributionDiagnostic
+from src.lava.training.policy import (
+    assert_test_isolation,
+    require_validation_source,
+    resolve_training_policy,
+    weights_for_policy,
+)
 from src.lava.training.tensorflow_lifecycle import (
     batch_normalization_status,
     finalize_global_selection,
+    finalize_scratch_selection,
     initial_lifecycle_state,
+    initial_scratch_state,
     lifecycle_paths,
     load_selected_model,
     mark_interrupted,
+    mark_scratch_interrupted,
     optimizer_learning_rate,
+    scratch_callbacks,
+    scratch_lifecycle_paths,
     stage_callbacks,
     write_lifecycle_state,
 )
-from src.utils import plot_training_history
+from src.utils import plot_single_stage_history, plot_training_history
 
 
 def set_reproducible_seed(seed: int = config.RANDOM_SEED) -> None:
@@ -128,6 +142,7 @@ def _save_metadata(
     *, detector, threshold: float, threshold_f1: float, history_path: str,
     warmup_epochs: int, finetune_epochs: int, lifecycle_state: dict[str, Any],
     checkpoint_directory: Path, bn_status: dict[str, int],
+    backbone_epoch1: dict[str, int],
 ) -> None:
     spec = detector.spec
     with MANIFEST_METADATA.open("r", encoding="utf-8") as handle:
@@ -151,7 +166,9 @@ def _save_metadata(
         "label_mapping": {"REAL": 0, "FAKE": 1},
         "score_semantics": "sigmoid output = P(FAKE)",
         "pretraining": "imagenet" if primary_eligible else "scratch",
+        "initialization": spec.initialization.value,
         "pretraining_status": spec.pretraining_status,
+        "training_policy": spec.training_policy.value,
         "pretraining_stratum": "imagenet_verified" if primary_eligible else "scratch_experimental",
         "primary_pretrained_comparison_eligible": primary_eligible,
         "final_threshold": threshold,
@@ -163,6 +180,17 @@ def _save_metadata(
         "training_seed": config.RANDOM_SEED,
         "hardware_summary": {"visible_gpus": [d.name for d in tf.config.list_physical_devices("GPU")]},
         "training_strategy": "warmup_then_finetune",
+        "optimizer": "Adam",
+        "initial_lr": config.WARMUP_LR,
+        "scheduler": "stage_local_reduce_lr_on_plateau",
+        "epochs_run": warmup_epochs + finetune_epochs,
+        "best_epoch": lifecycle_state["global_best_epoch"],
+        "best_val_loss": lifecycle_state["global_best_val_loss"],
+        "backbone_total_params": backbone_epoch1["total"],
+        "backbone_trainable_params_at_epoch1": backbone_epoch1["trainable"],
+        "BN_total": bn_status["total"],
+        "BN_trainable": 0,
+        "manifest_hash": manifest["manifest_hash"],
         "training_schedule": {
             "warmup_epochs_run": warmup_epochs, "finetune_epochs_run": finetune_epochs,
             "warmup_lr": config.WARMUP_LR, "finetune_lr": config.FINETUNE_LR,
@@ -194,11 +222,220 @@ def _save_metadata(
     write_json_atomic(spec.metadata_artifact, metadata)
 
 
+def _save_scratch_metadata(
+    *, detector, threshold: float, threshold_f1: float, history_path: str,
+    epochs_run: int, lifecycle_state: dict[str, Any], checkpoint_directory: Path,
+    backbone_epoch1: dict[str, int], bn_epoch1: dict[str, int],
+) -> None:
+    spec = detector.spec
+    with MANIFEST_METADATA.open("r", encoding="utf-8") as handle:
+        manifest = json.load(handle)
+    metadata: dict[str, Any] = {
+        "detector_name": spec.name,
+        "display_name": spec.display_name,
+        "architecture": (
+            f"6 chronological Mel images -> TimeDistributed({detector.backbone.name}) -> "
+            "LSTM(128) -> Dense(64, relu) -> Dropout(0.4) -> Dense(1, sigmoid)"
+        ),
+        "group": spec.group,
+        "framework": "tensorflow",
+        "framework_version": tf.__version__,
+        "training_manifest_hash": manifest["manifest_hash"],
+        "manifest_hash": manifest["manifest_hash"],
+        "input_contract": {
+            "shape": list(detector.model.input_shape[1:]), "sample_rate": spec.sample_rate,
+            "audio_duration": spec.audio_duration, "input_scale": [0.0, 255.0],
+        },
+        "label_mapping": {"REAL": 0, "FAKE": 1},
+        "score_semantics": "sigmoid output = P(FAKE)",
+        "initialization": spec.initialization.value,
+        "pretraining": "scratch",
+        "pretraining_status": spec.pretraining_status,
+        "pretraining_stratum": "scratch_experimental",
+        "primary_pretrained_comparison_eligible": False,
+        "training_policy": spec.training_policy.value,
+        "training_strategy": "single_stage_full_end_to_end",
+        "optimizer": "Adam",
+        "initial_lr": config.SCRATCH_LR,
+        "scheduler": "reduce_lr_on_plateau",
+        "epochs_run": epochs_run,
+        "best_epoch": lifecycle_state["global_best_epoch"],
+        "best_val_loss": lifecycle_state["global_best_val_loss"],
+        "backbone_total_params": backbone_epoch1["total"],
+        "backbone_trainable_params_at_epoch1": backbone_epoch1["trainable"],
+        "BN_total": bn_epoch1["total"],
+        "BN_trainable": bn_epoch1["trainable"],
+        "final_threshold": threshold,
+        "threshold_source": "validation FAKE-class F1",
+        "threshold_validation_f1": threshold_f1,
+        "parameter_count": int(detector.model.count_params()),
+        "serialized_size": spec.model_artifact.stat().st_size,
+        "git_commit": _git_commit(),
+        "training_seed": config.RANDOM_SEED,
+        "hardware_summary": {"visible_gpus": [d.name for d in tf.config.list_physical_devices("GPU")]},
+        "selection": {
+            "monitor": "validation_loss", "mode": "min",
+            "best_epoch": lifecycle_state["global_best_epoch"],
+            "best_value": lifecycle_state["global_best_val_loss"],
+            "best_stage": "scratch", "test_used": False,
+        },
+        "checkpoint": {
+            "directory": os.path.relpath(checkpoint_directory, config.BASE_DIR),
+            "best": "best.keras", "lifecycle_state": "lifecycle_state.json",
+        },
+        "batch_normalization": bn_epoch1,
+        "load_smoke_test": "PASS",
+        "training_history": os.path.relpath(history_path, config.BASE_DIR),
+    }
+    write_json_atomic(spec.metadata_artifact, metadata)
+
+
 def _extract_backbone(model: tf.keras.Model) -> tf.keras.Model:
     for layer in model.layers:
         if isinstance(layer, tf.keras.layers.TimeDistributed):
             return layer.layer
     raise RuntimeError("Temporal classifier contains no TimeDistributed backbone")
+
+
+def _train_scratch_detector(
+    *, detector, model: tf.keras.Model, backbone: tf.keras.Model,
+    train_dataset: tf.data.Dataset, validation_dataset: tf.data.Dataset,
+    class_weights: dict[int, float], manifest_hash: str, smoke_test: bool,
+) -> dict[str, Any]:
+    """Run one end-to-end optimization stage for a randomly initialized backbone."""
+    spec = detector.spec
+    enable_scratch_end_to_end(backbone)
+    backbone_epoch1 = parameter_status(backbone)
+    bn_epoch1 = batch_normalization_status(backbone)
+    trainable_fraction = backbone_epoch1["trainable"] / max(1, backbone_epoch1["total"])
+    if trainable_fraction <= 0.95:
+        raise RuntimeError(
+            f"Scratch backbone is not fully trainable before compile: {backbone_epoch1}"
+        )
+    if bn_epoch1["total"] and bn_epoch1["trainable"] == 0:
+        raise RuntimeError(f"Scratch BatchNormalization layers must learn: {bn_epoch1}")
+
+    print(f"Initialization: {spec.initialization.value}")
+    print(f"Training policy: {spec.training_policy.value}")
+    print(
+        "Backbone trainable at epoch 1: "
+        f"{backbone_epoch1['trainable']:,} / {backbone_epoch1['total']:,} parameters"
+    )
+    print(f"BatchNorm trainable: {bn_epoch1['trainable']} / {bn_epoch1['total']}")
+    print(f"Initial LR: {config.SCRATCH_LR:g}")
+
+    # Keras captures trainable variables at compile time, so policy is applied first.
+    compile_binary_model(model, config.SCRATCH_LR)
+    smoke_directory = (
+        tempfile.TemporaryDirectory(prefix=f"{spec.name}_scratch_", dir=config.CHECKPOINTS_DIR)
+        if smoke_test else None
+    )
+    paths = scratch_lifecycle_paths(
+        spec.name, root=smoke_directory.name if smoke_directory else None
+    )
+    paths.directory.mkdir(parents=True, exist_ok=True)
+    for artifact in (paths.best_checkpoint, paths.state):
+        artifact.unlink(missing_ok=True)
+    state = initial_scratch_state(
+        spec.name, manifest_hash=manifest_hash, seed=config.RANDOM_SEED
+    )
+    state["backbone_epoch1"] = backbone_epoch1
+    state["batch_normalization_epoch1"] = bn_epoch1
+    write_lifecycle_state(paths.state, state)
+    callbacks = scratch_callbacks(
+        paths=paths,
+        state=state,
+        early_stopping_patience=(1 if smoke_test else config.SCRATCH_EARLY_STOPPING_PATIENCE),
+        lr_reduction_patience=(1 if smoke_test else config.SCRATCH_REDUCE_LR_PATIENCE),
+        verbose=0 if smoke_test else 1,
+    )
+    if not smoke_test:
+        callbacks.append(
+            ValidationDistributionDiagnostic(
+                validation_dataset,
+                start_epoch=config.COLLAPSE_DIAGNOSTIC_START_EPOCH,
+                interval=config.COLLAPSE_DIAGNOSTIC_INTERVAL,
+            )
+        )
+    try:
+        history = model.fit(
+            train_dataset,
+            validation_data=validation_dataset,
+            epochs=1 if smoke_test else config.SCRATCH_EPOCHS,
+            class_weight=class_weights,
+            callbacks=callbacks,
+            verbose=0 if smoke_test else 1,
+        )
+        state["final_lr"] = optimizer_learning_rate(model)
+        selection = finalize_scratch_selection(state, paths)
+        selected_model = load_selected_model(selection)
+        if selected_model.input_shape != model.input_shape or selected_model.output_shape != model.output_shape:
+            raise RuntimeError("Scratch checkpoint violates the detector architecture contract")
+        detector.model = selected_model
+        detector.backbone = _extract_backbone(selected_model)
+
+        validation_labels, scores = collect_predictions(selected_model, validation_dataset)
+        require_validation_source("validation")
+        threshold, threshold_f1 = calibrate_threshold(validation_labels, scores)
+        if smoke_test:
+            save_load_path = paths.directory / "selected_best.keras"
+            selected_model.save(save_load_path)
+            loaded = tf.keras.models.load_model(save_load_path, compile=False)
+            if loaded.output_shape != (None, 1):
+                raise RuntimeError("Scratch smoke save/load output contract failed")
+            state["status"] = "SMOKE_COMPLETE"
+            state["production_model_saved"] = False
+            write_lifecycle_state(paths.state, state)
+            return {
+                "status": "SMOKE_TESTED", "model": spec.name,
+                "input_shape": list(selected_model.input_shape),
+                "embedding_dimension": int(detector.backbone.output_shape[-1]),
+                "output_shape": list(selected_model.output_shape),
+                "parameter_count": int(selected_model.count_params()),
+                "backbone_epoch1": backbone_epoch1,
+                "batch_normalization_epoch1": bn_epoch1,
+                "threshold_smoke_only": threshold,
+                "training_policy": spec.training_policy.value,
+            }
+
+        detector.save()
+        history_path = os.path.join(config.PLOTS_DIR, spec.name, "training_history.png")
+        history_path = plot_single_stage_history(
+            history, output_path=history_path, model_name=spec.display_name,
+            best_epoch=selection.epoch, best_val_loss=selection.val_loss,
+        )
+        save_detector_threshold(spec, threshold)
+        state["production_model_saved"] = True
+        state["production_model_path"] = str(spec.model_artifact)
+        write_lifecycle_state(paths.state, state)
+        _save_scratch_metadata(
+            detector=detector, threshold=threshold, threshold_f1=threshold_f1,
+            history_path=history_path, epochs_run=len(history.epoch), lifecycle_state=state,
+            checkpoint_directory=paths.directory, backbone_epoch1=backbone_epoch1,
+            bn_epoch1=bn_epoch1,
+        )
+        return {
+            "status": "TRAINED", "model": spec.name, "artifact": str(spec.model_artifact),
+            "threshold": threshold, "best_val_loss": selection.val_loss,
+            "lifecycle_state": str(paths.state),
+        }
+    except KeyboardInterrupt:
+        state["final_lr"] = optimizer_learning_rate(model)
+        mark_scratch_interrupted(state, paths)
+        print(
+            f"Training interrupted. Best scratch checkpoint preserved in {paths.directory}. "
+            "No production model was written."
+        )
+        raise
+    except Exception as exc:
+        state["status"] = "FAILED"
+        state["error_type"] = type(exc).__name__
+        state["production_model_saved"] = False
+        write_lifecycle_state(paths.state, state)
+        raise
+    finally:
+        if smoke_directory is not None:
+            smoke_directory.cleanup()
 
 
 def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> dict[str, Any]:
@@ -216,8 +453,10 @@ def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> d
     train_dataset = create_tf_dataset(*train_data, batch_size=batch_size, training=True)
     validation_dataset = create_tf_dataset(*validation_data, batch_size=batch_size, training=False)
     class_weights = get_class_weights(train_data[1])
+    policy = resolve_training_policy(spec)
     detector = create(model_name)
-    build_weights = None if smoke_test or spec.pretraining_status != "VERIFIED_IMAGENET" else "imagenet"
+    # Smoke tests avoid network/cache dependencies; production transfer runs must load ImageNet.
+    build_weights = None if smoke_test else weights_for_policy(spec)
     model = detector.build(weights=build_weights)
     backbone = detector.backbone
     assert backbone is not None
@@ -225,6 +464,17 @@ def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> d
     with MANIFEST_METADATA.open("r", encoding="utf-8") as handle:
         manifest_metadata = json.load(handle)
     Path(config.CHECKPOINTS_DIR).mkdir(parents=True, exist_ok=True)
+    if policy == TrainingPolicy.SCRATCH_END_TO_END:
+        return _train_scratch_detector(
+            detector=detector, model=model, backbone=backbone,
+            train_dataset=train_dataset, validation_dataset=validation_dataset,
+            class_weights=class_weights,
+            manifest_hash=str(manifest_metadata["manifest_hash"]),
+            smoke_test=smoke_test,
+        )
+
+    print(f"Initialization: {spec.initialization.value}")
+    print(f"Training policy: {spec.training_policy.value}")
     smoke_directory = (
         tempfile.TemporaryDirectory(prefix=f"{model_name}_lifecycle_", dir=config.CHECKPOINTS_DIR)
         if smoke_test else None
@@ -249,6 +499,16 @@ def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> d
         else:
             freeze_backbone(backbone)
             compile_binary_model(model, config.WARMUP_LR)
+        backbone_epoch1 = parameter_status(backbone)
+        warmup_bn = batch_normalization_status(backbone)
+        if backbone_epoch1["trainable"] != 0:
+            raise RuntimeError(f"Pretrained warm-up backbone must be frozen: {backbone_epoch1}")
+        print(
+            "Warm-up backbone trainable: "
+            f"{backbone_epoch1['trainable']:,} / {backbone_epoch1['total']:,} parameters"
+        )
+        print(f"Warm-up BatchNorm trainable: {warmup_bn['trainable']} / {warmup_bn['total']}")
+        print(f"Warm-up LR: {config.WARMUP_LR:g}; fine-tune LR: {config.FINETUNE_LR:g}")
         warmup_callbacks = stage_callbacks(
             stage="warmup",
             paths=paths,
@@ -365,6 +625,7 @@ def train_tensorflow_detector(model_name: str, *, smoke_test: bool = False) -> d
             lifecycle_state=state,
             checkpoint_directory=paths.directory,
             bn_status=bn_status,
+            backbone_epoch1=backbone_epoch1,
         )
         if model_name == "mobilenetv3_lstm":
             archive_legacy_artifacts()

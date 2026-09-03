@@ -48,6 +48,26 @@ def freeze_backbone(backbone: tf.keras.Model) -> None:
     backbone.trainable = False
 
 
+def enable_scratch_end_to_end(backbone: tf.keras.Model) -> None:
+    """Make every learnable backbone layer, including BatchNorm, trainable."""
+    backbone.trainable = True
+    for layer in backbone.layers:
+        layer.trainable = True
+        if isinstance(layer, tf.keras.Model):
+            enable_scratch_end_to_end(layer)
+
+
+def parameter_status(backbone: tf.keras.Model) -> dict[str, int]:
+    """Report unique parameter elements after the requested trainability policy."""
+    if not backbone.built:
+        return {"total": 0, "trainable": 0, "frozen": 0}
+    total = sum(int(tf.keras.backend.count_params(weight)) for weight in backbone.weights)
+    trainable = sum(
+        int(tf.keras.backend.count_params(weight)) for weight in backbone.trainable_weights
+    )
+    return {"total": total, "trainable": trainable, "frozen": total - trainable}
+
+
 def unfreeze_backbone(backbone: tf.keras.Model, tail_layers: int) -> None:
     backbone.trainable = True
     cutoff = max(0, len(backbone.layers) - tail_layers)
@@ -63,4 +83,3 @@ def compile_binary_model(model: tf.keras.Model, learning_rate: float) -> None:
         loss="binary_crossentropy",
         metrics=[tf.keras.metrics.BinaryAccuracy(name="accuracy"), tf.keras.metrics.AUC(name="auc")],
     )
-

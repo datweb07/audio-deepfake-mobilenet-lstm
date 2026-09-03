@@ -86,3 +86,40 @@ def plot_training_history(
     figure.savefig(destination, dpi=160)
     plt.close(figure)
     return destination
+
+
+def plot_single_stage_history(
+    training_history: tf.keras.callbacks.History,
+    *,
+    output_path: str,
+    model_name: str,
+    best_epoch: int | None = None,
+    best_val_loss: float | None = None,
+) -> str:
+    """Save the single end-to-end lifecycle used by scratch-initialized detectors."""
+    history = merge_histories((training_history,))
+    epochs = list(range(1, len(history.get("loss", [])) + 1))
+    figure, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    for axis, train_key, validation_key, title in (
+        (axes[0], "accuracy", "val_accuracy", "Accuracy"),
+        (axes[1], "loss", "val_loss", "Binary cross-entropy"),
+    ):
+        if train_key in history:
+            axis.plot(epochs, history[train_key], label="Train")
+        if validation_key in history:
+            axis.plot(epochs, history[validation_key], label="Validation")
+        if title == "Binary cross-entropy" and best_epoch is not None and best_val_loss is not None:
+            axis.scatter(
+                [best_epoch], [best_val_loss], color="black", marker="*", s=100,
+                zorder=5, label="Validation-selected best",
+            )
+        axis.set_xlabel("Epoch")
+        axis.set_title(title)
+        axis.grid(alpha=0.2)
+        axis.legend()
+    figure.suptitle(f"{model_name} full end-to-end scratch training")
+    figure.tight_layout()
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    figure.savefig(output_path, dpi=160)
+    plt.close(figure)
+    return output_path

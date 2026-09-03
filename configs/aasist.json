@@ -1,6 +1,8 @@
 {
   "model": "aasist",
   "framework": "pytorch",
+  "initialization": "native",
+  "training_policy": "native_reference",
   "pretraining": "scratch",
   "sample_rate": 16000,
   "common_target_samples": 48000,

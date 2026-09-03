@@ -2,7 +2,12 @@
   "model": "mnasnet_lstm",
   "framework": "tensorflow",
   "variant": "A1-1.0",
+  "initialization": "scratch",
+  "training_policy": "full_end_to_end_from_epoch_1",
   "pretraining": "not_verified_scratch_experimental",
-  "training_strategy": "warmup_then_finetune",
+  "training_strategy": "full_end_to_end_from_epoch_1",
+  "optimizer": "adam",
+  "initial_learning_rate": 0.0003,
+  "scheduler": "reduce_lr_on_plateau",
   "primary_pretrained_comparison_eligible": false
 }

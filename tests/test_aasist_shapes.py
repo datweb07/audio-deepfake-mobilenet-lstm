@@ -6,6 +6,14 @@ import unittest
 
 @unittest.skipUnless(importlib.util.find_spec("torch"), "PyTorch environment not installed")
 class AASISTShapesTest(unittest.TestCase):
+    def test_no_accidentally_frozen_learnable_parameters(self) -> None:
+        from src.lava.models.pytorch.aasist import build_model
+
+        model = build_model()
+        self.assertEqual(
+            [name for name, parameter in model.named_parameters() if not parameter.requires_grad], []
+        )
+
     def test_common_and_native_lengths(self) -> None:
         import torch
         from src.lava.models.pytorch.aasist import build_model

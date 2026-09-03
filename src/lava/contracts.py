@@ -4,10 +4,23 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Sequence
 
 import numpy as np
+
+
+class Initialization(str, Enum):
+    IMAGENET_PRETRAINED = "imagenet_pretrained"
+    SCRATCH = "scratch"
+    NATIVE = "native"
+
+
+class TrainingPolicy(str, Enum):
+    PRETRAINED_TRANSFER = "transfer_learning"
+    SCRATCH_END_TO_END = "full_end_to_end_from_epoch_1"
+    NATIVE_REFERENCE = "native_reference"
 
 
 @dataclass(frozen=True)
@@ -24,6 +37,8 @@ class DetectorSpec:
     threshold_artifact: Path
     metadata_artifact: Path
     pretraining_status: str
+    initialization: Initialization
+    training_policy: TrainingPolicy
 
 
 class LAVADetector(ABC):

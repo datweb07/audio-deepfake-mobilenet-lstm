@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from src.lava.artifacts import artifact_readiness, load_threshold, save_threshold, write_json_atomic
-from src.lava.contracts import DetectorSpec
+from src.lava.contracts import DetectorSpec, Initialization, TrainingPolicy
 
 
 class ArtifactContractTest(unittest.TestCase):
@@ -17,6 +17,8 @@ class ArtifactContractTest(unittest.TestCase):
                 input_type="mel_sequence", sample_rate=22050, audio_duration=3.0, num_segments=6,
                 model_artifact=root / "model.keras", threshold_artifact=root / "threshold.json",
                 metadata_artifact=root / "metadata.json", pretraining_status="TEST",
+                initialization=Initialization.SCRATCH,
+                training_policy=TrainingPolicy.SCRATCH_END_TO_END,
             )
             ready, missing = artifact_readiness(spec)
             self.assertFalse(ready)

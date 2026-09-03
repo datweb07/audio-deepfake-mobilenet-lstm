@@ -138,6 +138,11 @@ def train_detector(name: str, options: dict[str, Any] | None = None) -> dict[str
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, generator=generator)
     validation_loader = DataLoader(validation_data, batch_size=batch_size, shuffle=False)
     model = _build_model(name).to(device)
+    accidentally_frozen = [parameter_name for parameter_name, parameter in model.named_parameters() if not parameter.requires_grad]
+    if accidentally_frozen:
+        raise RuntimeError(
+            f"Native detector has unexpectedly frozen learnable parameters: {accidentally_frozen[:10]}"
+        )
     counts = Counter(native_label for _, lava_label in train_data.rows for native_label in [0 if lava_label == 1 else 1])
     total = len(train_data)
     class_weights = torch.tensor([total / (2 * counts[0]), total / (2 * counts[1])], dtype=torch.float32, device=device)
@@ -152,7 +157,9 @@ def train_detector(name: str, options: dict[str, Any] | None = None) -> dict[str
     best_loss = float("inf")
     best_epoch = 0
     stale_epochs = 0
+    epochs_run = 0
     for epoch in range(1, epochs + 1):
+        epochs_run = epoch
         model.train()
         for inputs, native_labels in train_loader:
             inputs, native_labels = inputs.to(device), native_labels.to(device)
@@ -214,8 +221,28 @@ def train_detector(name: str, options: dict[str, Any] | None = None) -> dict[str
         "label_mapping": {"REAL": 0, "FAKE": 1},
         "native_class_order": ["FAKE", "REAL"],
         "score_semantics": "softmax(logits)[:, 0] = P(FAKE)",
+        "initialization": spec.initialization.value,
         "pretraining": "scratch",
+        "pretraining_status": spec.pretraining_status,
         "pretraining_stratum": "native_reference_scratch",
+        "training_policy": spec.training_policy.value,
+        "optimizer": "Adam",
+        "initial_lr": learning_rate,
+        "scheduler": "cosine_annealing" if scheduler is not None else "none",
+        "epochs_run": epochs_run,
+        "best_epoch": best_epoch,
+        "best_val_loss": best_loss,
+        "backbone_total_params": sum(parameter.numel() for parameter in model.parameters()),
+        "backbone_trainable_params_at_epoch1": sum(
+            parameter.numel() for parameter in model.parameters() if parameter.requires_grad
+        ),
+        "BN_total": sum(1 for module in model.modules() if isinstance(module, nn.modules.batchnorm._BatchNorm)),
+        "BN_trainable": sum(
+            1 for module in model.modules()
+            if isinstance(module, nn.modules.batchnorm._BatchNorm)
+            and any(parameter.requires_grad for parameter in module.parameters())
+        ),
+        "manifest_hash": manifest_metadata["manifest_hash"],
         "final_threshold": threshold,
         "threshold_validation_f1": threshold_f1,
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),

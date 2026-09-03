@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import config
 from src.lava.artifacts import torch_artifacts
-from src.lava.contracts import DetectorSpec
+from src.lava.contracts import DetectorSpec, Initialization, TrainingPolicy
 from src.lava.workers.torch_proxy import TorchWorkerDetector
 
 
@@ -23,6 +23,8 @@ def _spec(name: str, display_name: str) -> DetectorSpec:
         threshold_artifact=threshold,
         metadata_artifact=metadata,
         pretraining_status="NOT_APPLICABLE_TRAIN_FROM_SCRATCH",
+        initialization=Initialization.NATIVE,
+        training_policy=TrainingPolicy.NATIVE_REFERENCE,
     )
 
 
@@ -36,4 +38,3 @@ def rawnet2_factory() -> TorchWorkerDetector:
 
 def aasist_factory() -> TorchWorkerDetector:
     return TorchWorkerDetector(AASIST_SPEC)
-
