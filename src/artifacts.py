@@ -58,17 +58,61 @@ def validate_model_contract(model: tf.keras.Model) -> None:
         raise ValueError("Production output must be one sigmoid unit representing P(FAKE)")
 
 
-def load_production_model(*, compile: bool = False) -> tf.keras.Model:
-    """Load only the canonical production artifact; never fall back to legacy files."""
-    if not os.path.isfile(config.MODEL_PATH):
-        raise FileNotFoundError(PRODUCTION_MODEL_NOT_FOUND)
-    model = tf.keras.models.load_model(config.MODEL_PATH, compile=compile)
+def _load_production_weights(weights_path: str) -> tf.keras.Model:
+    """Rebuild the exact architecture and restore a weights-only deployment copy."""
+    # Import lazily to keep the artifact module independent of model builders at
+    # import time and to make the deployment fallback explicit and testable.
+    from src.model import build_hybrid_model
+
+    model, _ = build_hybrid_model(weights=None)
+    model.load_weights(weights_path)
     validate_model_contract(model)
     return model
 
 
+def load_production_model(
+    *,
+    compile: bool = False,
+    model_path: str | None = None,
+    weights_path: str | None = None,
+) -> tf.keras.Model:
+    """Load MobileNet production weights without silently using legacy checkpoints.
+
+    The full ``.keras`` artifact remains the preferred local path.  Some Linux
+    Keras 2.15 deployments fail to restore nested MobileNetV3 variables from
+    that archive (``Layer 'Conv' expected 1 variables, but received 0``).  A
+    verified weights-only copy avoids deserializing the nested architecture:
+    production code rebuilds the unchanged architecture, then restores weights.
+    """
+    resolved_model_path = model_path or config.MODEL_PATH
+    resolved_weights_path = weights_path or config.MODEL_WEIGHTS_PATH
+    model_exists = os.path.isfile(resolved_model_path)
+    weights_exist = os.path.isfile(resolved_weights_path)
+
+    if not model_exists and not weights_exist:
+        raise FileNotFoundError(PRODUCTION_MODEL_NOT_FOUND)
+
+    if model_exists:
+        try:
+            model = tf.keras.models.load_model(resolved_model_path, compile=compile)
+            validate_model_contract(model)
+            return model
+        except (ValueError, TypeError, OSError) as archive_error:
+            if not weights_exist:
+                raise RuntimeError(
+                    "Production .keras model could not be loaded and its deployment "
+                    f"weights fallback is missing: {resolved_weights_path}"
+                ) from archive_error
+            print(
+                "[LAVA] Full-model load failed; using verified MobileNet weights "
+                f"fallback ({type(archive_error).__name__}: {archive_error})"
+            )
+
+    return _load_production_weights(resolved_weights_path)
+
+
 def save_production_model(model: tf.keras.Model) -> tf.keras.Model:
-    """Verify a pending save before atomically replacing the production artifact."""
+    """Atomically publish verified full-model and weights-only artifacts."""
     validate_model_contract(model)
     # Export an uncompiled clone so the deployment artifact never carries an
     # optimizer slot state from either internal training stage.
@@ -76,16 +120,26 @@ def save_production_model(model: tf.keras.Model) -> tf.keras.Model:
     export_model.set_weights(model.get_weights())
     validate_model_contract(export_model)
     pending_path = f"{config.MODEL_PATH}.pending.keras"
+    pending_weights_path = f"{config.MODEL_WEIGHTS_PATH}.pending.weights.h5"
     if os.path.exists(pending_path):
         os.remove(pending_path)
+    if os.path.exists(pending_weights_path):
+        os.remove(pending_weights_path)
     try:
         export_model.save(pending_path)
         verified = tf.keras.models.load_model(pending_path, compile=False)
         validate_model_contract(verified)
+        export_model.save_weights(pending_weights_path)
+        weights_verified = _load_production_weights(pending_weights_path)
+        if weights_verified.count_params() != export_model.count_params():
+            raise ValueError("Weights-only deployment artifact parameter count mismatch")
+        os.replace(pending_weights_path, config.MODEL_WEIGHTS_PATH)
         os.replace(pending_path, config.MODEL_PATH)
     finally:
         if os.path.exists(pending_path):
             os.remove(pending_path)
+        if os.path.exists(pending_weights_path):
+            os.remove(pending_weights_path)
     return load_production_model(compile=False)
 
 

@@ -19,6 +19,10 @@ LEGACY_MODELS_DIR = os.path.join(OUTPUTS_DIR, "legacy_models")
 LEGACY_TRAINING_DIR = os.path.join(OUTPUTS_DIR, "legacy_training")
 
 MODEL_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.keras")
+# Deployment fallback for environments where the Keras v3 archive can be
+# opened but nested MobileNetV3 variables are not restored correctly.  This
+# contains the exact same weights; the architecture is rebuilt from src/model.py.
+MODEL_WEIGHTS_PATH = os.path.join(MODELS_DIR, "lava_mobilenetv3_lstm.weights.h5")
 THRESHOLD_PATH = os.path.join(MODELS_DIR, "best_threshold.txt")
 MODEL_METADATA_PATH = os.path.join(MODELS_DIR, "model_metadata.json")
 TRAINING_HISTORY_PATH = os.path.join(PLOTS_DIR, "training_history.png")
