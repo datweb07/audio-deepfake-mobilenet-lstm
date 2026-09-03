@@ -1,0 +1,13 @@
+{
+  "class_order": "0=FAKE(spoof), 1=REAL(bonafide)",
+  "detector_name": "rawnet2_pretrained",
+  "display_name": "RawNet2 (DF-Pretrained, 2021)",
+  "framework": "pytorch",
+  "nb_classes": 2,
+  "note": "Use calibrate_pretrained.py on your validation set to get a better threshold.",
+  "sample_rate": 16000,
+  "score_semantics": "softmax(logits)[FAKE_INDEX=0] = P(FAKE)",
+  "source": "ASVspoof2021 DF track baseline by Tak et al.",
+  "target_samples": 64600,
+  "threshold_source": "default_0.5_uncalibrated"
+}

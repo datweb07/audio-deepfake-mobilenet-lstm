@@ -1,0 +1,13 @@
+{
+  "class_order": "0=FAKE(spoof), 1=REAL(bonafide)",
+  "detector_name": "aasist_pretrained",
+  "display_name": "AASIST (Official Pretrained, NAVER)",
+  "framework": "pytorch",
+  "nb_classes": 2,
+  "note": "Use calibrate_pretrained.py on your validation set to get a better threshold.",
+  "sample_rate": 16000,
+  "score_semantics": "softmax(logits)[FAKE_INDEX=0] = P(FAKE)",
+  "source": "NAVER Corp - AASIST paper (ICASSP 2022)",
+  "target_samples": 64600,
+  "threshold_source": "default_0.5_uncalibrated"
+}

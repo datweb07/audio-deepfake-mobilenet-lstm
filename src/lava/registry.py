@@ -1,4 +1,4 @@
-"""Lazy detector registry; importing it never imports PyTorch."""
+﻿"""Lazy detector registry; importing it never imports PyTorch."""
 
 from __future__ import annotations
 
@@ -77,6 +77,15 @@ def _register_builtins() -> None:
 
     register(RAWNET2_SPEC, rawnet2_factory)
     register(AASIST_SPEC, aasist_factory)
+
+    from src.lava.models.pytorch.specs import (
+        RAWNET2_PRETRAINED_SPEC,
+        AASIST_PRETRAINED_SPEC,
+        rawnet2_pretrained_factory,
+        aasist_pretrained_factory,
+    )
+    register(RAWNET2_PRETRAINED_SPEC, rawnet2_pretrained_factory)
+    register(AASIST_PRETRAINED_SPEC, aasist_pretrained_factory)
 
 
 _register_builtins()

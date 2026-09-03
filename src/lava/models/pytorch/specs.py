@@ -1,4 +1,4 @@
-"""PyTorch detector metadata safe to import without importing torch."""
+﻿"""PyTorch detector metadata safe to import without importing torch."""
 
 from __future__ import annotations
 
@@ -38,3 +38,14 @@ def rawnet2_factory() -> TorchWorkerDetector:
 
 def aasist_factory() -> TorchWorkerDetector:
     return TorchWorkerDetector(AASIST_SPEC)
+
+RAWNET2_PRETRAINED_SPEC = _spec("rawnet2_pretrained", "RawNet2 (DF-Pretrained, 2021)")
+AASIST_PRETRAINED_SPEC = _spec("aasist_pretrained", "AASIST (Official Pretrained, NAVER)")
+
+
+def rawnet2_pretrained_factory() -> TorchWorkerDetector:
+    return TorchWorkerDetector(RAWNET2_PRETRAINED_SPEC)
+
+
+def aasist_pretrained_factory() -> TorchWorkerDetector:
+    return TorchWorkerDetector(AASIST_PRETRAINED_SPEC)

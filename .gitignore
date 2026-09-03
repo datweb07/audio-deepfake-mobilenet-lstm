@@ -38,11 +38,11 @@ data/*
 # Model artifacts
 # =========================
 
-models/**/*.h5
-models/**/*.keras
-models/**/*.pth
-models/**/*.pt
-models/**/*.ckpt
+# models/**/*.h5
+# models/**/*.keras
+# models/**/*.pth
+# models/**/*.pt
+# models/**/*.ckpt
 
 # Outputs from experiments
 outputs/
@@ -67,3 +67,4 @@ mnasnet/
 ShuffleNetV2/
 rawnet2-antispoofing-main/
 aasist-main/
+2021-main/

@@ -1,4 +1,4 @@
-"""JSON stdin/stdout worker for process-isolated native PyTorch detectors."""
+﻿"""JSON stdin/stdout worker for process-isolated native PyTorch detectors."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from typing import Any
 import numpy as np
 import torch
 
-from src.lava.models.pytorch.specs import AASIST_SPEC, RAWNET2_SPEC
 from src.lava.preprocessing.waveform import load_waveform
 from src.lava.timing import timed_runs
 
@@ -20,21 +19,53 @@ from src.lava.timing import timed_runs
 def _build(name: str):
     if name == "rawnet2":
         from src.lava.models.pytorch.rawnet2 import NATIVE_FAKE_INDEX, build_model
+        return build_model(), NATIVE_FAKE_INDEX
     elif name == "aasist":
         from src.lava.models.pytorch.aasist import NATIVE_FAKE_INDEX, build_model
+        return build_model(), NATIVE_FAKE_INDEX
+    elif name == "rawnet2_pretrained":
+        from src.lava.models.pytorch.rawnet2_pretrained import NATIVE_FAKE_INDEX, build_model
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        return build_model(device), NATIVE_FAKE_INDEX
+    elif name == "aasist_pretrained":
+        from src.lava.models.pytorch.aasist_pretrained import NATIVE_FAKE_INDEX, build_model
+        return build_model(), NATIVE_FAKE_INDEX
     else:
         raise ValueError(f"Unknown torch detector: {name}")
-    return build_model(), NATIVE_FAKE_INDEX
 
 
 def _spec(name: str):
-    return RAWNET2_SPEC if name == "rawnet2" else AASIST_SPEC
+    from src.lava.models.pytorch.specs import (
+        RAWNET2_SPEC, AASIST_SPEC, RAWNET2_PRETRAINED_SPEC, AASIST_PRETRAINED_SPEC
+    )
+    mapping = {
+        "rawnet2": RAWNET2_SPEC,
+        "aasist": AASIST_SPEC,
+        "rawnet2_pretrained": RAWNET2_PRETRAINED_SPEC,
+        "aasist_pretrained": AASIST_PRETRAINED_SPEC,
+    }
+    if name not in mapping:
+        raise ValueError(f"Unknown torch detector: {name}")
+    return mapping[name]
 
 
 def _load(name: str, device: torch.device):
     spec = _spec(name)
     if not spec.model_artifact.is_file():
-        raise FileNotFoundError(f"Production model not found for {name}. Run: python train.py --model {name}")
+        msg = (
+            f"Production model not found for {name}. Run: python import_pretrained.py"
+            if name.endswith("_pretrained")
+            else f"Production model not found for {name}. Run: python train.py --model {name}"
+        )
+        raise FileNotFoundError(msg)
+    if name == "rawnet2_pretrained":
+        from src.lava.models.pytorch.rawnet2_pretrained import NATIVE_FAKE_INDEX, load_pretrained, target_samples
+        model = load_pretrained(spec.model_artifact, device)
+        return model, NATIVE_FAKE_INDEX, target_samples()
+    if name == "aasist_pretrained":
+        from src.lava.models.pytorch.aasist_pretrained import NATIVE_FAKE_INDEX, load_pretrained, target_samples
+        model = load_pretrained(spec.model_artifact, device)
+        return model, NATIVE_FAKE_INDEX, target_samples()
     checkpoint = torch.load(spec.model_artifact, map_location=device)
     model, fake_index = _build(name)
     model.load_state_dict(checkpoint["state_dict"])
