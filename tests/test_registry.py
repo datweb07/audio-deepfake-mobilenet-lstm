@@ -12,6 +12,7 @@ class RegistryTest(unittest.TestCase):
             (
                 "mobilenetv3_lstm", "efficientnet_b0_lstm", "shufflenetv2_lstm",
                 "mnasnet_lstm", "rawnet2", "aasist",
+                "rawnet2_pretrained", "aasist_pretrained",
             ),
         )
         spec = get_spec("mobilenetv3_lstm")

@@ -3,16 +3,18 @@
 from pathlib import Path
 
 import config
-from src.lava.artifacts import tensorflow_artifacts
+from src.lava.artifacts import mobilenet_artifacts, tensorflow_artifacts
 from src.lava.contracts import DetectorSpec, Initialization, TrainingPolicy
 
+
+_MOBILENET_MODEL, _MOBILENET_THRESHOLD, _MOBILENET_METADATA = mobilenet_artifacts()
 
 MOBILENET_SPEC = DetectorSpec(
     name="mobilenetv3_lstm", display_name="MobileNetV3Small-LSTM", group="lightweight",
     framework="tensorflow", input_type="mel_sequence", sample_rate=config.SAMPLE_RATE,
     audio_duration=config.AUDIO_DURATION, num_segments=config.NUM_SEGMENTS,
-    model_artifact=Path(config.MODEL_PATH), threshold_artifact=Path(config.THRESHOLD_PATH),
-    metadata_artifact=Path(config.MODEL_METADATA_PATH), pretraining_status="VERIFIED_IMAGENET",
+    model_artifact=_MOBILENET_MODEL, threshold_artifact=_MOBILENET_THRESHOLD,
+    metadata_artifact=_MOBILENET_METADATA, pretraining_status="VERIFIED_IMAGENET",
     initialization=Initialization.IMAGENET_PRETRAINED,
     training_policy=TrainingPolicy.PRETRAINED_TRANSFER,
 )

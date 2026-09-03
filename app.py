@@ -13,43 +13,79 @@ import streamlit as st
 
 import config
 from src.lava.score_semantics import classify_probability
-from src.lava.artifacts import artifact_readiness, load_threshold
+from src.lava.artifacts import artifact_diagnostics, load_threshold
 from src.lava.registry import create, get_spec, specs
 from src.preprocessing import create_mel_spectrogram_db, load_audio, segment_audio
 
 
 st.set_page_config(page_title="LAVA Deepfake Voice Detection", page_icon="🎙️", layout="wide")
+SHOW_DETECTOR_DIAGNOSTICS = os.getenv(
+    "LAVA_SHOW_DETECTOR_DIAGNOSTICS", "0"
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
-@st.cache_resource
 def load_detector(model_name: str):
+    """Keep loaded models in this browser session without Streamlit's TTL cache.
+
+    Streamlit 1.34's TimedCleanupCache constructs an un-awaited coroutine from
+    script threads on some Windows/Python 3.11 combinations. Session state gives
+    the desired rerun persistence without triggering that upstream warning.
+    """
+    cache = st.session_state.setdefault("_lava_loaded_detectors", {})
+    if model_name in cache:
+        return cache[model_name]
     detector = create(model_name)
     detector.load()
-    return detector, load_threshold(detector.spec)
+    loaded = (detector, load_threshold(detector.spec))
+    cache[model_name] = loaded
+    return loaded
 
 
 def available_specs():
     available = []
+    rejected: dict[str, list[str]] = {}
     for spec in specs():
-        ready, _ = artifact_readiness(spec)
-        if not ready:
+        issues = artifact_diagnostics(spec)
+        if issues:
+            rejected[spec.name] = issues
             continue
         try:
-            detector = create(spec.name)
-            detector.load()
-        except Exception:
+            # Use the same cached load path as inference; do not load every model twice.
+            load_detector(spec.name)
+        except Exception as exc:
+            rejected[spec.name] = [f"load failed: {type(exc).__name__}: {exc}"]
             continue
         available.append(spec)
-    return available
+    for name, reasons in rejected.items():
+        # Missing untrained artifacts are normal. Always log real load failures;
+        # log all expected-missing models only in explicitly requested debug mode.
+        if SHOW_DETECTOR_DIAGNOSTICS or any(reason.startswith("load failed:") for reason in reasons):
+            print(f"[LAVA artifact probe] {name}: {'; '.join(reasons)}")
+    return available, rejected
 
 
 def main() -> None:
     st.title("LAVA Deepfake Voice Detection")
     st.caption("REAL=0, FAKE=1; every detector returns P(FAKE).")
-    candidates = available_specs()
+    candidates, rejected = available_specs()
     if not candidates:
-        st.warning("No valid trained detector found. Run: python train.py")
+        st.error("No valid trained detector found.")
+        with st.expander("Detector diagnostics", expanded=True):
+            for name, reasons in rejected.items():
+                st.markdown(f"**{name}**")
+                for reason in reasons:
+                    st.code(reason)
+            st.caption(
+                "MobileNet accepts either the legacy root bundle or "
+                "models/mobilenetv3_lstm/. No duplicate model is required."
+            )
         return
+    if rejected and SHOW_DETECTOR_DIAGNOSTICS:
+        with st.expander("Technical detector diagnostics"):
+            for name, reasons in rejected.items():
+                st.write(name)
+                for reason in reasons:
+                    st.code(reason)
     default_index = next((index for index, spec in enumerate(candidates) if spec.name == "mobilenetv3_lstm"), 0)
     selected_name = st.selectbox(
         "Detector", [spec.name for spec in candidates], index=default_index,

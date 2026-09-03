@@ -26,6 +26,33 @@ def torch_artifacts(name: str) -> tuple[Path, Path, Path]:
     return directory / "model.pt", directory / "threshold.json", directory / "metadata.json"
 
 
+def mobilenet_artifacts() -> tuple[Path, Path, Path]:
+    """Resolve MobileNet's backward-compatible or canonical artifact bundle.
+
+    A bundle is selected atomically: paths are never mixed between layouts.
+    Existing local training keeps the legacy contract, while a deployment may
+    provide the canonical per-detector directory or explicit environment paths.
+    """
+    explicit_values = (
+        os.getenv("LAVA_MOBILENET_MODEL_PATH"),
+        os.getenv("LAVA_MOBILENET_THRESHOLD_PATH"),
+        os.getenv("LAVA_MOBILENET_METADATA_PATH"),
+    )
+    candidates: list[tuple[Path, Path, Path]] = []
+    if all(explicit_values):
+        candidates.append(tuple(Path(value) for value in explicit_values))  # type: ignore[arg-type]
+    legacy = (
+        Path(config.MODEL_PATH), Path(config.THRESHOLD_PATH), Path(config.MODEL_METADATA_PATH)
+    )
+    canonical = tensorflow_artifacts("mobilenetv3_lstm")
+    candidates.extend((legacy, canonical))
+    for bundle in candidates:
+        if all(path.is_file() for path in bundle):
+            return bundle
+    # Training remains backward compatible when neither complete bundle exists.
+    return legacy
+
+
 def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -48,7 +75,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def save_threshold(spec: DetectorSpec, threshold: float, *, source: str = "validation") -> None:
     if not 0.0 <= threshold <= 1.0:
         raise ValueError("threshold must be in [0, 1]")
-    if spec.name == "mobilenetv3_lstm":
+    if spec.threshold_artifact.suffix.lower() == ".txt":
         temporary = Path(str(spec.threshold_artifact) + ".tmp")
         temporary.parent.mkdir(parents=True, exist_ok=True)
         temporary.write_text(f"{threshold:.8f}\n", encoding="utf-8")
@@ -61,7 +88,7 @@ def load_threshold(spec: DetectorSpec) -> float:
     path = spec.threshold_artifact
     if not path.is_file():
         raise ArtifactNotReadyError(f"Threshold not found for {spec.name}. Train the detector first: python train.py --model {spec.name}")
-    if spec.name == "mobilenetv3_lstm":
+    if path.suffix.lower() == ".txt":
         try:
             value = float(path.read_text(encoding="utf-8").strip())
         except (OSError, ValueError) as exc:
@@ -81,3 +108,27 @@ def artifact_readiness(spec: DetectorSpec) -> tuple[bool, list[str]]:
     ]
     return not missing, missing
 
+
+def artifact_diagnostics(spec: DetectorSpec) -> list[str]:
+    """Return actionable deployment diagnostics without loading a framework."""
+    ready, missing = artifact_readiness(spec)
+    if not ready:
+        return [f"missing: {path}" for path in missing]
+    issues: list[str] = []
+    try:
+        prefix = spec.model_artifact.read_bytes()[:160]
+        if prefix.startswith(b"version https://git-lfs.github.com/spec/v1"):
+            issues.append(f"model is a Git LFS pointer, not model bytes: {spec.model_artifact}")
+        elif spec.model_artifact.stat().st_size == 0:
+            issues.append(f"model file is empty: {spec.model_artifact}")
+    except OSError as exc:
+        issues.append(f"model is unreadable: {exc}")
+    try:
+        load_threshold(spec)
+    except (ArtifactNotReadyError, TypeError, ValueError) as exc:
+        issues.append(str(exc))
+    try:
+        load_json(spec.metadata_artifact)
+    except ArtifactNotReadyError as exc:
+        issues.append(str(exc))
+    return issues
