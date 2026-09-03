@@ -1,4 +1,4 @@
-"""Responsive artifact-gated dashboard for trained LAVA detectors."""
+﻿"""Responsive artifact-gated dashboard for trained LAVA detectors."""
 
 from __future__ import annotations
 
