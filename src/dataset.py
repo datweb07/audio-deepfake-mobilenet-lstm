@@ -113,7 +113,10 @@ def create_tf_dataset(
     dataset = tf.data.Dataset.from_tensor_slices((list(file_paths), list(labels)))
     if training:
         dataset = dataset.shuffle(
-            min(len(file_paths), config.SHUFFLE_BUFFER_SIZE),
+            # Manifest rows may be grouped by label. A bounded prefix buffer
+            # creates long single-class runs, biasing optimization and BN state.
+            # Shuffle all path/label records BEFORE feature decoding (not tensors).
+            len(file_paths),
             seed=config.RANDOM_SEED,
             reshuffle_each_iteration=True,
         )
