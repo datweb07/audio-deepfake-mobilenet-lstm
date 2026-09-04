@@ -8,10 +8,28 @@ import numpy as np
 import tensorflow as tf
 
 import config
-from src.lava.models.tensorflow.shufflenetv2_lstm import ChannelShuffle, build_backbone, build_model
+from src.lava.models.tensorflow.shufflenetv2_lstm import ChannelSplit, ChannelShuffle, build_backbone, build_model
 
 
 class ShuffleNetShapesTest(unittest.TestCase):
+    def tearDown(self):
+        tf.keras.backend.clear_session()
+
+    def test_channel_split_symbolic_and_serialization(self) -> None:
+        inputs = tf.keras.Input((2, 2, 116))
+        outputs = ChannelSplit(name="split")(inputs)
+        model = tf.keras.Model(inputs, outputs)
+        value = tf.reshape(tf.range(2 * 2 * 116, dtype=tf.float32), (1, 2, 2, 116))
+        expected = tf.split(value, 2, axis=-1)
+        for a, b in zip(model(value), expected):
+            np.testing.assert_array_equal(a.numpy(), b.numpy())
+        self.assertEqual(model.count_params(), 0)
+        clone = tf.keras.models.clone_model(model)
+        for a, b in zip(clone(value), expected):
+            np.testing.assert_array_equal(a.numpy(), b.numpy())
+        with self.assertRaises(ValueError):
+            ChannelSplit().compute_output_shape((None, 2, 2, 115))
+
     def test_channel_shuffle_permutation(self) -> None:
         value = tf.reshape(tf.range(4, dtype=tf.float32), (1, 1, 1, 4))
         shuffled = ChannelShuffle(2)(value).numpy().reshape(-1)

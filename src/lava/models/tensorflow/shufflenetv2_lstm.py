@@ -11,6 +11,21 @@ from src.lava.models.tensorflow.temporal_classifier import build_temporal_classi
 
 
 @tf.keras.utils.register_keras_serializable(package="LAVA")
+class ChannelSplit(tf.keras.layers.Layer):
+    """Equal channel split inside a Layer, valid for Keras 2 and 3 graphs."""
+
+    def call(self, inputs: tf.Tensor):
+        return tuple(tf.split(inputs, num_or_size_splits=2, axis=-1))
+
+    def compute_output_shape(self, input_shape):
+        shape = list(input_shape)
+        if shape[-1] is None or shape[-1] % 2:
+            raise ValueError("ChannelSplit requires a known even channel count")
+        shape[-1] //= 2
+        return (tuple(shape), tuple(shape))
+
+
+@tf.keras.utils.register_keras_serializable(package="LAVA")
 class ChannelShuffle(tf.keras.layers.Layer):
     def __init__(self, groups: int = 2, **kwargs):
         super().__init__(**kwargs)
@@ -24,6 +39,10 @@ class ChannelShuffle(tf.keras.layers.Layer):
         output = tf.reshape(inputs, [batch, height, width, self.groups, channels_per_group])
         output = tf.transpose(output, [0, 1, 2, 4, 3])
         return tf.reshape(output, [batch, height, width, channels])
+
+    def compute_output_shape(self, input_shape):
+        # Keras 3 TimeDistributed asks nested layers for symbolic output shapes.
+        return tuple(input_shape)
 
     def get_config(self) -> dict[str, int]:
         return {**super().get_config(), "groups": self.groups}
@@ -50,7 +69,7 @@ def shuffle_unit(x: tf.Tensor, out_channels: int, stride: int, name: str) -> tf.
     if stride == 1:
         if input_channels != out_channels or input_channels is None or int(input_channels) % 2:
             raise ValueError("Stride-1 ShuffleNet unit requires even input_channels == out_channels")
-        branch1, branch2 = tf.split(x, num_or_size_splits=2, axis=-1, name=f"{name}_split")
+        branch1, branch2 = ChannelSplit(name=f"{name}_split")(x)
         branch2 = _pointwise(branch2, branch_channels, f"{name}_b2_pw1")
         branch2 = _depthwise(branch2, 1, f"{name}_b2")
         branch2 = _pointwise(branch2, branch_channels, f"{name}_b2_pw2")
