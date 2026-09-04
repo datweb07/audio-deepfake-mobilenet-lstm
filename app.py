@@ -21,6 +21,7 @@ from audio_recorder_streamlit import audio_recorder
 import config
 from src.lava.artifacts import artifact_diagnostics, load_threshold
 from src.lava.registry import create, get_spec, specs
+from src.lava.benchmark_display import benchmark_card
 from src.lava.score_semantics import classify_probability
 from src.lava.decision_display import SCORE_NOTICE, decision_explanation, threshold_description
 from src.lava.preprocessing.microphone import (
@@ -245,6 +246,14 @@ def render_sidebar(candidates):
         f'Input: {html.escape(selected_spec.input_type)}<br>Score contract: P(FAKE)</div>',
         unsafe_allow_html=True,
     )
+    measured = benchmark_card(selected_spec)
+    if measured is not None:
+        with st.sidebar.expander("LAVA-5 measured benchmark", expanded=False):
+            st.caption(f"Canonical test: {measured['TestSamples']} samples. {measured['Provenance']}.")
+            st.write(f"F1: {float(measured['CleanF1']):.4f} | AUC: {float(measured['AUC']):.4f} | EER: {float(measured['EER']):.4f}")
+            if measured.get("LatencyMeanMs") and measured.get("RTF"):
+                st.write(f"Benchmark CPU latency: {float(measured['LatencyMeanMs']):.1f} ms | RTF: {float(measured['RTF']):.3f}")
+            st.caption("Measured on the benchmark machine, not this browser/server. Training provenance differs between models.")
     st.sidebar.markdown('<div class="sidebar-label">Authors</div>', unsafe_allow_html=True)
     st.sidebar.markdown(
         '<ul class="author-list">'

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Iterable, Mapping
+import math
 
 
 def pareto_frontier(
@@ -17,7 +18,8 @@ def pareto_frontier(
         for key in objectives:
             if key not in row or row[key] in (None, "", "NOT_RUN"):
                 raise ValueError("Pareto analysis unavailable: incomplete selected objectives.")
-            float(row[key])
+            if not math.isfinite(float(row[key])):
+                raise ValueError("Pareto analysis unavailable: non-finite selected objectives.")
 
     frontier = []
     for candidate in candidates:
@@ -41,4 +43,3 @@ def pareto_frontier(
         if not dominated:
             frontier.append(candidate)
     return frontier
-

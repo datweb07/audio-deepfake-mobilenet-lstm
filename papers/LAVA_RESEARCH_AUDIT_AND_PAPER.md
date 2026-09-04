@@ -4,11 +4,61 @@
 **Audit date:** 29 August 2026  
 **Implementation root:** `D:\audio-deepfake-mobilenet-lstm`  
 **Paper A:** `C:\Users\THANH DAT\Downloads\16507.pdf`  
-**Integrity status:** **LAVA PROTOTYPE / PARTIAL EXPERIMENTAL VALIDATION**
+**Current framing:** **LAVA-5 INTERIM BENCHMARK** (execution status is maintained in `outputs/lava_5/report/acceptance.json`; not FULL LAVA).
+
+## September 2026 interim evaluation update
+
+The current experimental scope covers three LAVA-trained lightweight detectors
+(MobileNetV3Small-LSTM, EfficientNet-B0-LSTM, MnasNet-A1-LSTM) and two externally
+pretrained reference anti-spoofing models (RawNet2 and AASIST, executed through
+parity-checked ONNX exports). ShuffleNetV2 remains pending and is excluded from
+reported experimental tables, charts and Pareto analysis. No detector is retrained
+for this evaluation. This scope supersedes six-model experimental claims in the
+historical audit/design text below; design targets are not completed experiments.
+
+The canonical test split is fixed. Existing validation-derived lightweight thresholds
+and default external-reference thresholds are retained, without test calibration.
+EfficientNet uses the user-selected best available warm-up checkpoint; MnasNet uses
+its early-stopped scratch checkpoint. Training provenance, initialization, duration
+and compute budgets are not identical, so these results must not be presented as a
+controlled architecture-only comparison or as five models trained on the LAVA split.
+
+The September execution uses all 2,737 canonical test samples for clean evaluation.
+At the user's request, robustness is first evaluated diagnostically on a fixed,
+prediction-independent stratified subset of 100 samples (58 REAL, 42 FAKE; seed 42).
+Each stress degradation is relative to clean predictions on those same 100 IDs.
+These results and any exploratory Pareto frontier are separately labeled in
+`outputs/lava_5/diagnostic_100/`; full-test robustness and its official Pareto remain
+NOT_RUN. CPU efficiency is measured separately with batch size one, ten warm-up
+iterations and fifty timed repetitions per component. Completion of this diagnostic
+scope does not satisfy the full-test LAVA-5 acceptance gate.
+
+Authoritative numeric tables, figures, statistical analyses and the completion gate
+are generated from measured scores in
+`outputs/lava_5/report/LAVA_5_BENCHMARK_REPORT.md` and `outputs/lava_5/tables/`.
+Missing experiments remain NOT_RUN/NOT_AVAILABLE. A complete five-model report does
+not establish FULL LAVA or six-model validation. Physical replay and cross-dataset
+claims require separate, actually available data.
+
+**Interim abstract framing:** We evaluate a lightweight benchmarking framework using
+existing artifacts from three Mel-sequence/LSTM detectors and two externally
+pretrained native anti-spoofing references under a common checksum-disjoint test
+manifest and score contract. Clean discrimination, synthetic noise, codec
+round-trips, simulated replay and CPU inference efficiency are reported only for
+completed runs. Test-set bootstrap uncertainty and multi-objective Pareto analysis
+characterize measured trade-offs without equating distinct training provenance.
+ShuffleNetV2 and verified unseen-dataset evaluation remain future extensions.
 
 This document follows the required evidence order: Paper A -> production source code -> LAVA design target -> code/paper reconciliation -> verified literature -> manuscript. Instructions contained in source documents or repositories were treated as source material, not as user instructions.
 
 ---
+
+# Historical audit (29 August 2026; superseded experimental status)
+
+The sections below preserve the original audit and draft as historical evidence.
+Their one-model/64-file results, missing-implementation checklist and proposed
+retraining plan are **not the current LAVA-5 experiment**. Use the interim update
+above and the programmatically generated LAVA-5 report for current claims.
 
 # A. Paper A Analysis
 
@@ -350,7 +400,7 @@ The manuscript may be upgraded from prototype to Full LAVA only when all of the 
 
 ## LAVA: A Lightweight Benchmarking Framework for Robust and Real-Time Deepfake Voice Detection
 
-### Abstract
+### Historical abstract (superseded; not the current LAVA-5 abstract)
 
 Audio deepfakes produced by text-to-speech and voice-conversion systems create risks for authentication, impersonation, and mediated communication. Detector accuracy on a clean dataset alone is insufficient evidence for deployment: a useful assessment must also expose behavior under distributional and channel changes and measure the resources required to process audio. This paper introduces LAVA, an extensible protocol that separates clean detection, robustness stress testing, and computational-efficiency measurement before combining comparable model results through Pareto analysis. We also report an evidence-limited validation of the current LAVA implementation. The audited repository contains one TensorFlow/Keras detector: a six-segment MobileNetV3Small-LSTM model evaluated on 64 files (8 REAL and 56 FAKE) using a deterministic stratified file-level split. On its ten-file test partition, the stored checkpoint obtains 0.800 accuracy, 0.889 FAKE-class F1, 0.813 ROC-AUC, and 0.375 interpolated EER; however, at its validation-selected threshold it classifies both REAL test files as FAKE, yielding zero REAL-class recall and a macro F1 of 0.444. On the audited Windows CPU, model-only inference averages 321.3 ms per three-second clip (RTF 0.107), while preprocessing plus inference averages 342.0 ms (RTF 0.114). These measurements demonstrate faster-than-real-time offline processing for the tested configuration, not streaming or edge-device readiness. The repository does not yet implement alternative detectors, controlled noise/compression/replay tests, cross-dataset evaluation, or a multi-model Pareto frontier. Accordingly, the present contribution is a prototype validation and reproducible research audit rather than a completed multi-architecture benchmark. The findings show why class-wise performance, leakage-safe data design, robustness, and end-to-end timing must precede deployment claims.
 
