@@ -1,0 +1,7 @@
+{
+  "manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "metric": "FAKE-class F1",
+  "samples": 2733,
+  "source": "validation",
+  "threshold": 0.8999999999999996
+}

@@ -68,3 +68,7 @@ ShuffleNetV2/
 rawnet2-antispoofing-main/
 aasist-main/
 2021-main/
+efficientnet_b0_warmup_checkpoint/
+/best_threshold.txt
+/model_metadata.json
+/lava_kaggle_input_clean.zip

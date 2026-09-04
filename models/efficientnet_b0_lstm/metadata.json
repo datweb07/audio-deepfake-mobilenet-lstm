@@ -1,0 +1,98 @@
+{
+  "architecture": "6 chronological Mel images -> TimeDistributed(EfficientNetB0) -> LSTM(128) -> Dense(64,relu) -> Dropout(0.4) -> sigmoid",
+  "calibration_samples": 2733,
+  "conversion": {
+    "converted_scores": [
+      0.0337894931435585,
+      0.058611903339624405,
+      0.9974768757820129,
+      0.9988929629325867,
+      0.48397013545036316,
+      0.07662646472454071
+    ],
+    "converted_sha256": "853a428ad0280faa644aaad0b4d3d6e25d9130b70b4167dfed9a7193a1b053f2",
+    "embedding_max_abs_difference": 1.4781951904296875e-05,
+    "input_shape": [
+      null,
+      6,
+      224,
+      224,
+      3
+    ],
+    "output_shape": [
+      null,
+      1
+    ],
+    "parameter_count": 4779300,
+    "parity_samples": 6,
+    "save_reload_max_abs_difference": 0.0,
+    "score_max_abs_difference": 2.682209014892578e-07,
+    "source_keras": "3.13.2",
+    "source_scores": [
+      0.033789630979299545,
+      0.05861174315214157,
+      0.9974768757820129,
+      0.9988929629325867,
+      0.48396986722946167,
+      0.07662627100944519
+    ],
+    "source_sha256": "6f3a47593235f625e79f34d583bc2eeae0bcd2135829cbba6ae5c9975cebc615",
+    "status": "PASS",
+    "target_tensorflow": "2.15.0",
+    "weight_layers": 134
+  },
+  "detector_name": "efficientnet_b0_lstm",
+  "display_name": "EfficientNet-B0-LSTM",
+  "inference": {
+    "default_batch_size": 1,
+    "calibration_batch_size": 1,
+    "training": false,
+    "precision": "float32"
+  },
+  "final_threshold": 0.8999999999999996,
+  "framework": "tensorflow",
+  "framework_version": "2.15.0",
+  "group": "lightweight",
+  "initialization": "imagenet_pretrained",
+  "input_contract": {
+    "audio_duration": 3.0,
+    "input_scale": [
+      0,
+      255
+    ],
+    "sample_rate": 22050,
+    "shape": [
+      6,
+      224,
+      224,
+      3
+    ]
+  },
+  "label_mapping": {
+    "FAKE": 1,
+    "REAL": 0
+  },
+  "limitations": [
+    "Fine-tune final model unavailable; this is a warm-up-only deployment",
+    "Kaggle preprocessing parity cannot be independently established from checkpoint alone",
+    "Supplied root metadata/threshold belong to MobileNet and were not reused"
+  ],
+  "load_smoke_test": "PASS",
+  "parameter_count": 4779300,
+  "pretraining_status": "VERIFIED_IMAGENET",
+  "score_semantics": "sigmoid output = P(FAKE)",
+  "selection": {
+    "best_epoch": 47,
+    "best_value": 0.1698165237903595,
+    "deployment_choice": "user_selected_best_available_warmup",
+    "global_selection_finalized": false,
+    "monitor": "val_loss",
+    "stage": "warmup",
+    "test_used": false
+  },
+  "serialized_size": 19886234,
+  "threshold_source": "validation FAKE-class F1",
+  "threshold_validation_f1": 0.9583694709453601,
+  "training_manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "training_seed": 42
+}
