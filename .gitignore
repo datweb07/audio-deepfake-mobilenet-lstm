@@ -72,3 +72,4 @@ efficientnet_b0_warmup_checkpoint/
 /best_threshold.txt
 /model_metadata.json
 /lava_kaggle_input_clean.zip
+mnasnet_lstm_deployment/
