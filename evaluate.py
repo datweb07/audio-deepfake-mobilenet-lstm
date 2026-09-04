@@ -16,6 +16,7 @@ from sklearn.metrics import (
 )
 
 import config
+from src.lava.decision_display import threshold_description
 from src.lava.data.loader import load_split
 from src.lava.artifacts import load_threshold
 from src.lava.registry import create, get_spec, names
@@ -68,7 +69,8 @@ def evaluate_detector(model_name: str = "mobilenetv3_lstm", *, limit: int | None
 def main(model_name: str = "mobilenetv3_lstm", *, limit: int | None = None) -> None:
     result = evaluate_detector(model_name, limit=limit)
     print(f"Model:      {result['model']} ({result['framework']})")
-    print(f"Threshold:  {result['threshold']:.4f} (validation calibrated)")
+    print(f"Threshold:  {result['threshold']:.4f}")
+    print(threshold_description(get_spec(model_name)))
     print(f"Samples:    {result['samples']}")
     for label, key in (
         ("Accuracy", "accuracy"), ("Precision", "precision"), ("Recall", "recall"),

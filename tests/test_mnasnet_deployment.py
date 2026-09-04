@@ -80,10 +80,9 @@ class MnasNetConversionTest(unittest.TestCase):
                     page.run(timeout=120)
                 self.assertEqual(list(page.exception), [])
                 self.assertEqual(list(page.error), [])
-                self.assertTrue(any(m.label == "P(FAKE)" for m in page.metric))
+                self.assertTrue(any(m.label == "Raw FAKE score" for m in page.metric))
 
 
 if __name__ == "__main__":
     unittest.main()
-
 

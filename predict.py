@@ -8,6 +8,7 @@ import os
 from src.lava.score_semantics import classify_probability
 from src.lava.artifacts import load_threshold
 from src.lava.registry import create, get_spec, names
+from src.lava.decision_display import SCORE_NOTICE, decision_explanation, threshold_description
 
 
 def main(audio_path: str, model_name: str = "mobilenetv3_lstm") -> None:
@@ -23,9 +24,11 @@ def main(audio_path: str, model_name: str = "mobilenetv3_lstm") -> None:
     print(f"Framework: {spec.framework}")
     print(f"File: {os.path.basename(audio_path)}")
     print(f"Prediction: {result.prediction}")
-    print(f"Confidence: {result.confidence * 100:.2f}%")
     print(f"Raw P(FAKE): {result.probability_fake:.4f}")
     print(f"Threshold: {result.threshold:.4f}")
+    print(decision_explanation(result))
+    print(threshold_description(spec))
+    print(SCORE_NOTICE)
 
 
 if __name__ == "__main__":

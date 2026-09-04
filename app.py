@@ -19,6 +19,7 @@ import config
 from src.lava.artifacts import artifact_diagnostics, load_threshold
 from src.lava.registry import create, get_spec, specs
 from src.lava.score_semantics import classify_probability
+from src.lava.decision_display import SCORE_NOTICE, decision_explanation, threshold_description
 from src.lava.preprocessing.microphone import (
     MicrophoneQualityError,
     prepare_microphone_recording,
@@ -134,14 +135,19 @@ def render_segment_profile(segments: np.ndarray) -> None:
 
 
 def render_probability(probability_fake: float, threshold: float) -> None:
-    probabilities = [1.0 - probability_fake, probability_fake]
     figure, axis = plt.subplots(figsize=(8, 3.1), facecolor="#f5f9ff")
-    bars = axis.barh(["REAL", "FAKE"], probabilities, color=["#14b8a6", "#f04452"], height=0.45)
-    axis.axvline(threshold, color="#f59e0b", linestyle="--", linewidth=1.5, label="Decision threshold")
-    axis.set(xlabel="Probability", xlim=(0, 1), title="Decision distribution")
-    for bar, value in zip(bars, probabilities):
-        axis.text(min(value + 0.02, 0.94), bar.get_y() + bar.get_height() / 2, f"{value:.3f}", va="center")
-    axis.legend(frameon=False, fontsize=8, loc="lower right")
+    axis.axvspan(0, threshold, color="#14b8a6", alpha=0.12, label="REAL: score < threshold")
+    axis.axvspan(threshold, 1, color="#f04452", alpha=0.12, label="FAKE: score >= threshold")
+    axis.axvline(threshold, color="#d97706", linestyle="--", linewidth=1.5,
+                 label=f"Threshold {threshold:.4f}")
+    axis.scatter([probability_fake], [0.5], color="#2563eb", s=100, zorder=4, clip_on=False)
+    axis.annotate(f"Raw score {probability_fake:.4f}", (probability_fake, 0.5),
+                  xytext=(0, 18), textcoords="offset points",
+                  ha="left" if probability_fake < 0.15 else "right" if probability_fake > 0.85 else "center",
+                  color="#1d4ed8", fontsize=10)
+    axis.set(xlabel="Raw FAKE score (not calibrated confidence)", xlim=(0, 1),
+             ylim=(0, 1), yticks=[], title="Score against decision threshold")
+    axis.legend(frameon=False, fontsize=8, loc="upper left", bbox_to_anchor=(0, -0.25))
     configure_plot(axis)
     figure.tight_layout()
     st.pyplot(figure, use_container_width=True)
@@ -316,17 +322,15 @@ def main() -> None:
         f'<div class="result-model">{html.escape(selected_spec.display_name)}<br>'
         f'{html.escape(audio_name)}</div></div>', unsafe_allow_html=True,
     )
-    first, second, third, fourth = st.columns(4)
-    first.metric("Confidence", f"{result.confidence * 100:.2f}%")
-    second.metric("P(FAKE)", f"{result.probability_fake:.4f}")
-    third.metric("Threshold", f"{result.threshold:.4f}")
-    fourth.metric("Model input", f"{selected_spec.audio_duration:.1f} s")
+    first, second, third = st.columns(3)
+    first.metric("Raw FAKE score", f"{result.probability_fake:.4f}", help=SCORE_NOTICE)
+    second.metric("Decision threshold", f"{result.threshold:.4f}")
+    third.metric("Model input", f"{selected_spec.audio_duration:.1f} s")
+    st.caption(decision_explanation(result))
 
     st.markdown('<h2 class="section-heading">Decision dashboard</h2>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="section-copy">The threshold is calibrated per detector; ROC-oriented analysis '
-        'should always use the raw P(FAKE) score.</p>', unsafe_allow_html=True,
-    )
+    st.caption(threshold_description(selected_spec))
+    st.caption(SCORE_NOTICE)
     render_probability(result.probability_fake, result.threshold)
 
     if show_analysis:
