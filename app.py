@@ -5,15 +5,18 @@ from __future__ import annotations
 import html
 import os
 import tempfile
+import io
+import base64
 from pathlib import Path
 
 import matplotlib
-
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+
 import streamlit as st
-from streamlit_mic_recorder import mic_recorder
+import streamlit.components.v1 as components
+from audio_recorder_streamlit import audio_recorder
 
 import config
 from src.lava.artifacts import artifact_diagnostics, load_threshold
@@ -32,11 +35,9 @@ SHOW_DETECTOR_DIAGNOSTICS = os.getenv("LAVA_SHOW_DETECTOR_DIAGNOSTICS", "0").str
     "1", "true", "yes", "on",
 }
 
-
 def inject_styles() -> None:
     stylesheet = Path(__file__).resolve().parent / "assets" / "app.css"
     st.markdown(f"<style>{stylesheet.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
-
 
 def load_detector(model_name: str):
     """Keep one runtime resident to stay within Community Cloud memory limits."""
@@ -48,7 +49,6 @@ def load_detector(model_name: str):
     threshold = load_threshold(detector.spec)
     st.session_state["_lava_loaded_detector"] = (model_name, detector, threshold)
     return detector, threshold
-
 
 def available_specs():
     available, rejected = [], {}
@@ -63,7 +63,6 @@ def available_specs():
             print(f"[LAVA artifact probe] {name}: {'; '.join(reasons)}")
     return available, rejected
 
-
 def configure_plot(axis) -> None:
     axis.set_facecolor("#f5f9ff")
     axis.grid(axis="y", color="#dbeafe", linewidth=0.7)
@@ -74,6 +73,83 @@ def configure_plot(axis) -> None:
     axis.yaxis.label.set_color("#1d4ed8")
     axis.title.set_color("#172554")
 
+def render_interactive_plot(figure, height=320) -> None:
+    """Chuyển đổi Matplotlib figure sang ảnh tương tác toàn màn hình (bứt phá iframe)"""
+    buf = io.BytesIO()
+    figure.savefig(buf, format="png", bbox_inches='tight', facecolor=figure.get_facecolor(), transparent=False)
+    buf.seek(0)
+    img_b64 = base64.b64encode(buf.read()).decode("utf-8")
+    
+    html_code = f"""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.3/viewer.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.3/viewer.min.js"></script>
+    <style>
+        body {{ margin: 0; overflow: hidden; background-color: transparent; }}
+        #img-container {{ width: 100%; height: {height}px; display: flex; justify-content: center; align-items: center; }}
+        img {{ max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; border-radius: 4px; }}
+    </style>
+    
+    <div id="img-container">
+        <img id="interactive-img" src="data:image/png;base64,{img_b64}" alt="LAVA Signal Analysis">
+    </div>
+    
+    <script>
+        const img = document.getElementById('interactive-img');
+        const frame = window.frameElement; 
+        
+        let origStyles = {{}};
+        if (frame) {{
+            origStyles = {{
+                position: frame.style.position,
+                zIndex: frame.style.zIndex,
+                top: frame.style.top,
+                left: frame.style.left,
+                width: frame.style.width,
+                height: frame.style.height,
+            }};
+        }}
+
+        const viewer = new Viewer(img, {{
+            inline: false,
+            button: true,
+            navbar: false,
+            title: false,
+            tooltip: true,
+            movable: true,
+            rotatable: true,
+            scalable: true,
+            zoomable: true,
+            transition: false,
+            toolbar: {{
+                zoomIn: 1, zoomOut: 1, oneToOne: 1, reset: 1, 
+                rotateLeft: 1, rotateRight: 1, flipHorizontal: 1, flipVertical: 1
+            }},
+        }});
+
+        img.addEventListener('show', function () {{
+            if (frame) {{
+                frame.style.position = 'fixed';
+                frame.style.zIndex = '99999999'; 
+                frame.style.top = '0';
+                frame.style.left = '0';
+                frame.style.width = '100vw';
+                frame.style.height = '100vh';
+            }}
+        }});
+
+        img.addEventListener('hidden', function () {{
+            if (frame) {{
+                frame.style.position = origStyles.position;
+                frame.style.zIndex = origStyles.zIndex;
+                frame.style.top = origStyles.top;
+                frame.style.left = origStyles.left;
+                frame.style.width = origStyles.width;
+                frame.style.height = origStyles.height;
+            }}
+        }});
+    </script>
+    """
+    components.html(html_code, height=height)
 
 def render_pipeline(input_type: str) -> None:
     source = "Waveform 16 kHz" if input_type == "waveform" else "Audio 22.05 kHz"
@@ -87,7 +163,6 @@ def render_pipeline(input_type: str) -> None:
             pieces.append('<div class="pipeline-arrow">&#8594;</div>')
     st.markdown(f'<div class="pipeline">{"".join(pieces)}</div>', unsafe_allow_html=True)
 
-
 def render_waveform(audio: np.ndarray) -> None:
     figure, axis = plt.subplots(figsize=(8, 3.1), facecolor="#f5f9ff")
     timeline = np.arange(audio.size, dtype=np.float32) / config.SAMPLE_RATE
@@ -96,9 +171,8 @@ def render_waveform(audio: np.ndarray) -> None:
     axis.set(xlabel="Time (s)", ylabel="Amplitude", title="Waveform", xlim=(0, config.AUDIO_DURATION))
     configure_plot(axis)
     figure.tight_layout()
-    st.pyplot(figure, use_container_width=True)
+    render_interactive_plot(figure)
     plt.close(figure)
-
 
 def render_full_mel(segments: np.ndarray) -> None:
     mel_db = np.concatenate([create_mel_spectrogram_db(segment) for segment in segments], axis=1)
@@ -112,9 +186,8 @@ def render_full_mel(segments: np.ndarray) -> None:
     colorbar = figure.colorbar(image, ax=axis, format="%+2.0f dB", pad=0.02)
     colorbar.ax.tick_params(colors="#334155", labelsize=8)
     figure.tight_layout()
-    st.pyplot(figure, use_container_width=True)
+    render_interactive_plot(figure)
     plt.close(figure)
-
 
 def render_segment_profile(segments: np.ndarray) -> None:
     rms = np.sqrt(np.mean(np.square(segments), axis=1))
@@ -130,9 +203,8 @@ def render_segment_profile(segments: np.ndarray) -> None:
     axis.legend(frameon=False, fontsize=8)
     configure_plot(axis)
     figure.tight_layout()
-    st.pyplot(figure, use_container_width=True)
+    render_interactive_plot(figure)
     plt.close(figure)
-
 
 def render_probability(probability_fake: float, threshold: float) -> None:
     figure, axis = plt.subplots(figsize=(8, 3.1), facecolor="#f5f9ff")
@@ -150,9 +222,8 @@ def render_probability(probability_fake: float, threshold: float) -> None:
     axis.legend(frameon=False, fontsize=8, loc="upper left", bbox_to_anchor=(0, -0.25))
     configure_plot(axis)
     figure.tight_layout()
-    st.pyplot(figure, use_container_width=True)
+    render_interactive_plot(figure)
     plt.close(figure)
-
 
 def render_sidebar(candidates):
     st.sidebar.markdown('<div class="lava-wordmark">LAVA</div>', unsafe_allow_html=True)
@@ -186,7 +257,6 @@ def render_sidebar(candidates):
         unsafe_allow_html=True,
     )
     return selected_name, selected_spec, show_analysis, compact
-
 
 def main() -> None:
     inject_styles()
@@ -223,11 +293,14 @@ def main() -> None:
     )
     render_pipeline(selected_spec.input_type)
 
-    st.markdown('<h2 class="section-heading">Audio input</h2>', unsafe_allow_html=True)
     st.markdown(
-        f'<p class="section-copy">Active detector: {html.escape(selected_spec.display_name)}</p>',
+        f'<div style="display: flex; align-items: baseline; justify-content: space-between; margin: 2.7rem 0 1rem 0;">'
+        f'<h2 class="section-heading" style="margin: 0;">Audio input</h2>'
+        f'<span class="section-copy" style="margin: 0;">Active detector: {html.escape(selected_spec.display_name)}</span>'
+        f'</div>',
         unsafe_allow_html=True,
     )
+
     input_method = st.radio(
         "Input method",
         ("Upload file", "Record microphone"),
@@ -250,23 +323,27 @@ def main() -> None:
             audio_format = uploaded.type or "audio/wav"
     else:
         st.markdown(
-            '<div class="panel"><strong>Microphone capture</strong><br>'
-            'Speak one continuous sentence for 3–5 seconds. Use a quiet room, keep a stable '
-            'distance from the microphone and stop the recording after speaking. The capture '
-            'must pass quality checks before inference.</div>',
+            '<div class="panel" style="text-align: center;">'
+            '<strong>Microphone capture</strong><br>'
+            '<span style="color: var(--muted); font-size: 0.9rem;">'
+            'Speak one continuous sentence for 3–5 seconds. Use a quiet room, keep a stable distance from the microphone and stop the recording after speaking. The capture must pass quality checks before inference.</span></div>',
             unsafe_allow_html=True,
         )
-        recording = mic_recorder(
-            start_prompt="Start recording",
-            stop_prompt="Stop recording",
-            just_once=False,
-            use_container_width=True,
-            format="wav",
-            key="lava_microphone_recorder",
+        
+        st.markdown('<div style="display: flex; justify-content: center; margin: 2.5rem 0;">', unsafe_allow_html=True)
+        raw_audio_bytes = audio_recorder(
+            text="",  
+            recording_color="#f04452", 
+            neutral_color="#14b8a6",   
+            icon_name="microphone",
+            icon_size="3x",
+            key="lava_microphone_recorder"
         )
-        if recording and recording.get("bytes"):
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if raw_audio_bytes:
             try:
-                prepared = prepare_microphone_recording(recording["bytes"])
+                prepared = prepare_microphone_recording(raw_audio_bytes)
             except MicrophoneQualityError as exc:
                 st.warning(str(exc))
                 return
@@ -371,7 +448,6 @@ def main() -> None:
         'or intent.</div>',
         unsafe_allow_html=True,
     )
-
 
 if __name__ == "__main__":
     main()

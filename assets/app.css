@@ -40,6 +40,7 @@
   border-bottom: 1px solid #eeeeef;
 }
 
+/* Sidebar Toggle Minimalist */
 [data-testid="collapsedControl"] {
   width: 40px !important;
   height: 36px !important;
@@ -294,6 +295,30 @@
   line-height: 1.5;
 }
 
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] p {
+  color: var(--ink) !important;
+}
+
+/* Ẩn nút Fullscreen mặc định của Streamlit */
+[data-testid="StyledFullScreenButton"] {
+  display: none !important;
+}
+
+/* Tối ưu hiển thị cho Audio Recorder Component */
+/* Tối ưu hiển thị và ép căn giữa Micro tĩnh tuyệt đối trên mọi thiết bị */
+iframe[title="audio_recorder_streamlit.audio_recorder"] {
+  border: none !important;
+  background: transparent !important;
+  height: 70px !important;
+  /* Bo khít chiều cao */
+  width: 70px !important;
+  /* Bo khít chiều rộng đúng bằng icon */
+  display: block !important;
+  margin: 1.5rem auto !important;
+  /* Căn giữa tự động hoàn hảo */
+}
+
 @media (max-width:768px) {
   .block-container {
     padding: 1.6rem 1rem 2.5rem;
@@ -349,9 +374,4 @@
   [data-testid="stMetric"] {
     min-height: 94px;
   }
-}
-
-[data-testid="stRadio"] label,
-[data-testid="stRadio"] p {
-  color: var(--ink) !important;
 }
