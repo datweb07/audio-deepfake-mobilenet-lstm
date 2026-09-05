@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "figures": 10,
+  "tables": 6,
+  "citations": 8,
+  "clean_models": 5,
+  "diagnostic_conditions": 45,
+  "full_test_robustness": "NOT_RUN",
+  "shuffle_excluded": true,
+  "latex_compilation": "NOT_AVAILABLE_ON_HOST"
+}

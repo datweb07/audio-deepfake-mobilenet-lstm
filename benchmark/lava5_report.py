@@ -66,7 +66,7 @@ def save(fig, path):
     fig.tight_layout()
     if _DIAGNOSTIC:
         fig.text(.5, -.01, "DIAGNOSTIC SUBSET - NOT FULL TEST ROBUSTNESS", ha="center", fontsize=9, color="#B3261E")
-    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor="white")
+    fig.savefig(path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
 
 
@@ -142,7 +142,8 @@ def statistics(output, clean, canonical, iterations=1000):
     directory = output / "error_analysis"
     key = {n: r["summary"]["scores_sha256"] for n, r in clean.items()}
     stamp = directory / "statistics_state.json"
-    if stamp.exists() and json.loads(stamp.read_text()) == dict(scores=key, iterations=iterations, method_version=2):
+    state = dict(scores=key, iterations=iterations, method_version=3, figure_dpi=300)
+    if stamp.exists() and json.loads(stamp.read_text()) == state:
         return
     y = clean[names[0]]["y"]
     correct = np.array([clean[n]["pred"] == y for n in names])
@@ -208,7 +209,7 @@ def statistics(output, clean, canonical, iterations=1000):
         pairs[i]["holm_adjusted_log10_p"] = float(previous_log)
         pairs[i]["holm_adjusted_p"] = float(10. ** previous_log)
     write_csv(directory / "paired_comparison.csv", pairs)
-    write_json_atomic(stamp, dict(scores=key, iterations=iterations, method_version=2))
+    write_json_atomic(stamp, state)
 
 
 def generate_report(output):

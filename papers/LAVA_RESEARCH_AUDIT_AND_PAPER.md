@@ -1,5 +1,12 @@
 # LAVA Research Audit, Code Reconciliation, and Paper B
 
+> **Superseded manuscript notice (5 September 2026).** This file is retained as a
+> historical audit trail and design record. It is not the submission manuscript.
+> The evidence-corrected papers are `LAVA_FULL_PAPER_EN.md`,
+> `LAVA_FULL_PAPER_VI.md`, and `LAVA_FULL_PAPER.tex`; empirical claims must be
+> checked through `PAPER_EVIDENCE_MAP.md`. Any older prototype, six-model,
+> unseen-data, or robustness wording below is non-current unless repeated there.
+
 **Target title:** *LAVA: A Lightweight Benchmarking Framework for Robust and Real-Time Deepfake Voice Detection*  
 **Audit date:** 29 August 2026  
 **Implementation root:** `D:\audio-deepfake-mobilenet-lstm`  
