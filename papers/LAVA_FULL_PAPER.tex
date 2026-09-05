@@ -1,145 +1,619 @@
-\documentclass[10pt,conference]{IEEEtran}
-\usepackage[utf8]{inputenc}
-\usepackage{booktabs,tabularx,graphicx,amsmath,amssymb,url,multirow}
+\documentclass[10pt,journal]{IEEEtran}
+\usepackage{graphicx,booktabs,tabularx,amsmath,amssymb,xcolor,url,hyperref}
 \graphicspath{{figures/}}
-\newcommand{\pfake}{P(\mathrm{FAKE})}
 \title{LAVA: A Lightweight Benchmarking Framework for Robust and Real-Time Deepfake Voice Detection}
 \author{Phan Khac Anh Tuan, Nguyen Phuong Chinh, Lai Thanh Dat, Nguyen Tan Khiem, and Truong Thanh Dat}
 \begin{document}
 \maketitle
 \begin{abstract}
-LAVA evaluates heterogeneous detectors through a common integrity, score, robustness, and timing contract while preserving native architectures. This study evaluates four LAVA-trained Mel-sequence models and externally pretrained RawNet2 and AASIST checkpoints. Clean evaluation used all 2,737 canonical test recordings. ShuffleNetV2-LSTM obtained the best F1 (0.9824), AUC (0.9929), and EER (1.46\%); MobileNetV3-LSTM had the lowest desktop-CPU latency (43.8 ms), while ShuffleNet required 62.5 ms (RTF 0.0208). A fixed 100-recording diagnostic showed small codec degradation but strong low-SNR sensitivity; ShuffleNet's mean degradation across nine conditions was 0.1623. The diagnostic Pareto set contains MobileNet, ShuffleNet, and AASIST. Heterogeneous provenance precludes architecture-only conclusions. Physical replay, unseen data, edge devices, multiple seeds, and full-test robustness remain future work.
+Deepfake-voice detectors are commonly compared across different data partitions, score conventions, preprocessing pipelines, and runtime protocols, making accuracy–efficiency claims difficult to interpret. This paper presents LAVA, a registry-based framework that evaluates heterogeneous detectors through a common label, score, integrity, robustness, and timing contract while preserving their native architectures. The current study evaluates six artifacts: four LAVA-trained Mel-sequence detectors—MobileNetV3Small-LSTM, ShuffleNetV2-1.0x-LSTM, EfficientNet-B0-LSTM, and MnasNet-A1-LSTM—and externally pretrained RawNet2 and AASIST references. SHA-256 grouping quarantined 30 byte-identical cross-label files and prevented same-checksum leakage. Clean evaluation used all 2,737 canonical test recordings. ShuffleNetV2 achieved the strongest clean result (F1 0.9824, ROC-AUC 0.9929, EER 1.46\%), while MobileNetV3 provided the lowest measured end-to-end latency (43.8 ms). ShuffleNetV2 required 62.5 ms (RTF 0.0208) on the same single-thread desktop CPU. Robustness was evaluated diagnostically—not as a full-test result—on a fixed stratified 100-recording subset under seeded white noise, four codec round trips, and one simulated replay channel. ShuffleNet's mean F1 degradation was 0.1623 across nine conditions; low-SNR noise remained the dominant failure mode. The diagnostic three-objective Pareto set contained MobileNetV3, ShuffleNetV2, and AASIST. The reference checkpoints performed substantially worse under the present clean dataset and adapter protocol, but provenance and input-contract differences preclude an architecture-only interpretation. These findings support reproducible deployment-oriented comparison, but not physical-replay, unseen-dataset, edge-device, multi-seed, or full-test robustness claims.
 \end{abstract}
-\begin{IEEEkeywords}deepfake voice detection, audio anti-spoofing, robustness, real-time factor, Pareto analysis\end{IEEEkeywords}
-
+\begin{IEEEkeywords}deepfake voice detection; audio anti-spoofing; lightweight deep learning; robustness; real-time factor; Pareto analysis.\end{IEEEkeywords}
 \section{Introduction}
-Synthetic and converted speech challenge listeners and automatic verification. ASVspoof formalized logical- and physical-access threats \cite{todisco2019asvspoof}, while WaveFake expanded generated-audio resources \cite{frank2021wavefake}. Yet comparisons remain confounded by opposite class orders, incompatible durations, inconsistent timing boundaries, and duplicated audio. LAVA standardizes the evaluation boundary rather than forcing one architecture onto all models.
+\subsection{Background and motivation}
+Synthetic and converted speech challenge both human listeners and automatic speaker-verification systems. Community benchmarks such as ASVspoof formalized logical- and physical-access threat models \cite{wu2015asvspoof,kinnunen2017asvspoof,todisco2019asvspoof,yamagishi2021asvspoof,kinnunen2018tdcf}, while WaveFake broadened publicly available generated-audio resources \cite{frank2021wavefake}. The resulting literature includes engineered acoustic features, raw-waveform networks, graph-attention systems, and compact convolutional backbones. Reported quality alone, however, does not answer whether a detector is robust to channel distortion or usable under a constrained runtime.
 
-The current repository supports a six-detector clean study: MobileNetV3Small-LSTM, EfficientNet-B0-LSTM, MnasNet-A1-LSTM, and ShuffleNetV2-LSTM were trained locally with unequal initialization histories; RawNet2 and AASIST use external checkpoints. We ask: \emph{RQ1}, how do the lightweight artifacts compare with external references under one clean protocol? \emph{RQ2}, how do scores change under the executed stress conditions? \emph{RQ3}, which systems are non-dominated in detection--robustness--runtime space?
+Comparison is especially fragile when systems encode opposite class orders, expose logits rather than comparable probabilities, use incompatible durations, or time only the neural forward pass for one model and the complete pipeline for another. Dataset duplication provides a second failure mode: byte-identical audio can inflate held-out performance when copies enter different splits. LAVA addresses these experimental-interface problems rather than asserting that one internal architecture fits every detector.
+
+\subsection{Research gap}
+RawNet2 directly models waveforms \cite{tak2021rawnet2}, AASIST preserves interacting spectral and temporal graph representations \cite{jung2022aasist}, and mobile CNN families were designed around different efficiency principles \cite{howard2019mobilenetv3,sandler2018mobilenetv2,zhang2018shufflenet,ma2018shufflenetv2,tan2019efficientnet,tan2019mnasnet}. Forcing these systems into one topology would destroy useful architectural diversity. Conversely, evaluating them without a common contract confounds architecture, score semantics, data integrity, and measurement policy. A reproducible framework must therefore standardize the evaluation boundary while retaining native computation inside that boundary.
+
+The present repository provides such a boundary for four locally trained lightweight artifacts with unequal initialization histories and two externally pretrained references. Clean evaluation is complete for all six; robustness has been completed only on a fixed diagnostic subset. This paper reports that mixed scope explicitly.
+
+\subsection{Research questions}
+\textbf{RQ1:} How competitive are the four lightweight temporal CNN detectors relative to two externally pretrained anti-spoofing systems under the common clean LAVA evaluation protocol?
+
+\textbf{RQ2:} How does detection performance change under the noise, codec, and simulated-replay conditions actually executed in the current diagnostic evaluation?
+
+\textbf{RQ3:} Which evaluated detectors are non-dominated when EER, mean robustness degradation, and end-to-end RTF are considered jointly within the completed diagnostic scope?
+
+\subsection{Contributions}
+This work contributes: (1) a framework-neutral \texttt{P(FAKE)} contract across TensorFlow and externally trained PyTorch/ONNX detectors; (2) a checksum-aware integrity protocol that quarantines cross-label conflicts and prevents byte-identical split leakage; (3) an artifact-traceable six-detector clean benchmark and fixed-subset robustness diagnostic; (4) a common CPU protocol separating preprocessing, model-only, and end-to-end latency; and (5) measured error, bootstrap, agreement, and Pareto analyses without an arbitrary weighted ranking.
 
 \section{Related Work}
-ASVspoof covers synthetic, converted, and replayed speech \cite{todisco2019asvspoof}; WaveFake was not evaluated here \cite{frank2021wavefake}. RawNet2 learns from waveforms \cite{tak2021rawnet2}; AASIST integrates heterogeneous graph attention \cite{jung2022aasist}. MobileNetV3 \cite{howard2019mobilenetv3}, EfficientNet \cite{tan2019efficientnet}, MnasNet \cite{tan2019mnasnet}, and ShuffleNetV2 \cite{ma2018shufflenetv2} provide complementary compact backbones.
+\subsection{Benchmarks and evaluation metrics}
+ASVspoof established common corpora and protocols for synthesis, conversion, and replay countermeasures across its 2015, 2017, 2019, and 2021 editions \cite{wu2015asvspoof,kinnunen2017asvspoof,todisco2019asvspoof,yamagishi2021asvspoof}. The tandem detection cost function subsequently connected countermeasure errors to an automatic-speaker-verification operating scenario \cite{kinnunen2018tdcf}. LAVA uses EER as a threshold-independent discrimination summary, but it does not claim compatibility with an ASV operating prior and therefore does not report t-DCF. WaveFake broadened access to generated speech \cite{frank2021wavefake}, while recent surveys organize the expanding landscape of representations, datasets, and generalization problems \cite{yi2023survey,li2024survey}. None of those corpus statistics are reused as statistics of the internal LAVA manifest.
 
+\subsection{Native anti-spoofing architectures}
+RawNet2 performs end-to-end anti-spoofing from waveform samples \cite{tak2021rawnet2}. AASIST adds integrated spectral and temporal graph attention \cite{jung2022aasist}, building on the broader graph-attention mechanism \cite{velickovic2018gat}. LCNN systems demonstrate the continuing relevance of explicitly constructed time-frequency features \cite{wu2020lcnn}. LAVA preserves the internal form of each reference system: the RawNet2 adapter does not construct Mel images, and the AASIST adapter does not replace graph reasoning with an LSTM. Its intervention is limited to input adaptation, strict checkpoint loading, export, and common score semantics.
+
+\subsection{Self-supervision and generalization}
+Self-supervised speech encoders such as wav2vec 2.0, HuBERT, and WavLM provide transferable representations \cite{baevski2020wav2vec,hsu2021hubert,chen2022wavlm}. Their use in anti-spoofing with augmentation has yielded strong benchmark performance \cite{tak2022wav2vec}, and frozen self-supervised representations can improve calibration and cross-dataset behavior \cite{pascu2024calibrated}. LAVA does not evaluate these large encoders in the current six-detector set; they instead define an important future extension point.
+
+Generalization remains a distinct question from in-domain accuracy. Uniform re-evaluation has revealed substantial degradation outside familiar conditions \cite{muller2022generalize}; attack-agnostic data construction \cite{kawa2022attack}, decomposition of domain shift \cite{muller2024harder}, explicit cross-domain corpora \cite{li2024crossdomain}, non-semantic representations \cite{das2025nonsemantic}, and multilingual cross-domain benchmarks \cite{ciobanu2026xmad} all reinforce that conclusion. The present repository has no executed external-corpus evaluation. Consequently, LAVA reports only its canonical held-out split and marks cross-domain performance \texttt{NOT\_AVAILABLE}.
+
+\subsection{Lightweight convolutional backbones}
+MobileNetV2 introduced inverted residuals and linear bottlenecks \cite{sandler2018mobilenetv2}, and MobileNetV3 combined these ideas with hardware-aware search \cite{howard2019mobilenetv3}. ShuffleNet introduced group convolution and channel shuffling \cite{zhang2018shufflenet}; ShuffleNetV2 emphasized practical memory-access and parallelism criteria rather than FLOPs alone \cite{ma2018shufflenetv2}. EfficientNet jointly scales depth, width, and image resolution \cite{tan2019efficientnet}, whereas MnasNet explicitly incorporated measured mobile latency into architecture search \cite{tan2019mnasnet}. LAVA reuses these designs only as segment encoders. Their published ImageNet or phone measurements are not treated as evidence for LAVA audio accuracy or runtime.
+
+\subsection{Robustness and deployment measurement}
+Codec, channel, noise, and unseen-generator shifts may redistribute detector scores even when linguistic content is preserved. Prior generalization work \cite{muller2022generalize,kawa2022attack,muller2024harder,pascu2024calibrated,li2024crossdomain,das2025nonsemantic,ciobanu2026xmad} motivates matched-condition evaluation, while the ASVspoof replay track illustrates the difficulty of variable acoustic paths \cite{kinnunen2017asvspoof}. Runtime likewise depends on backend, tensor shape, memory traffic, thread policy, and timing boundary. LAVA therefore measures the executed pipeline rather than inferring latency from parameter count. Its real-time factor is an offline ratio; it is not evidence of causal streaming or edge-device validation.
+
+\subsection{Statistical and multi-objective analysis}
+Test-set uncertainty is estimated with the non-parametric bootstrap \cite{efron1979bootstrap}. Paired correctness differences use McNemar's exact test \cite{mcnemar1947}, with Holm correction across the 15 detector pairs \cite{holm1979}. Pareto analysis retains distinct detection, robustness, and runtime objectives instead of collapsing them into an arbitrarily weighted score. This distinction is important because a model can be non-dominated for an extreme objective while remaining unattractive under absolute detection quality.
+
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Positioning of representative related work. A dash means that the cited work was not designed to report that dimension under a unified detector-comparison protocol.}
+\label{tab:1}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+Work & Detector or resource & Robustness/cross-domain focus & Measured efficiency & Relation to LAVA \\
+\midrule
+ASVspoof series \cite{wu2015asvspoof,kinnunen2017asvspoof,todisco2019asvspoof,yamagishi2021asvspoof,kinnunen2018tdcf} & community benchmark & logical/physical/deepfake protocols & not the primary focus & motivates common protocols and EER \\
+WaveFake \cite{frank2021wavefake} & multi-generator dataset & dataset diversity & no & candidate future external corpus \\
+RawNet2 \cite{tak2021rawnet2} & raw-waveform network & anti-spoofing benchmark & limited & external reference checkpoint \\
+AASIST \cite{jung2022aasist} & spectro-temporal graph network & anti-spoofing benchmark & limited & external reference checkpoint \\
+wav2vec anti-spoofing \cite{tak2022wav2vec} & self-supervised encoder & augmentation/generalization & no unified CPU protocol & future detector family \\
+Müller et al. \cite{muller2022generalize,muller2024harder} & uniform/cross-domain analyses & central & partial & motivates conservative scope \\
+Kawa et al. \cite{kawa2022attack} & attack-agnostic data/LCNN & central & limited & motivates data provenance \\
+CD-ADD/XMAD-Bench \cite{li2024crossdomain,ciobanu2026xmad} & cross-domain datasets & central & not unified with LAVA & future external evaluation \\
+LAVA (this work) & six heterogeneous detectors & clean plus diagnostic noise/codec/replay & size, RSS, latency, throughput, RTF & unified score, artifact, and analysis contract \\
+\bottomrule
+\end{tabularx}
+\end{table*}
 \section{Methodology}
-\subsection{Framework and integrity}
-Figure~\ref{fig:overview} shows the native-model/common-evaluation separation. Specifications declare framework, input, duration, artifact, and provenance; score files and artifact bundles are hash-verified. Figure~\ref{fig:pipeline} shows execution.
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{lava_6_model_overview.png}\caption{LAVA six-detector architecture and evaluation boundary.}\label{fig:overview}\end{figure}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{lava_benchmark_pipeline.png}\caption{Reproducible benchmark pipeline.}\label{fig:pipeline}\end{figure}
+\subsection{LAVA framework overview}
+LAVA is a benchmarking framework rather than a seventh detector. We represent an executed benchmark as
 
-The internal dataset has no known speaker, source, generator, parent-recording, or dataset identifiers. Inventory scanned 18,722 files (10,550 REAL; 8,172 FAKE), finding 435 checksum groups, 476 redundant copies, and 14 cross-label groups involving 30 files. Cross-label members were quarantined; one lexicographically first representative was retained per same-label checksum. The final 18,232 samples (10,493 REAL; 7,739 FAKE) were split with seed 42 into 12,762/2,733/2,737 train/validation/test samples. The only supported claim is checksum-group-disjoint. The manifest hash is \texttt{8b55591d...958df9}.
+\begin{equation}
+\mathcal{B}=\{\mathcal{D},\mathcal{M},\mathcal{C},\mathcal{E},\mathcal{A}\},
+\end{equation}
+where $\mathcal{D}$ is the canonical data and integrity protocol, $\mathcal{M}$ is the registered detector set, $\mathcal{C}$ is the set of executed clean and stress conditions, $\mathcal{E}$ contains detection and resource metrics, and $\mathcal{A}$ contains statistical, agreement, error-overlap, and Pareto analyses. This factorization prevents a planned condition from silently becoming an executed result.
 
-\subsection{Preprocessing and models}
-Lightweight audio is converted to mono, polyphase-resampled to 22.05 kHz, zero-padded/truncated to 3 s, and divided chronologically into six 0.5-s segments. Each segment uses a Hann STFT ($n_{fft}=2048$, hop 512), 128 HTK-style Mel bands from 20--8000 Hz, relative-dB clipping at 80 dB, linear [0,255] mapping, bilinear $224\times224$ resizing, and RGB replication. The common head is TimeDistributed(backbone)$\rightarrow$LSTM(128)$\rightarrow$Dense(64, ReLU)$\rightarrow$Dropout(0.4)$\rightarrow$sigmoid.
+Four software layers implement this abstraction. The data/integrity layer constructs immutable sample identities and splits. The model/adapter layer retains each native architecture while exposing a common prediction API. The benchmark layer performs clean, robustness, and isolated runtime measurements. The analysis layer joins stored scores by sample ID, calculates uncertainty and agreement, and produces tables and figures. Detector specifications declare framework, input type, duration, artifact paths, and provenance. Adapters expose loading, score prediction, parameter count, and model size. The benchmark seals model, metadata, threshold, manifest, and inference-source hashes before execution; report generation recomputes aggregates from the sealed per-sample files.
 
-Reference models consume 64,600 samples at 16 kHz. RawNet2 retains its Sinc/residual/attention/GRU design; AASIST retains Sinc, encoder, graph branches, heterogeneous interaction and readout. Production adapters use polyphase resampling and zero-padding, unlike original librosa/repetition padding. Native--ONNX score parity therefore establishes export fidelity on identical tensors, not paper-pipeline equivalence.
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{lava_6_model_overview.png}
+\caption{LAVA six-detector architecture and unified evaluation boundary.}
+\label{fig:1}
+\end{figure*}
+The execution pipeline (Fig. 2) verifies the canonical manifest, loads each artifact in an isolated sequential worker, evaluates unchanged scores, generates shared stress audio, measures runtime, and derives tables and figures programmatically.
 
-Table~\ref{tab:detectors} summarizes the evaluated artifacts and preserves the distinction between locally trained lightweight models and externally pretrained references.
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{lava_benchmark_pipeline.png}
+\caption{Reproducible LAVA benchmark pipeline.}
+\label{fig:2}
+\end{figure*}
+\subsection{Dataset and integrity protocol}
+The repository dataset is an internal binary collection stored under \texttt{data/REAL} and \texttt{data/FAKE}; its speaker, source, generator, parent-recording, and dataset identifiers are all \texttt{UNKNOWN}. Accordingly, LAVA makes no ASVspoof-sized, speaker-disjoint, source-disjoint, generator-disjoint, or cross-dataset claim for this collection.
 
-\begin{table*}[t]\caption{Detector configuration and provenance.}\label{tab:detectors}\centering\small
-\begin{tabularx}{\textwidth}{l l l l X r X}\toprule Model&Group&Runtime&Input&Mechanism&Params&Provenance\\\midrule
-MobileNetV3-LSTM&Light&TF 2.15&Mel, 3 s&576-D backbone + LSTM&1,308,401&LAVA, ImageNet\\
-EfficientNet-B0-LSTM&Light&TF 2.15&Mel, 3 s&1280-D backbone + LSTM&4,779,300&LAVA, ImageNet, warm-up best\\
-MnasNet-A1-LSTM&Light&TF 2.15&Mel, 3 s&1280-D backbone + LSTM&3,369,255&LAVA, scratch, early-stopped best\\
-ShuffleNetV2-LSTM&Light&TF 2.15&Mel, 3 s&1024-D backbone + LSTM&1,868,441&LAVA, scratch, early-stopped best\\
-RawNet2&Reference&ONNX/PyTorch&Wave, 4.0375 s&Sinc/residual/attention/GRU&17,621,410&External checkpoint\\
-AASIST&Reference&ONNX/PyTorch&Wave, 4.0375 s&Heterogeneous graph attention&297,866&External checkpoint\\\bottomrule
-\end{tabularx}\end{table*}
+Inventory scanned 18,722 files: 10,550 labeled REAL and 8,172 labeled FAKE. SHA-256 analysis found 435 duplicate groups, 476 redundant duplicate files, and 14 cross-label checksum groups involving 30 files. Every cross-label member was quarantined at manifest level. For a same-label checksum group, the lexicographically first path was retained as the canonical representative and other copies were excluded. The final manifest contains 18,232 recordings (10,493 REAL; 7,739 FAKE), split deterministically with seed 42 into 12,762 training, 2,733 validation, and 2,737 test recordings. The supported claim is therefore \textbf{checksum-group-disjoint only}. The manifest hash is \texttt{8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9}.
 
-\subsection{Training and scores}
-MobileNet used ImageNet initialization, frozen-backbone warm-up and partial low-rate fine-tuning with frozen BatchNorm. EfficientNet is the best available warm-up checkpoint (epoch 47, validation loss 0.1698), not a completed fine-tune lifecycle. MnasNet was scratch-trained end-to-end; the deployed best is epoch 27 from a 39-epoch early-stopped run, using Adam $10^{-4}$, clip norm 1, label smoothing 0.1 and L2 coefficient $10^{-5}$. RawNet2/AASIST were not LAVA-trained. Six-tensor native--ONNX maximum score differences were $4.11\times10^{-6}$ and $5.96\times10^{-8}$.
+For audio file $x_i$, let $h(x_i)=\operatorname{SHA256}(x_i)$. Byte-level duplicate equivalence is
 
-REAL=0, FAKE=1, and all adapters expose $p=\pfake$:
-\begin{equation}\hat y=\begin{cases}1&p\ge\tau\\0&p<\tau.\end{cases}\label{eq:decision}\end{equation}
-Validation-F1 thresholds are 0.82/0.90/0.90/0.12 for MobileNet/EfficientNet/MnasNet/ShuffleNet. References retain uncalibrated 0.5 defaults. Test labels select neither weights nor thresholds.
+\begin{equation}
+x_i\sim x_j\iff h(x_i)=h(x_j).
+\end{equation}
+Let $G_{train}$, $G_{val}$, and $G_{test}$ denote the checksum-equivalence groups assigned to each split. The integrity assertion checked by the manifest utility is
 
-\subsection{Metrics, stress, and timing}
-\begin{align}P&=TP/(TP+FP),\quad R=TP/(TP+FN),\nonumber\\F1&=2PR/(P+R).\label{eq:f1}\end{align}
-ROC-AUC uses raw $p$. With $FAR=FP/(FP+TN)$ and $FRR=FN/(FN+TP)$, EER is linearly interpolated where $FAR\simeq FRR$ and reported as their mean.
+\begin{equation}
+G_{train}\cap G_{val}=G_{train}\cap G_{test}=G_{val}\cap G_{test}=\varnothing.
+\end{equation}
+This guarantee is deliberately narrower than speaker independence: the manifest has no speaker identifiers with which to test speaker overlap. Figure 3 shows the actual quarantine and canonicalization sequence.
 
-Robustness uses a prediction-independent stratified subset of 100 test samples (58 REAL; 42 FAKE; seed 42). Conditions are seeded AWGN at 20/10/5/0 dB; FFmpeg MP3 128/64, Opus 64, and AAC 96 kb/s round trips; and one simulated channel with 0/17/43/89-ms taps plus fourth-order 100--3800-Hz band-pass. Replay is not physical. For each condition, $\Delta F1=F1_{clean}-F1_{stress}$; the overall value is the arithmetic mean across nine conditions.
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{dataset_integrity_pipeline.png}
+\caption{Checksum-aware construction of the canonical dataset manifest.}
+\label{fig:3}
+\end{figure*}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Dataset-integrity inventory derived from \texttt{manifest\_metadata.json}.}
+\label{tab:2}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Quantity & Value \\
+\midrule
+Scanned / included / excluded files & 18,722 / 18,232 / 490 \\
+Included REAL / FAKE & 10,493 / 7,739 \\
+Duplicate groups / redundant files & 435 / 476 \\
+Cross-label groups / files quarantined & 14 / 30 \\
+Split seed & 42 \\
+Supported independence claim & checksum-group-disjoint only \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Canonical splits.}
+\label{tab:3}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+Split & Samples & Share \\
+\midrule
+Train & 12,762 & 70.0\% \\
+Validation & 2,733 & 15.0\% \\
+Test & 2,737 & 15.0\% \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\subsection{Standardized audio preprocessing}
+For the lightweight family, audio is decoded with SoundFile where supported, converted to mono by channel averaging, resampled with polyphase filtering to 22,050 Hz, and zero-padded or truncated to 3.0 s (66,150 samples). The signal is divided chronologically into six non-overlapping 0.5-s segments. Each segment uses a Hann-window STFT with \texttt{n\_fft=2048} and hop length 512. A 128-band HTK-style triangular Mel bank spans 20–8,000 Hz. Power is converted to decibels relative to the segment maximum and clipped to an 80-dB range. Linear mapping yields [0,255], bilinear resizing yields 224$\times$224, and channel replication yields an RGB tensor. One recording therefore has shape \texttt{6×224×224×3} in float32.
 
-Efficiency uses sequential isolated CPU processes, float32, batch one, one computational thread, ten warm-ups and 50 timed runs. Startup/tracing are excluded. RSS is whole-process sampled memory. 
-\begin{equation}RTF=T_{processing}/T_{audio},\quad \mathrm{Throughput}=N/T_{total}.\label{eq:rtf}\end{equation}
-RTF below one means faster-than-duration offline inference, not causal streaming.
+For segment $t$, the implemented short-time Fourier transform corresponds to
 
-The diagnostic Pareto objectives minimize subset EER, mean $\Delta F1$, and RTF. $A$ dominates $B$ iff
-\begin{equation}f_i(A)\le f_i(B)\ \forall i,\quad \exists j:f_j(A)<f_j(B).\label{eq:pareto}\end{equation}
-No weighted score is used. Uncertainty uses 1,000 shared stratified test bootstraps; it is not multi-seed uncertainty.
+\begin{equation}
+X_t(m,k)=\sum_{n=0}^{N-1}x_t[n+mH]w[n]e^{-j2\pi kn/N},
+\end{equation}
+with $N=2048$, $H=512$, and a Hann window. The power spectrum is projected through triangular HTK Mel filters $H_r(k)$,
+
+\begin{equation}
+S_{mel,t}(m,r)=\sum_k |X_t(m,k)|^2H_r(k),
+\end{equation}
+floored at $10^{-10}$, and mapped relative to the segment maximum as $S_{dB}=10\log_{10}S_{mel}-\max(10\log_{10}S_{mel})$. Values below $-80$ dB are clipped. This exact implementation uses SciPy STFT and an explicit Mel bank; librosa is only a decoding fallback \cite{mcfee2015librosa}. Figure 4 clarifies that chronological order is retained through the recurrent head.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{lightweight_temporal_pipeline.png}
+\caption{Standardized preprocessing and temporal classification path for the four lightweight detectors.}
+\label{fig:4}
+\end{figure*}
+Reference adapters instead load mono 16-kHz waveforms of 64,600 samples (4.0375 s). The retained production adapters use polyphase resampling and prefix/zero-padding. The reference repositories use librosa and repetition padding for short files. This documented deviation was not changed after test inspection. Native-checkpoint versus ONNX parity uses identical adapter tensors and therefore verifies export fidelity, not equivalence to the original publication pipeline.
+
+\subsection{Lightweight temporal detector family}
+For the four image-backbone systems, a recording is a sequence $\mathbf{X}=\{X_1,\ldots,X_6\}$. A shared backbone $f_\theta$ produces $\mathbf{z}_t=f_\theta(X_t)$ independently at every time step. The recurrent representation is $\mathbf{h}=\operatorname{LSTM}(\mathbf{z}_1,\ldots,\mathbf{z}_6)$, after which the actual head computes
+
+\begin{equation}
+p_{fake}=\sigma\left(W_2\operatorname{Dropout}_{0.4}(\operatorname{ReLU}(W_1\mathbf{h}+b_1))+b_2\right).
+\end{equation}
+The LSTM has 128 units and the hidden dense layer has 64 units. The time-distributed construction shares backbone weights across segments, so it does not multiply the parameter count by six. It does multiply per-recording convolutional work, which is why measured runtime remains necessary.
+
+\subsection{MobileNetV3Small-LSTM}
+MobileNetV3Small combines inverted residual blocks, depthwise convolutions, squeeze-and-excitation, and hardware-aware nonlinearities \cite{howard2019mobilenetv3,sandler2018mobilenetv2}. In LAVA it emits a 576-dimensional segment embedding. The deployment artifact has 1,308,401 Keras parameters and uses ImageNet initialization. Training followed frozen-backbone warm-up and lower-rate partial fine-tuning; BatchNormalization remained frozen during fine-tuning. This artifact therefore tests a transfer-learning path, not a scratch-controlled comparison.
+
+\subsection{ShuffleNetV2-1.0x-LSTM}
+ShuffleNetV2 uses stride-one channel splitting: one branch is preserved while the second applies pointwise, depthwise, and pointwise convolutions, after which concatenation and channel shuffle exchange information \cite{zhang2018shufflenet,ma2018shufflenetv2}. Stride-two units transform both branches while reducing spatial resolution. The LAVA backbone produces a 1,024-dimensional segment embedding and the complete temporal model has 1,868,441 parameters. It was initialized from scratch and trained end-to-end from epoch 1, with all 56 BatchNormalization layers trainable. Adam began at $3\times10^{-4}$; early stopping ended the run at epoch 28 and restored the minimum-validation-loss checkpoint from epoch 16. Its validation-selected threshold is 0.12.
+
+\subsection{MnasNet-A1-LSTM}
+MnasNet-A1 originates from platform-aware neural architecture search \cite{tan2019mnasnet}. Its inverted residual stages provide a 1,280-dimensional embedding. The resulting LAVA model has 3,369,255 parameters and was initialized from scratch. Backbone, 49 BatchNormalization layers, LSTM, and head were jointly trainable from epoch 1. Adam began at $10^{-4}$; training stopped at epoch 39 and restored epoch 27. The deployed validation-F1 threshold is 0.90. These facts are taken from lifecycle and deployment metadata rather than inferred from the filename.
+
+\subsection{EfficientNet-B0-LSTM}
+EfficientNet-B0 uses mobile inverted bottlenecks, squeeze-and-excitation, and compound scaling \cite{tan2019efficientnet}. The LAVA adapter exposes a 1,280-dimensional segment embedding, and the temporal classifier contains 4,779,300 parameters. Its backbone is ImageNet-initialized. The available deployment bundle is specifically the best warm-up checkpoint (epoch 47, validation loss 0.1698); it is not represented as a completed fine-tuning lifecycle. This distinction matters when comparing it with fully trained lightweight artifacts.
+
+\subsection{RawNet2 reference detector}
+RawNet2 receives 64,600 samples at 16 kHz (4.0375 s), applies a Sinc-style filter bank, residual temporal blocks, channel attention, a GRU, and a classifier \cite{tak2021rawnet2,ravanelli2018sincnet}. LAVA strictly loads the external checkpoint and exports a self-contained ONNX graph for production evaluation. The adapter takes the spoof posterior at the checkpoint-defined class index and exposes it as $P(FAKE)$. The 17,621,410-parameter checkpoint was not trained by the LAVA trainer.
+
+\subsection{AASIST reference detector}
+AASIST combines a raw-waveform front end with a two-dimensional encoder, spectral and temporal graphs, graph-attention layers, heterogeneous interaction, master nodes, graph pooling, and a final classifier \cite{jung2022aasist,velickovic2018gat}. LAVA preserves these operations and maps the native spoof logit/posterior to $P(FAKE)$. The strict native load contains 297,866 parameters; the ONNX export is used for the common runtime. As with RawNet2, this is an externally pretrained reference checkpoint.
+
+\subsection{Detector specification}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Detector configuration and artifact provenance.}
+\label{tab:4}
+\begin{tabularx}{\textwidth}{lXXXXXX}
+\toprule
+Detector & Category & Runtime & Input/duration & Architecture and temporal mechanism & Parameters & Artifact/training provenance \\
+\midrule
+MobileNetV3Small-LSTM & lightweight & TensorFlow 2.15 & Mel sequence, 3.0 s & TimeDistributed MobileNetV3Small (576-D), LSTM(128), dense head & 1,308,401 & LAVA-trained; ImageNet initialization \\
+EfficientNet-B0-LSTM & lightweight & TensorFlow 2.15 & Mel sequence, 3.0 s & TimeDistributed EfficientNet-B0 (1280-D), LSTM(128), dense head & 4,779,300 & LAVA-trained; ImageNet; best available warm-up checkpoint \\
+MnasNet-A1-LSTM & lightweight & TensorFlow 2.15 & Mel sequence, 3.0 s & TimeDistributed MnasNet-A1 (1280-D), LSTM(128), dense head & 3,369,255 & LAVA-trained end-to-end from scratch; early-stopped best \\
+ShuffleNetV2-1.0x-LSTM & lightweight & TensorFlow 2.15 & Mel sequence, 3.0 s & TimeDistributed ShuffleNetV2 (1024-D), LSTM(128), dense head & 1,868,441 & LAVA-trained end-to-end from scratch; early-stopped best \\
+RawNet2 & reference & ONNX Runtime export of PyTorch & waveform, 4.0375 s & Sinc/residual/attention/GRU & 17,621,410 & external checkpoint; reference README associates it with ASVspoof 2019 LA \\
+AASIST & reference & ONNX Runtime export of PyTorch & waveform, 4.0375 s & Sinc/2-D encoder/spectral-temporal heterogeneous graph attention/readout & 297,866 & external checkpoint; reference README associates it with ASVspoof 2019 LA \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+Parameter counts come from loaded Keras models for lightweight detectors and strictly loaded native PyTorch parameters for reference detectors. The conventions differ because Keras counts non-trainable BatchNorm state whereas the native count excludes buffers.
+
+Backbone embedding width is not artificially equalized. Parameter counts come from loaded Keras models for the lightweight detectors and strictly loaded native PyTorch tensors for reference detectors; Keras includes non-trainable BatchNormalization state whereas the native reference count excludes buffers.
+
+\subsection{Training and artifact provenance}
+MobileNetV3 used ImageNet initialization and the repository's two-stage lifecycle: frozen-backbone head warm-up followed by lower-rate partial fine-tuning with BatchNorm frozen. EfficientNet also uses ImageNet initialization, but the available deployment is explicitly the best warm-up checkpoint (warm-up epoch 47, validation loss 0.1698), not a completed global-best fine-tuning lifecycle. MnasNet was trained from scratch, end-to-end from epoch 1; its deployed artifact is the best restored epoch 27 from an early-stopped 39-epoch run. ShuffleNet was likewise trained end-to-end from scratch with all 56 BatchNormalization layers trainable; the deployed artifact is restored from best epoch 16 of an early-stopped 28-epoch run. Its recorded Adam learning rate is \texttt{3e-4}. Thus evaluation is shared, but initialization and optimization are not identical.
+
+RawNet2 and AASIST were not trained by the LAVA trainer. Their source \texttt{.pth} files were strictly loaded in PyTorch and exported to self-contained ONNX graphs. Six real sample tensors produced maximum native-versus-ONNX \texttt{P(FAKE)} differences of \texttt{4.11×10⁻⁶} for RawNet2 and \texttt{5.96×10⁻⁸} for AASIST. These tests establish numerical adapter/export parity, not equal training provenance.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{training_provenance_strategies.png}
+\caption{Heterogeneous initialization, training, and checkpoint provenance retained by LAVA.}
+\label{fig:5}
+\end{figure*}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Training, selection, and threshold provenance.}
+\label{tab:5}
+\begin{tabularx}{\textwidth}{lXXXXX}
+\toprule
+Detector & Initialization / training mode & Initial LR & BN policy & Selected artifact & Threshold source \\
+\midrule
+MobileNetV3 & ImageNet; warm-up then partial fine-tune & $10^{-4}$ & frozen in fine-tune & completed local lifecycle & validation FAKE-F1, 0.82 \\
+EfficientNet-B0 & ImageNet; warm-up & $10^{-4}$ & frozen backbone & best warm-up epoch 47 & validation FAKE-F1, 0.90 \\
+MnasNet-A1 & scratch; full end-to-end & $10^{-4}$ & 49/49 trainable & restored epoch 27 of 39 & validation FAKE-F1, 0.90 \\
+ShuffleNetV2 & scratch; full end-to-end & $3\times10^{-4}$ & 56/56 trainable & restored epoch 16 of 28 & validation FAKE-F1, 0.12 \\
+RawNet2 & external checkpoint; no LAVA training & N/A & native & strict load + ONNX export & uncalibrated default, 0.50 \\
+AASIST & external checkpoint; no LAVA training & N/A & native & strict load + ONNX export & uncalibrated default, 0.50 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\subsection{Score semantics and threshold calibration}
+LAVA fixes REAL=0 and FAKE=1. Every adapter returns a bounded score (p=P(FAKE)), and
+
+\begin{equation}
+
+\hat y=\begin{cases}1,&p\ge\tau,\\0,&p<\tau.\end{cases}
+
+\end{equation}
+The lightweight thresholds—0.82 for MobileNet, 0.90 for EfficientNet and MnasNet, and 0.12 for ShuffleNet—were selected only on validation data as $\tau^*=\arg\max_{\tau}F1_{val}(\tau)$ over the configured search grid. RawNet2 and AASIST retain uncalibrated default thresholds of 0.5. Test labels never choose weights or thresholds. Scores are not claimed to be calibrated real-world probabilities; a label selected by a non-0.5 threshold must not be interpreted as the larger of two calibrated posteriors.
+
+\subsection{Clean evaluation protocol}
+Clean evaluation uses all 2,737 test samples (1,575 REAL, 1,162 FAKE). For FAKE as the positive class,
+
+\begin{equation}
+Precision=\frac{TP}{TP+FP},\quad Recall=\frac{TP}{TP+FN},\quad F1=\frac{2PR}{P+R}.
+\end{equation}
+In addition, $Accuracy=(TP+TN)/(TP+TN+FP+FN)$ and $F1_{macro}=\frac{1}{2}(F1_{REAL}+F1_{FAKE})$. Binary cross-entropy used by the locally trained sigmoid classifiers is
+
+\begin{equation}
+\mathcal{L}_{BCE}=-\frac{1}{N}\sum_i[y_i\log p_i+(1-y_i)\log(1-p_i)].
+\end{equation}
+ROC-AUC is computed from raw (P(FAKE)), never thresholded labels. For a threshold (\tau),
+
+\begin{equation}
+FAR(\tau)=\frac{FP}{FP+TN},\qquad FRR(\tau)=\frac{FN}{FN+TP}.
+\end{equation}
+The implementation finds the first sign change of (FAR-FRR), linearly interpolates, and reports
+
+\begin{equation}
+EER=\frac{FAR(\tau^*)+FRR(\tau^*)}{2},\quad FAR(\tau^*)\simeq FRR(\tau^*).
+\end{equation}
+\subsection{Background-noise stress protocol}
+For signal power $P_s$ and target SNR $r$, the required noise power is $P_n=P_s/10^{r/10}$. A sample-specific seed is derived from the first 16 hexadecimal characters of its SHA-256 identity, making the generated white-noise waveform reproducible. Conditions are 20, 10, 5, and 0 dB. Stress WAV files are written once in float32 and shared by all six adapters; no detector receives an independently sampled perturbation.
+
+\subsection{Compression stress protocol}
+Four FFmpeg round trips were executed: MP3 at 128 and 64 kb/s, Opus at 64 kb/s, and AAC at 96 kb/s. Source waveforms are first materialized as PCM16, encoded, decoded, and then consumed through the ordinary detector adapter. The same encoded files and condition manifest are reused across models. Codec-library version is not sealed in the present result metadata and is therefore reported as \texttt{NOT\_MEASURED} rather than guessed.
+
+\subsection{Simulated replay protocol}
+The single replay condition is explicitly simulated. It applies a direct path and taps at 17, 43, and 89 ms with gains 0.45, 0.25, and 0.12 after the unit direct tap, divides the result by 1.82, and applies a causal fourth-order Butterworth band-pass from 100 to 3,800 Hz. In compact notation, $y(t)=(x*h)(t)$ for the fixed synthetic impulse response $h$, followed by fixed channel filtering. No room response was measured and no loudspeaker/microphone recording was made.
+
+\subsection{Robustness scope and degradation}
+Runtime estimates made full-test stress evaluation impractical in the current execution. Before observing model errors, a deterministic stratified subset of 100 test recordings (58 REAL, 42 FAKE; seed 42) was selected. The clean baseline for every degradation is derived from exactly those IDs. All diagnostic figures carry a warning and are stored separately from full-test results.
+
+Noise uses seeded additive white Gaussian noise at 20, 10, 5, and 0 dB, with exact whole-prefix RMS SNR and float32 WAV storage. Compression uses FFmpeg round trips through MP3 at 128 and 64 kb/s, Opus at 64 kb/s, and AAC at 96 kb/s; PCM16 conversion is part of the condition. Simulated replay applies direct and delayed taps at 0, 17, 43, and 89 ms with gains 1, 0.45, 0.25, and 0.12, fixed normalization, and a causal fourth-order 100–3,800-Hz Butterworth band-pass. It is not physical replay or a measured room impulse response.
+
+For higher-is-better F1, (\Delta F1=F1\_{clean}-F1\_{stress}); lower is better. The overall diagnostic degradation is the arithmetic mean across all nine individual conditions, not a weighted category score. Negative degradation denotes an improvement on this small subset and should not be over-interpreted. No unseen/cross-dataset result exists.
+
+Analogously, $\Delta AUC_c=AUC_{clean}-AUC_c$ and $\Delta EER_c=EER_c-EER_{clean}$. The reported aggregate uses F1 only: $\overline{\Delta F1}=K^{-1}\sum_{k=1}^{K}\Delta F1_k$ with $K=9$. Full-test robustness, physical replay, and unseen evaluation remain \texttt{NOT\_RUN}, \texttt{NOT\_AVAILABLE}, and \texttt{NOT\_AVAILABLE}, respectively.
+
+\subsection{Computational efficiency protocol}
+Each model runs in a sequential isolated process on the same Windows desktop CPU, float32, batch size one, and one computational thread per backend. The sealed metadata reports Windows \texttt{10.0.26200} and \texttt{AMD64 Family 25 Model 68 Stepping 1, AuthenticAMD}; it does not record a commercial CPU name or installed RAM capacity, so neither is invented here. No accelerator is used. Lightweight models execute with TensorFlow 2.15, while exported reference models execute with ONNX Runtime 1.17.3. Ten warm-up runs precede 50 timed repetitions. The runner reports mean, median, standard deviation, P95, preprocessing, model-only and end-to-end time, throughput, load time, and process RSS sampled every 20 ms. Interpreter startup and graph tracing are excluded from warm timings. RSS is whole-process memory, not model-only peak allocation.
+
+\begin{equation}
+\bar T=\frac{1}{N}\sum_iT_i,\quad \sigma_T=\sqrt{\frac{1}{N-1}\sum_i(T_i-\bar T)^2},
+\end{equation}
+\begin{equation}
+RTF=\frac{T_{processing}}{T_{audio}},\qquad Q=\frac{N_{clips}}{T_{total}},\qquad S_{MiB}=\frac{bytes}{2^{20}}.
+\end{equation}
+RTF below one means offline processing completed faster than clip duration; it does not demonstrate causal streaming. No edge hardware was tested.
+
+\subsection{Statistical uncertainty and paired tests}
+The six full-test score files are joined by sample ID. One thousand stratified bootstrap replicates (seed 42) resample REAL and FAKE indices independently and compute percentile 95\% intervals for F1, ROC-AUC, and EER \cite{efron1979bootstrap}. Correctness discordances for each detector pair form counts $n_{01}$ and $n_{10}$ for the exact two-sided McNemar test \cite{mcnemar1947}. Holm's sequential procedure controls family-wise error over all 15 pairs \cite{holm1979}. Paired bootstrap intervals for $F1_A-F1_B$ preserve within-sample dependence. These analyses quantify uncertainty conditional on existing checkpoints and this test sample; they are not multi-seed training uncertainty.
+
+\subsection{Error and agreement analysis}
+Pairwise agreement is the fraction of sample IDs receiving identical thresholded decisions. The analysis also counts unanimous correctness, unanimous failure, lightweight-reference disagreements, and detector-specific errors. High-confidence categories are retained in machine-readable outputs, but because reference scores are not probability-calibrated, they are not interpreted as calibrated risk.
+
+\subsection{Pareto multi-objective analysis}
+The diagnostic Pareto objectives minimize clean-subset EER, mean F1 degradation, and end-to-end RTF. Model (A) dominates (B) iff
+
+\begin{equation}
+f_i(A)\le f_i(B)\ \forall i,\qquad \exists j:f_j(A)<f_j(B).
+\end{equation}
+The non-dominated set is $\mathcal{P}=\{m\in\mathcal{M}:\nexists m'\text{ such that }m'\prec m\}$. No weighted composite score is used. Because robustness is subset diagnostic, this frontier is exploratory; the official full-test frontier remains \texttt{NOT\_RUN}.
+
+\subsection{Reproducibility and artifact management}
+Every deployable bundle is resolved through the detector registry and paired with metadata and threshold artifacts. The clean benchmark stores one row per canonical test sample, including \texttt{sample\_id}, true label, raw $P(FAKE)$, threshold, prediction, and correctness. LAVA-5 outputs are retained as immutable history; the incremental six-model process evaluated only ShuffleNet and then recomputed aggregates whose mathematics depends on model count. The publication tables are generated from stored CSV/JSON by \texttt{scripts/finalize\_publication\_assets.py}, which imports no detector loader and therefore cannot trigger training or inference.
 
 \section{Results}
-\subsection{Clean performance (RQ1)}
-All six artifacts passed load, score-bound, hash, and adapter-parity checks. Table~\ref{tab:clean} and Figs.~\ref{fig:roc}--\ref{fig:det} use all 2,737 test samples.
-\begin{table*}[t]\caption{Full canonical-test clean performance.}\label{tab:clean}\centering\small
-\begin{tabular}{lrrrrrrrrl}\toprule Model&Acc.&Prec.&Rec.&F1&Macro-F1&AUC&EER& &TN/FP/FN/TP\\\midrule
-MobileNet&.9766&.9741&.9707&.9724&.9761&.9911&.0250&&1545/30/34/1128\\
-EfficientNet&.9635&.9724&.9406&.9563&.9624&.9877&.0400&&1544/31/69/1093\\
-MnasNet&.9697&.9599&.9690&.9645&.9690&.9886&.0310&&1528/47/36/1126\\
-ShuffleNet&.9850&.9795&.9854&.9824&.9847&.9929&.0146&&1551/24/17/1145\\
-RawNet2 ext.&.4936&.4380&.6807&.5330&.4900&.5178&.4813&&560/1015/371/791\\
-AASIST ext.&.5513&.4758&.5585&.5139&.5487&.5597&.4463&&860/715/513/649\\\bottomrule
-\end{tabular}\end{table*}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{roc_comparison_6_models.png}\caption{Full-test ROC curves.}\label{fig:roc}\end{figure}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{det_comparison_6_models.png}\caption{Full-test DET curves.}\label{fig:det}\end{figure}
-The four local lightweight artifacts exceed the external references under this contract. ShuffleNet leads clean aggregates; MobileNet is fastest. Different provenance and initialization prohibit an architecture-only ranking.
+\subsection{Experimental artifact coverage}
+All six artifacts passed loading, bounded-score, two-class probe, artifact-hash, and public-adapter parity checks. The native checkpoint-to-ONNX parity checks passed for both external references. ShuffleNet's converted TensorFlow 2.15 artifact preserved source scores within \texttt{1.75×10^-10}, loaded with 1,868,441 parameters, and matched the canonical training-manifest hash.
 
-\subsection{Diagnostic robustness (RQ2)}
-Table~\ref{tab:robust} reports mean diagnostic degradation by stress family.
-\begin{table}[t]\caption{Mean diagnostic $\Delta F1$ (lower is better).}\label{tab:robust}\centering\small
-\begin{tabular}{lrrrr}\toprule Model&Noise&Codec&Replay&All 9\\\midrule MobileNet&.6722&.0095&.0620&.3099\\EfficientNet&.8053&.0000&.0641&.3650\\MnasNet&.6119&.0233&.1489&.2989\\ShuffleNet&.3555&.0032&.0256&.1623\\RawNet2&.5077&-.0007&-.0109&.2241\\AASIST&-.0660&-.0074&-.0682&-.0402\\\bottomrule\end{tabular}\end{table}
-Codec changes were small for lightweight models, whereas AWGN was damaging (Figs.~\ref{fig:noise} and~\ref{fig:heat}). Simulated replay F1 was 0.9136/0.8989/0.8267 for MobileNet/EfficientNet/MnasNet. Negative degradation for weak reference baselines is not evidence of superior robustness.
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{noise_f1_vs_snr_6_models.png}\caption{Diagnostic F1 under AWGN; not full-test robustness.}\label{fig:noise}\end{figure}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{robustness_heatmap_6_models.png}\caption{Per-condition diagnostic $\Delta F1$.}\label{fig:heat}\end{figure}
+\subsection{RQ1—clean detection performance}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Full canonical-test clean performance. Arrows indicate the desirable direction.}
+\label{tab:6}
+\begin{tabularx}{\textwidth}{lXXXXXXXX}
+\toprule
+Model & Accuracy & Precision & Recall & F1 & Macro F1 & ROC-AUC & EER & TN/FP/FN/TP \\
+\midrule
+MobileNetV3-LSTM & 0.9766 & 0.9741 & 0.9707 & 0.9724 & 0.9761 & 0.9911 & 0.0250 & 1545/30/34/1128 \\
+EfficientNet-B0-LSTM & 0.9635 & 0.9724 & 0.9406 & 0.9563 & 0.9624 & 0.9877 & 0.0400 & 1544/31/69/1093 \\
+MnasNet-A1-LSTM & 0.9697 & 0.9599 & 0.9690 & 0.9645 & 0.9690 & 0.9886 & 0.0310 & 1528/47/36/1126 \\
+ShuffleNetV2-LSTM & 0.9850 & 0.9795 & 0.9854 & 0.9824 & 0.9847 & 0.9929 & 0.0146 & 1551/24/17/1145 \\
+RawNet2 external & 0.4936 & 0.4380 & 0.6807 & 0.5330 & 0.4900 & 0.5178 & 0.4813 & 560/1015/371/791 \\
+AASIST external & 0.5513 & 0.4758 & 0.5585 & 0.5139 & 0.5487 & 0.5597 & 0.4463 & 860/715/513/649 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+The four lightweight artifacts substantially outperformed the two external checkpoints under this specific test and adapter contract. ShuffleNet led every reported clean aggregate: F1 0.9824, macro-F1 0.9847, AUC 0.9929, and EER 0.0146. MobileNet was second on F1 (0.9724) and AUC (0.9911); MnasNet followed on F1 (0.9645), while EfficientNet's available warm-up checkpoint reached 0.9563. RawNet2 and AASIST produced AUCs of 0.5178 and 0.5597. This observation is not a controlled architecture ranking because initialization, training provenance, thresholds, durations, preprocessing, and adaptation differ.
 
-\subsection{Efficiency}
-Table~\ref{tab:eff} reports the measured efficiency quantities.
-\begin{table*}[t]\caption{Single-thread desktop-CPU efficiency.}\label{tab:eff}\centering\small
-\begin{tabular}{lrrrrrrrr}\toprule Model&Size MiB&RSS MiB&Pre ms&Model ms&Mean/P95 ms&clips/s&RTF\\\midrule
-MobileNet&5.64&554.6&13.43&30.07&43.81/52.12&22.83&.0146\\EfficientNet&18.96&651.2&13.59&168.36&175.85/196.11&5.69&.0586\\MnasNet&13.43&566.0&13.60&95.25&117.00/138.96&8.55&.0390\\ShuffleNet&7.74&501.8&15.57&48.05&62.52/75.37&15.99&.0208\\RawNet2&67.65&249.5&.63&95.10&96.54/102.62&10.36&.0239\\AASIST&1.61&442.5&.47&359.61&362.91/398.45&2.76&.0899\\\bottomrule\end{tabular}\end{table*}
-MobileNet is fastest; AASIST is smallest but slowest, showing that size alone does not predict runtime. All results are desktop CPU evidence, not edge validation (Figs.~\ref{fig:lat} and~\ref{fig:params}).
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{end_to_end_latency_bar_6_models.png}\caption{Measured end-to-end CPU latency.}\label{fig:lat}\end{figure}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{parameters_bar_6_models.png}\caption{Parameter count under the documented Keras/native conventions.}\label{fig:params}\end{figure}
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{clean_metric_grouped_6_models.png}
+\caption{Clean accuracy, F1, macro-F1, and ROC-AUC derived from the six full-test score files.}
+\label{fig:6}
+\end{figure*}
+\subsection{Class-wise error characteristics}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Class-wise precision, recall, and F1 on the full canonical test split.}
+\label{tab:7}
+\begin{tabularx}{\textwidth}{lXXXXXX}
+\toprule
+Model & REAL P & REAL R & REAL F1 & FAKE P & FAKE R & FAKE F1 \\
+\midrule
+MobileNetV3 & 0.9785 & 0.9810 & 0.9797 & 0.9741 & 0.9707 & 0.9724 \\
+EfficientNet-B0 & 0.9572 & 0.9803 & 0.9686 & 0.9724 & 0.9406 & 0.9563 \\
+MnasNet-A1 & 0.9770 & 0.9702 & 0.9736 & 0.9599 & 0.9690 & 0.9645 \\
+ShuffleNetV2 & 0.9892 & 0.9848 & 0.9870 & 0.9795 & 0.9854 & 0.9824 \\
+RawNet2 & 0.6015 & 0.3556 & 0.4469 & 0.4380 & 0.6807 & 0.5330 \\
+AASIST & 0.6264 & 0.5460 & 0.5834 & 0.4758 & 0.5585 & 0.5139 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+ShuffleNet made 24 false-positive and 17 false-negative decisions, the smallest counts among the six. EfficientNet's recall gap is concentrated on FAKE samples (69 false negatives), whereas MnasNet trades more false positives (47) for fewer false negatives (36). RawNet2 labeled many REAL recordings as FAKE (1,015 false positives), consistent with an external threshold and a shifted input/domain contract. The six confusion matrices in Fig. 7 retain raw counts, avoiding the visual distortion that would result from independently normalized color scales.
 
-\subsection{Exploratory Pareto analysis (RQ3)}
-Table~\ref{tab:pareto} reports the three diagnostic objectives. MobileNet, ShuffleNet, and AASIST are non-dominated; ShuffleNet dominates MnasNet and RawNet2, while MobileNet dominates EfficientNet. Official full-test Pareto is NOT\_RUN.
-\begin{table}[t]\caption{Diagnostic three-objective Pareto result.}\label{tab:pareto}\centering\small
-\begin{tabular}{lrrrl}\toprule Model&EER&Mean $\Delta F1$&RTF&Front\\\midrule
-MobileNet&.0476&.3099&.0146&Yes\\
-EfficientNet&.0476&.3650&.0586&No\\
-MnasNet&.0476&.2989&.0390&No\\
-ShuffleNet&.0476&.1623&.0208&Yes\\
-RawNet2&.4138&.2241&.0239&No\\
-AASIST&.3810&-.0402&.0899&Yes\\\bottomrule
-\end{tabular}\end{table}
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{pareto_eer_rtf_6_models.png}\caption{Diagnostic EER--RTF projection; stars denote the three-objective frontier.}\label{fig:pareto}\end{figure}
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{confusion_matrix_panel_6_models.png}
+\caption{Full-test confusion matrices for all six detectors; cells show sample counts.}
+\label{fig:7}
+\end{figure*}
+\subsection{ROC and DET analysis}
+The full-score ROC and DET curves in Figs. 8 and 9 show strong separation for all four lightweight models and near-diagonal behavior for the external references. Because AUC and EER are computed from raw scores, these conclusions do not depend on the deployed thresholds. The close AUC values among the lightweight group should not be described as identical performance: bootstrap intervals overlap, but paired thresholded correctness can still differ.
 
-\subsection{Errors and uncertainty}
-All six models were correct on 911 samples and wrong on 10. The four lightweight systems were unanimously correct while both references were wrong on 785 samples; the reverse occurred on three. Figure~\ref{fig:agree} shows the matrix.
-\begin{figure}[t]\centering\includegraphics[width=\linewidth]{agreement_heatmap_6_models.png}\caption{Full-test pairwise prediction agreement.}\label{fig:agree}\end{figure}
-Table~\ref{tab:ci} gives the 95\% test-set bootstrap intervals. They quantify sampling uncertainty for fixed checkpoints, not training-seed uncertainty.
-\begin{table*}[t]\caption{Preserved five-model full-test intervals and appended ShuffleNet diagnostic interval (1,000 replicates).}\label{tab:ci}\centering\small
-\begin{tabular}{lccc}\toprule Model&F1 95\% CI&AUC 95\% CI&EER 95\% CI\\\midrule
-MobileNet&[.9654,.9788]&[.9871,.9947]&[.0178,.0311]\\
-EfficientNet&[.9477,.9651]&[.9833,.9917]&[.0311,.0482]\\
-MnasNet&[.9573,.9717]&[.9842,.9923]&[.0250,.0379]\\
-RawNet2&[.5150,.5489]&[.4944,.5395]&[.4616,.5016]\\
-AASIST&[.4928,.5349]&[.5377,.5815]&[.4279,.4660]\\
-ShuffleNet$^\dagger$&[.9367,1.0000]&[.9006,1.0000]&[.0000,.1190]\\\bottomrule
-\end{tabular}\end{table*}
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{roc_comparison_6_models.png}
+\caption{ROC curves on all 2,737 canonical test recordings.}
+\label{fig:8}
+\end{figure*}
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{det_comparison_6_models.png}
+\caption{DET representation and EER behavior on the full clean test split.}
+\label{fig:9}
+\end{figure*}
+\subsection{RQ2—diagnostic noise robustness}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Matched 100-sample diagnostic robustness. Values are mean F1 degradation; lower is better.}
+\label{tab:8}
+\begin{tabularx}{\textwidth}{lXXXXX}
+\toprule
+Model & Subset clean F1 & Noise ΔF1 & Codec ΔF1 & Simulated replay ΔF1 & Mean over 9 conditions \\
+\midrule
+MobileNetV3-LSTM & 0.9756 & 0.6722 & 0.0095 & 0.0620 & 0.3099 \\
+EfficientNet-B0-LSTM & 0.9630 & 0.8053 & 0.0000 & 0.0641 & 0.3650 \\
+MnasNet-A1-LSTM & 0.9756 & 0.6119 & 0.0233 & 0.1489 & 0.2989 \\
+ShuffleNetV2-LSTM & 0.9756 & 0.3555 & 0.0032 & 0.0256 & 0.1623 \\
+RawNet2 external & 0.5660 & 0.5077 & --0.0007 & --0.0109 & 0.2241 \\
+AASIST external & 0.5060 & --0.0660 & --0.0074 & --0.0682 & --0.0402 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+AWGN caused the largest deterioration for the lightweight family. Mean noise degradation ranged from 0.3555 for ShuffleNet to 0.8053 for EfficientNet. The curves show that the ranking is condition dependent and degradation accelerates at 5 and 0 dB. The stress suite is diagnostic: the sample size is 100, and its uncertainty is materially larger than that of the full clean benchmark.
 
-\section{Discussion}
-RQ1 shows strong clean performance for local lightweight models, with ShuffleNet providing the best clean detection and MobileNet the lowest runtime. This does not contradict reference publications because domain, adapter and threshold policies differ. RQ2 shows codec resilience but substantial low-SNR sensitivity. RQ3 demonstrates that Pareto membership is not a scalar ranking.
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{noise_f1_vs_snr_6_models.png}
+\caption{Diagnostic F1 as a function of seeded AWGN level.}
+\label{fig:10}
+\end{figure*}
+\subsection{Compression robustness}
+Codec round trips caused little average F1 change for the lightweight systems: 0.0000 for EfficientNet, 0.0032 for ShuffleNet, 0.0095 for MobileNet, and 0.0233 for MnasNet. This does not imply universal codec invariance; it describes four specific FFmpeg conditions on the fixed subset. External checkpoints showed small negative changes, which are compatible with score redistribution around a weak baseline and are not evidence that distortion improves intrinsic detection.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{codec_f1_comparison_6_models.png}
+\caption{F1 under the four executed diagnostic codec round trips.}
+\label{fig:11}
+\end{figure*}
+\subsection{Simulated replay robustness}
+ShuffleNet retained replay F1 0.9500, a degradation of 0.0256. MobileNet and EfficientNet degraded by approximately 0.0620 and 0.0641, while MnasNet degraded by 0.1489. The external checkpoints again had negative deltas from low subset baselines. Because the condition is a deterministic synthetic impulse response plus band limitation, these measurements cannot establish physical replay resistance.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{replay_f1_comparison_6_models.png}
+\caption{Clean-subset and simulated-replay F1 for six detectors.}
+\label{fig:12}
+\end{figure*}
+\subsection{Aggregate robustness comparison}
+Across the nine executed conditions, ShuffleNet had the smallest positive mean degradation among the four high-performing lightweight detectors (0.1623). MobileNet, MnasNet, and EfficientNet followed at 0.3099, 0.2989, and 0.3650. AASIST's calculated value was negative, but its subset clean F1 was only 0.5060; relative change and absolute quality must therefore be inspected together. Figure 13 exposes individual conditions rather than hiding this behavior in one number.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{robustness_heatmap_6_models.png}
+\caption{Per-condition F1 degradation on the fixed diagnostic subset.}
+\label{fig:13}
+\end{figure*}
+\subsection{Computational efficiency}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Measured single-thread desktop-CPU efficiency.}
+\label{tab:9}
+\begin{tabularx}{\textwidth}{lXXXXXXXX}
+\toprule
+Model & Params & Size MiB & RSS MiB & Preprocess ms & Model-only ms & End-to-end mean/P95 ms & Throughput clips/s & RTF \\
+\midrule
+MobileNetV3-LSTM & 1,308,401 & 5.64 & 554.6 & 13.43 & 30.07 & 43.81/52.12 & 22.83 & 0.0146 \\
+EfficientNet-B0-LSTM & 4,779,300 & 18.96 & 651.2 & 13.59 & 168.36 & 175.85/196.11 & 5.69 & 0.0586 \\
+MnasNet-A1-LSTM & 3,369,255 & 13.43 & 566.0 & 13.60 & 95.25 & 117.00/138.96 & 8.55 & 0.0390 \\
+ShuffleNetV2-LSTM & 1,868,441 & 7.74 & 501.8 & 15.57 & 48.05 & 62.52/75.37 & 15.99 & 0.0208 \\
+RawNet2 external & 17,621,410 & 67.65 & 249.5 & 0.63 & 95.10 & 96.54/102.62 & 10.36 & 0.0239 \\
+AASIST external & 297,866 & 1.61 & 442.5 & 0.47 & 359.61 & 362.91/398.45 & 2.76 & 0.0899 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+MobileNet produced the best measured latency and RTF; ShuffleNet ranked second among the TensorFlow detectors on both measures. AASIST had the smallest serialized artifact but the largest latency. RawNet2's waveform preprocessing was inexpensive, yet its 17.6 million parameters resulted in 95.1 ms model-only latency. Conversely, AASIST combined the fewest parameters with 359.6 ms model latency, illustrating that graph operations and backend execution shape runtime. Thus parameter count or file size alone did not predict latency.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{end_to_end_latency_bar_6_models.png}
+\caption{End-to-end latency under the common CPU protocol.}
+\label{fig:14}
+\end{figure*}
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{parameters_bar_6_models.png}
+\caption{Parameter count by detector and counting convention.}
+\label{fig:15}
+\end{figure*}
+Whole-process RSS ranged from 249.5 MiB for RawNet2 to 651.2 MiB for EfficientNet. These values include runtimes and allocator state and must not be read as model tensor memory. All end-to-end RTFs were below 0.1 for offline batch-one execution. MobileNet processed approximately 22.83 clips/s, ShuffleNet 15.99, and AASIST 2.76. The evidence justifies “faster-than-real-time offline on the measured desktop CPU,” not continuous-stream, mobile, or embedded deployment.
+
+\subsection{RQ3—exploratory Pareto trade-offs}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Diagnostic three-objective Pareto result.}
+\label{tab:10}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+Model & Subset EER & Mean ΔF1 & RTF & Non-dominated? \\
+\midrule
+MobileNetV3-LSTM & 0.0476 & 0.3099 & 0.0146 & Yes \\
+EfficientNet-B0-LSTM & 0.0476 & 0.3650 & 0.0586 & No \\
+MnasNet-A1-LSTM & 0.0476 & 0.2989 & 0.0390 & No \\
+ShuffleNetV2-LSTM & 0.0476 & 0.1623 & 0.0208 & Yes \\
+RawNet2 external & 0.4138 & 0.2241 & 0.0239 & No \\
+AASIST external & 0.3810 & --0.0402 & 0.0899 & Yes \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+The non-dominated set is MobileNet, ShuffleNet, and AASIST. ShuffleNet dominates MnasNet and RawNet2 under the three diagnostic objectives; MobileNet dominates EfficientNet. AASIST remains non-dominated because its negative calculated degradation offsets weak absolute clean performance. The frontier must be read jointly with absolute clean quality and provenance and is not an official full-test result.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{pareto_eer_rtf_6_models.png}
+\caption{Exploratory EER–RTF projection; stars denote the three-objective diagnostic frontier.}
+\label{fig:16}
+\end{figure*}
+The 3-D view confirms why a two-dimensional projection is insufficient: AASIST is slow and inaccurate on the subset but occupies an extreme negative-degradation coordinate. MobileNet represents the fastest point, while ShuffleNet combines the same diagnostic subset EER with lower degradation at a modest RTF cost. No scalar “best model” follows from these non-dominated positions.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{pareto_3d_6_models.png}
+\caption{Three-objective diagnostic Pareto space.}
+\label{fig:17}
+\end{figure*}
+\subsection{Error and agreement analysis}
+Across the full clean test, all six models were correct on 911 samples and all six were wrong on 10. The four lightweight systems were unanimously correct while both references were wrong on 785 samples; the reverse occurred on three. ShuffleNet agreed with MobileNet, EfficientNet, and MnasNet on 0.979, 0.970, and 0.977 of decisions; agreement with RawNet2 and AASIST was 0.494 and 0.559. RawNet2 and AASIST agreed on 0.658. Agreement does not imply correctness or independence.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=0.94\textwidth]{agreement_heatmap_6_models.png}
+\caption{Pairwise agreement over identical full-test sample IDs.}
+\label{fig:18}
+\end{figure*}
+\subsection{Statistical uncertainty and pairwise comparisons}
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Full canonical-test percentile 95\% intervals from 1,000 shared-scope stratified bootstrap replicates.}
+\label{tab:11}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+Model & F1 interval & AUC interval & EER interval \\
+\midrule
+MobileNetV3-LSTM & [0.9654, 0.9788] & [0.9871, 0.9947] & [0.0178, 0.0311] \\
+EfficientNet-B0-LSTM & [0.9477, 0.9651] & [0.9833, 0.9917] & [0.0311, 0.0482] \\
+MnasNet-A1-LSTM & [0.9573, 0.9717] & [0.9842, 0.9923] & [0.0250, 0.0379] \\
+RawNet2 external & [0.5150, 0.5489] & [0.4944, 0.5395] & [0.4616, 0.5016] \\
+AASIST external & [0.4928, 0.5349] & [0.5377, 0.5815] & [0.4279, 0.4660] \\
+ShuffleNetV2-LSTM & [0.9768, 0.9875] & [0.9894, 0.9960] & [0.0103, 0.0207] \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+All intervals now use the same full 2,737-sample scope; no 100-sample interval is mixed into this table. In the 15-pair exact McNemar family, ShuffleNet differed from MobileNet after Holm correction ($p_{adj}=0.0096$), and from EfficientNet and MnasNet more strongly. MobileNet versus MnasNet ($p_{adj}=0.1060$) and EfficientNet versus MnasNet ($p_{adj}=0.1180$) were not significant at 0.05. Every lightweight-versus-reference correctness comparison was significant after correction. Paired F1-difference intervals and complete adjusted p-values are stored in \texttt{table\_12\_pairwise\_full\_test.csv}; statistical significance does not remove the provenance caveat.
+
+\begin{table*}[htbp]
+\centering
+\small
+\caption{Full-test paired comparisons involving ShuffleNet. F1 intervals are for ShuffleNet minus comparator; p-values are Holm-adjusted over all 15 pairs.}
+\label{tab:12}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+Comparator & Discordant counts (Shuffle wrong/right) & 95\% CI of F1 difference & Adjusted p \\
+\midrule
+MobileNetV3 & 17 / 40 & [0.0036, 0.0166] & 0.0096 \\
+EfficientNet-B0 & 12 / 71 & [0.0182, 0.0339] & $1.68\times10^{-10}$ \\
+MnasNet-A1 & 10 / 52 & [0.0116, 0.0247] & $3.43\times10^{-7}$ \\
+RawNet2 & 20 / 1,365 & [0.4322, 0.4677] & $<10^{-300}$ \\
+AASIST & 10 / 1,197 & [0.4476, 0.4902] & $<10^{-300}$ \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+\subsection{Discussion and direct answers to the research questions}
+RQ1 is answered narrowly: under the current canonical clean protocol, the four locally trained lightweight systems outperform the two external references. ShuffleNet provides the strongest clean detection metrics, while MobileNet provides the lowest latency and RTF. This does not contradict published RawNet2/AASIST results because LAVA uses another dataset, uncalibrated reference thresholds, and a documented preprocessing adaptation.
+
+RQ2 reveals a condition-specific pattern: codec robustness was comparatively strong, whereas white-noise robustness was poor for the lightweight family. AASIST's negative degradation cannot be promoted as superior robustness because its clean baseline is low. Future full-test stress evaluation should report both absolute stressed metrics and changes.
+
+RQ3 shows that Pareto membership alone is not a ranking. MobileNet trades the lowest RTF against ShuffleNet's lower degradation; AASIST remains non-dominated because a weak baseline can produce negative degradation. EfficientNet, MnasNet, and RawNet2 are dominated in this diagnostic space. A new hardware target, threshold policy, or full-test stress run can change the frontier.
 
 \section{Limitations}
-The scope contains six clean models, but robustness covers only 100 diagnostic samples. Provenance is heterogeneous; EfficientNet is warm-up-only, MnasNet/ShuffleNet are scratch-trained, and RawNet2/AASIST are external. Unknown speaker/source/generator metadata limits the split to checksum-group-disjoint. Replay is simulated, no unseen dataset exists, and timing covers one Windows desktop CPU rather than edge hardware.
+First, this is a six-detector clean evaluation but robustness remains a diagnostic subset, not a full-test result. Second, training provenance is heterogeneous: MobileNet and EfficientNet use ImageNet initialization, MnasNet and ShuffleNet are scratch-trained, EfficientNet is a warm-up-only deployment, and RawNet2/AASIST are externally pretrained. Third, unavailable speaker/source/generator identifiers restrict the split claim to checksum-group-disjoint. Fourth, robustness uses only 100 fixed test samples; full-test robustness remains \texttt{NOT\_RUN}. Noise is synthetic white noise, replay is simulated rather than physical, and no external unseen dataset exists. Fifth, reference padding/resampling deviates from original loaders and their thresholds remain uncalibrated defaults. Sixth, timing is from one Windows desktop CPU, not an edge device; whole-process RSS is not isolated model memory. Seventh, artifacts represent single training runs, and test-set bootstrap intervals do not quantify initialization or training-seed variance. Finally, repeated development-time inspection of this test set may weaken strict independent-holdout interpretation.
+
+\section{Future Work}
+The most important next experiment is not another in-domain architecture sweep but a genuinely independent corpus with preserved speaker, generator, and source identifiers. Those identifiers would permit speaker-, generator-, and source-disjoint partitions and would test whether the lightweight ranking survives domain shift. Full-test execution of the existing nine stress conditions should precede adding more perturbations, because it would replace diagnostic degradation and Pareto coordinates with estimates over the canonical test population.
+
+Physical replay should be recorded across rooms, loudspeakers, microphones, distances, and playback levels. Deployment work should measure Raspberry Pi, Jetson, phone, or comparable target hardware and distinguish cold start, offline clip inference, and causal streaming. Quantization, pruning, ONNX/TFLite conversion, and streaming state management are promising engineering directions but are not current results. Finally, multi-seed retraining of locally trained models and validation calibration of the external references would separate checkpoint variability from test-sample uncertainty.
 
 \section{Conclusion}
-LAVA provides a traceable evaluation boundary across six heterogeneous anti-spoofing models. ShuffleNet obtained the best full-clean detection aggregate and MobileNet the best CPU latency. Diagnostic stress suggests codec tolerance but white-noise fragility. Full-test stress, physical replay, unseen data, edge devices, and multiple seeds remain future work.
+LAVA demonstrates a reproducible way to compare architecturally heterogeneous voice anti-spoofing systems without forcing identical internals. A checksum-aware manifest, common \texttt{P(FAKE)} semantics, sealed artifacts, shared stress waveforms, and measured CPU timing support an evidence-traceable six-detector clean study. ShuffleNetV2-LSTM achieved the best full-clean F1, AUC, and EER; MobileNetV3Small-LSTM retained the lowest latency. Diagnostic robustness indicates that codec transformations are less damaging than low-SNR white noise for the lightweight systems. Completing full-test robustness, physical replay, unseen-data evaluation, edge-hardware measurement, and multi-seed analysis remains necessary before a fully validated LAVA claim.
 
-\section*{Acknowledgements}
-Software and artifacts were developed by Phan Khac Anh Tuan, Nguyen Phuong Chinh, Lai Thanh Dat, Nguyen Tan Khiem, and Truong Thanh Dat. No external financial support is claimed.
+\section{Acknowledgements}
+The software and experimental artifacts were developed by Phan Khắc Anh Tuấn, Nguyễn Phương Chinh, Lại Thành Đạt, Nguyễn Tấn Khiêm, and Trương Thành Đạt. No external financial support is claimed.
 
-\appendices\section{Reproducibility}
-Canonical manifests are in \texttt{data/manifests}; historical results remain in \texttt{outputs/lava\_5}; ShuffleNet-only measurements and six-model aggregates are in \texttt{outputs/lava\_6}. The incremental runner and report generator verify all values without invoking training.
+\section{Appendix A. Reproducibility and Software Artifacts}
+The canonical manifests are in \texttt{data/manifests/}; detector specifications and adapters are in \texttt{src/lava/}; and deployment bundles are in \texttt{models/}. Historical five-model results remain in \texttt{outputs/lava\_5/}; ShuffleNet-only measurements and six-model aggregate outputs are in \texttt{outputs/lava\_6/}. \texttt{benchmark/lava6\_incremental.py} executes only missing ShuffleNet measurements and \texttt{benchmark/lava6\_report.py} combines stored evidence. Reproduction is inference-only and must not invoke \texttt{train.py}.
 
-\bibliographystyle{IEEEtran}\bibliography{references}
+\section{Appendix B. Detector and Score Contracts}
+Registry identifiers are \texttt{mobilenetv3\_lstm}, \texttt{shufflenetv2\_lstm}, \texttt{mnasnet\_lstm}, \texttt{efficientnet\_b0\_lstm}, \texttt{rawnet2}, and \texttt{aasist}. Each production bundle has a model artifact, \texttt{threshold.json}, and \texttt{metadata.json}. Lightweight outputs are scalar sigmoid scores. Reference logits are converted by their adapters so that column/index conventions do not leak into evaluation. All stored score files therefore use REAL=0, FAKE=1, and a \texttt{p\_fake} column.
+
+\section{Appendix C. Robustness Conditions}
+The diagnostic condition manifest contains one matched clean baseline, AWGN at 20/10/5/0 dB, MP3 at 128/64 kb/s, Opus at 64 kb/s, AAC at 96 kb/s, and one simulated replay condition. Condition audio is generated once and reused. There is no physical-replay recording and no unseen corpus. The complete per-condition values are retained under \texttt{outputs/lava\_6/robustness/}; Table 8 intentionally reports category means and the nine-condition mean to keep the main text legible.
+
+\section{Appendix D. Efficiency Measurement Boundaries}
+Preprocessing latency spans file decoding through construction of the detector-ready tensor. Model-only latency starts after that tensor exists. End-to-end latency includes both phases in a warm process. Load time is measured separately. The reported throughput is the reciprocal of the measured mean end-to-end latency under serial batch-one execution, and RTF divides this latency by each detector's declared input duration. Consequently, cross-family preprocessing cost is included, while interpreter launch and framework import are excluded.
+
+\section{Appendix E. Statistical Outputs}
+\texttt{papers/tables/table\_11\_bootstrap\_ci.csv} contains all-six full-test intervals. \texttt{papers/tables/table\_12\_pairwise\_full\_test.csv} contains all 15 discordance counts, exact p-values, Holm-adjusted p-values, and paired F1-difference intervals. These generated files supersede the earlier mixed-scope draft table; no per-sample model inference was repeated for this correction.
+
+\section{Appendix F. Publication Traceability}
+\texttt{PAPER\_EVIDENCE\_MAP.md} maps major claims to repository evidence. \texttt{FIGURE\_MANIFEST.md} and \texttt{TABLE\_MANIFEST.md} identify generated sources. \texttt{FINAL\_NUMERICAL\_AUDIT.md}, \texttt{FINAL\_FIGURE\_AUDIT.md}, \texttt{FINAL\_TABLE\_AUDIT.md}, \texttt{REFERENCE\_AUDIT.md}, and \texttt{PAPER\_VERSION\_CONSISTENCY\_REPORT.md} provide the final editorial gates. These files do not replace independent replication, but they make the evidentiary boundary of this manuscript inspectable.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 \end{document}

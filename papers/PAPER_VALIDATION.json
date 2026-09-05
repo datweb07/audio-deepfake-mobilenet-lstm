@@ -1,11 +1,14 @@
 {
   "status": "PASS",
-  "figures": 10,
-  "tables": 6,
-  "citations": 8,
-  "clean_models": 6,
-  "diagnostic_conditions": 54,
-  "full_test_robustness": "NOT_RUN",
-  "shuffle_excluded": false,
-  "latex_compilation": "NOT_AVAILABLE_ON_HOST"
+  "detectors": 6,
+  "lightweight_detectors": 4,
+  "reference_detectors": 2,
+  "clean_test_samples": 2737,
+  "robustness_scope": "DIAGNOSTIC_SUBSET_100",
+  "main_figures": 18,
+  "tables": 12,
+  "references": 34,
+  "latex_compiler_available": false,
+  "training_run": false,
+  "inference_run": false
 }

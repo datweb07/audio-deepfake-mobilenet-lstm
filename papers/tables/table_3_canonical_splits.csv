@@ -1,0 +1,4 @@
+Split,REAL,FAKE,Total
+train,7345,5417,12762
+validation,1573,1160,2733
+test,1575,1162,2737

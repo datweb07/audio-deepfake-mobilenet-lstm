@@ -1,16 +1,22 @@
-# Figure manifest — six-detector paper
+# Figure Manifest
 
-| Figure | Title | Paper file | Generated from | Script | Section |
-|---:|---|---|---|---|---|
-| 1 | Six-detector LAVA overview | `figures/lava_6_model_overview.png` | six-model protocol | `benchmark/lava6_report.py` | 3.1 |
-| 2 | Benchmark pipeline | `figures/lava_benchmark_pipeline.png` | historical protocol | `benchmark/lava5_report.py` | 3.1 |
-| 3 | Clean ROC | `figures/roc_comparison_6_models.png` | six full score files | `benchmark/lava6_report.py` | 4.2 |
-| 4 | Clean DET | `figures/det_comparison_6_models.png` | six full score files | same | 4.2 |
-| 5 | Noise F1 | `figures/noise_f1_vs_snr_6_models.png` | diagnostic scores | same | 4.3 |
-| 6 | Robustness heatmap | `figures/robustness_heatmap_6_models.png` | 54 stress summaries | same | 4.3 |
-| 7 | End-to-end latency | `figures/end_to_end_latency_bar_6_models.png` | six efficiency JSONs | same | 4.4 |
-| 8 | Parameters | `figures/parameters_bar_6_models.png` | metadata/load audits | same | 4.4 |
-| 9 | Diagnostic Pareto | `figures/pareto_eer_rtf_6_models.png` | six aggregate rows | same | 4.5 |
-| 10 | Agreement | `figures/agreement_heatmap_6_models.png` | aligned full predictions | same | 4.6 |
-
-Robustness and Pareto figures are explicitly marked diagnostic; none is a terminal screenshot.
+| Figure | Title | Publication path | Source/generator | SHA-256 |
+|---:|---|---|---|---|
+| 1 | LAVA six-detector architecture and unified evaluation boundary. | `figures/lava_6_model_overview.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `020763847a675c1c200dd02251b10a4af84abd6e59ac60af451c2b315a2d2497` |
+| 2 | Reproducible LAVA benchmark pipeline. | `figures/lava_benchmark_pipeline.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `cd1920e9961245512c1bcc23f31b17fb52ca48b6d9fd83afcaa2a5a6e139d355` |
+| 3 | Checksum-aware construction of the canonical dataset manifest. | `figures/dataset_integrity_pipeline.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `635b73115b98c05a33878f0c314516cba1950272b393599e68275676abdfe001` |
+| 4 | Standardized preprocessing and temporal classification path for the four lightweight detectors. | `figures/lightweight_temporal_pipeline.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `2c3d9b1efe3e96de52a1f08b00154554d98919534e9401ed378c9502d2938c07` |
+| 5 | Heterogeneous initialization, training, and checkpoint provenance retained by LAVA. | `figures/training_provenance_strategies.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `70980b4b8c449b6452ebe48d65f9bc38b724027aa17c09e69acdb2880d3b3d5e` |
+| 6 | Clean accuracy, F1, macro-F1, and ROC-AUC derived from the six full-test score files. | `figures/clean_metric_grouped_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `70a4d978387e9077ae975b558651ac6674de54f0d01f144bcb68ad2fdaa06c94` |
+| 7 | Full-test confusion matrices for all six detectors; cells show sample counts. | `figures/confusion_matrix_panel_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `a57d9fcbc886161930f49f38307653005ffc882a00c801b35c4c06330ab45472` |
+| 8 | ROC curves on all 2,737 canonical test recordings. | `figures/roc_comparison_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `3bb44c48aaa929c3a3ba9827f5ef52ec59bdf66de8a9398ee1b9c5673889a298` |
+| 9 | DET representation and EER behavior on the full clean test split. | `figures/det_comparison_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `f2ca5533f8c2a0f09d091d8fdd40d139cd93012f8177df3413ae67dd68f640ae` |
+| 10 | Diagnostic F1 as a function of seeded AWGN level. | `figures/noise_f1_vs_snr_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `8aaf41e6f394802f898d3676468c9e6a7d0d92895f36133db69feb1ea21cc98d` |
+| 11 | F1 under the four executed diagnostic codec round trips. | `figures/codec_f1_comparison_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `43c9a35f2b04499e4ec0b66053a0c141d71d61fb11395a15138425a124b1a597` |
+| 12 | Clean-subset and simulated-replay F1 for six detectors. | `figures/replay_f1_comparison_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `a1da8b48cfa9cdc1a46fd95454c9a04233579a6e02027178810f5328d990ed0e` |
+| 13 | Per-condition F1 degradation on the fixed diagnostic subset. | `figures/robustness_heatmap_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `a99e72d644176e1f7ac2a5176a9351e48520ce398baebb3aa75c7138eff280e3` |
+| 14 | End-to-end latency under the common CPU protocol. | `figures/end_to_end_latency_bar_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `d10ad4c4b3bee87d560a75abdd761d8d9a37ed610d2e0a0af2b5660cca8b39f0` |
+| 15 | Parameter count by detector and counting convention. | `figures/parameters_bar_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `81ce11db9829d5b3c03503686f4e2851832f878e32ede84605090cb32cc5c6ce` |
+| 16 | Exploratory EER–RTF projection; stars denote the three-objective diagnostic frontier. | `figures/pareto_eer_rtf_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `d8f860d7663135b75e3f42f3e192a0b14ff10899772e461e26274862487d899e` |
+| 17 | Three-objective diagnostic Pareto space. | `figures/pareto_3d_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `17a8df55d57a78a06db92662fce2bf1937a8d9f085fa0b9d4cbe6e09184e79a0` |
+| 18 | Pairwise agreement over identical full-test sample IDs. | `figures/agreement_heatmap_6_models.png` | stored benchmark CSV/JSON; `scripts/finalize_publication_assets.py` or six-model report generator | `351c8ad5683d6af2ac15dbecb31dd4c3ade9aa1040ca16277da47b34347ed9fc` |

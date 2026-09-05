@@ -1,0 +1,7 @@
+Model,Group,Framework,Input,Duration_s,Backbone,Temporal,Embedding,Initialization,Params,Provenance
+MobileNetV3Small-LSTM,Lightweight,TensorFlow 2.15,6 Mel images,3.0,MobileNetV3Small,LSTM(128),576,ImageNet,1308401,LAVA-trained
+ShuffleNetV2-1.0x-LSTM,Lightweight,TensorFlow 2.15,6 Mel images,3.0,ShuffleNetV2-1.0x,LSTM(128),1024,Scratch,1868441,LAVA-trained
+MnasNet-A1-LSTM,Lightweight,TensorFlow 2.15,6 Mel images,3.0,MnasNet-A1,LSTM(128),1280,Scratch,3369255,LAVA-trained
+EfficientNet-B0-LSTM,Lightweight,TensorFlow 2.15,6 Mel images,3.0,EfficientNet-B0,LSTM(128),1280,ImageNet,4779300,LAVA-trained; warm-up checkpoint
+RawNet2,Reference,ONNX 1.17.3 / PyTorch source,Waveform,4.0375,Sinc/residual/attention,GRU,native,External checkpoint,17621410,External reference
+AASIST,Reference,ONNX 1.17.3 / PyTorch source,Waveform,4.0375,Sinc/2-D encoder/graph attention,Graph readout,native,External checkpoint,297866,External reference

@@ -1,0 +1,7 @@
+Model,Initialization,Training_mode,Optimizer,Initial_LR,Fine_tune_LR,BN_policy,Early_stopping,Selection,Threshold
+MobileNetV3Small-LSTM,ImageNet,Frozen warm-up; partial tail fine-tune,Adam,1e-4,1e-5,Frozen,Per stage,Global minimum validation loss,Validation FAKE-F1; 0.82
+ShuffleNetV2-1.0x-LSTM,Scratch,Full end-to-end from epoch 1,Adam,3e-4,N/A,56/56 trainable,Stopped 28; restored 16,Minimum validation loss,Validation FAKE-F1; 0.12
+MnasNet-A1-LSTM,Scratch,Full end-to-end from epoch 1,Adam,1e-4,N/A,49/49 trainable,Stopped 39; restored 27,Minimum validation loss,Validation FAKE-F1; 0.90
+EfficientNet-B0-LSTM,ImageNet,Frozen warm-up only (deployed),Adam,1e-4,Not completed,Frozen,Warm-up lifecycle,Best warm-up epoch 47,Validation FAKE-F1; 0.90
+RawNet2,External,Not trained in current LAVA run,N/A,N/A,N/A,N/A,N/A,External checkpoint,Default uncalibrated; 0.50
+AASIST,External,Not trained in current LAVA run,N/A,N/A,N/A,N/A,N/A,External checkpoint,Default uncalibrated; 0.50

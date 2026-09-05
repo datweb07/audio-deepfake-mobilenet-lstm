@@ -1,12 +1,15 @@
-# Table manifest — six-detector paper
+# Table Manifest
 
-| Table | Columns | Programmatic source | Section |
-|---:|---|---|---|
-| 1 | detector, group, input, architecture, params, provenance | `outputs/lava_6/tables/table_1_detector_specification_6_models.csv` | 3.4 |
-| 2 | accuracy, precision, recall, F1, macro-F1, AUC, EER, confusion | `outputs/lava_6/tables/table_2_clean_6_models.csv` | 4.2 |
-| 3 | noise/codec/replay/overall degradation | `outputs/lava_6/tables/table_3_robustness_diagnostic_6_models.csv` | 4.3 |
-| 4 | params, size, RSS, latency, throughput, RTF | `outputs/lava_6/tables/table_4_efficiency_6_models.csv` | 4.4 |
-| 5 | diagnostic EER, degradation, RTF, Pareto | `outputs/lava_6/tables/table_5_pareto_diagnostic_6_models.csv` | 4.5 |
-| 6 | bootstrap intervals | `outputs/lava_6/error_analysis/bootstrap_95_ci_6_models.csv` | 4.7 |
-
-All tables are derived by `benchmark/lava6_report.py`; five-model rows are reused and ShuffleNet rows are appended.
+| Table | Source | Rows | Transformation | Paper section |
+|---:|---|---:|---|---|
+| 10 | `papers/tables/table_10_pareto.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
+| 11 | `papers/tables/table_11_bootstrap_ci.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
+| 12 | `papers/tables/table_12_pairwise_full_test.csv` | 15 | generated from manifest/model/output evidence | Results and Discussion |
+| 2 | `papers/tables/table_2_dataset_integrity.csv` | 1 | generated from manifest/model/output evidence | Methodology |
+| 3 | `papers/tables/table_3_canonical_splits.csv` | 3 | generated from manifest/model/output evidence | Methodology |
+| 4 | `papers/tables/table_4_detector_specification.csv` | 6 | generated from manifest/model/output evidence | Methodology |
+| 5 | `papers/tables/table_5_training_provenance.csv` | 6 | generated from manifest/model/output evidence | Methodology |
+| 6 | `papers/tables/table_6_clean_performance.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
+| 7 | `papers/tables/table_7_classwise_performance.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
+| 8 | `papers/tables/table_8_robustness_summary.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
+| 9 | `papers/tables/table_9_efficiency.csv` | 6 | generated from manifest/model/output evidence | Results and Discussion |
