@@ -11,7 +11,22 @@
 **Audit date:** 29 August 2026  
 **Implementation root:** `D:\audio-deepfake-mobilenet-lstm`  
 **Paper A:** `C:\Users\THANH DAT\Downloads\16507.pdf`  
-**Current framing:** **LAVA-5 INTERIM BENCHMARK** (execution status is maintained in `outputs/lava_5/report/acceptance.json`; not FULL LAVA).
+**Current framing:** **LAVA SIX-DETECTOR CLEAN BENCHMARK WITH DIAGNOSTIC ROBUSTNESS** (status: `outputs/lava_6/report/acceptance.json`; full-test robustness remains `NOT_RUN`).
+
+## September 2026 six-detector incremental update
+
+The current clean benchmark covers four LAVA-trained lightweight detectors
+(MobileNetV3Small-LSTM, ShuffleNetV2-1.0x-LSTM, EfficientNet-B0-LSTM, and
+MnasNet-A1-LSTM) and two externally pretrained references (RawNet2 and AASIST).
+ShuffleNet was integrated from its final artifact without retraining or
+re-executing the five historical detectors. Full clean evaluation contains 2,737
+samples per model. Robustness remains the existing fixed 100-sample diagnostic;
+the exact LAVA-5 stress waveforms were reused. The official full-test robustness
+and Pareto analyses remain `NOT_RUN`, while the diagnostic six-model Pareto is
+available. Authoritative current artifacts are under `outputs/lava_6/`; the
+LAVA-5 directory remains immutable history. Physical replay and unseen-data
+evaluation are `NOT_AVAILABLE`. This update supersedes the LAVA-5 status section
+immediately below but does not rewrite the older historical audit.
 
 ## September 2026 interim evaluation update
 

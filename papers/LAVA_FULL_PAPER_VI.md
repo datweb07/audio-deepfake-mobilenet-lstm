@@ -1,10 +1,10 @@
 # LAVA: Khung Đánh giá Gọn nhẹ cho Phát hiện Giọng nói Deepfake Bền vững và Thời gian Thực
 
-**Trạng thái bản thảo:** đánh giá thực nghiệm trung gian LAVA-5; chưa phải benchmark sáu detector hoàn chỉnh.
+**Trạng thái bản thảo:** benchmark clean sáu detector; robustness mới ở phạm vi chẩn đoán trên tập con cố định.
 
 ## Tóm tắt
 
-Các detector giọng nói deepfake thường được so sánh trên các phân hoạch dữ liệu, quy ước điểm số, chuỗi tiền xử lý và giao thức đo thời gian khác nhau, khiến các nhận định về độ chính xác–hiệu quả khó diễn giải. Bài báo trình bày LAVA, một khung dựa trên registry để đánh giá các detector dị thể bằng cùng hợp đồng về nhãn, điểm số, toàn vẹn dữ liệu, độ bền vững và đo thời gian, đồng thời bảo toàn kiến trúc nội tại nguyên bản. Nghiên cứu trung gian hiện tại đánh giá năm artifact sẵn có: ba detector chuỗi Mel được huấn luyện cục bộ—MobileNetV3Small-LSTM, EfficientNet-B0-LSTM và MnasNet-A1-LSTM—cùng hai mô hình tham chiếu chống giả mạo RawNet2 và AASIST được huấn luyện trước từ bên ngoài. Phân nhóm SHA-256 đã cách ly 30 file giống hệt theo byte nhưng khác nhãn và ngăn rò rỉ checksum giữa các split. Đánh giá clean dùng toàn bộ 2.737 bản ghi test chính tắc. MobileNetV3Small-LSTM đạt F1 0,9724, ROC-AUC 0,9911 và EER 2,50%; MnasNet-A1-LSTM đạt 0,9645, 0,9886 và 3,10%; EfficientNet-B0-LSTM đạt 0,9563, 0,9877 và 4,00%. Hai checkpoint ngoài cho kết quả thấp hơn đáng kể theo giao thức dữ liệu và adapter hiện tại, nhưng khác biệt về provenance, thời lượng đầu vào, trạng thái threshold và tiền xử lý không cho phép diễn giải đây là so sánh thuần kiến trúc. Trên CPU desktop một luồng, độ trễ end-to-end đo được từ 43,8 đến 362,9 ms và tất cả detector có RTF dưới 0,1. Độ bền vững được đánh giá ở mức chẩn đoán—không phải kết quả toàn test—trên tập con phân tầng cố định 100 bản ghi với nhiễu trắng có seed, bốn vòng codec và một kênh replay mô phỏng. Codec gây suy giảm nhỏ ở các mô hình lightweight, trong khi nhiễu cộng làm suy giảm mạnh. Tập Pareto chẩn đoán ba mục tiêu gồm MobileNetV3, MnasNet, RawNet2 và AASIST; EfficientNet bị trội hoàn toàn trong tập con và môi trường timing này. Các kết quả hỗ trợ so sánh hướng triển khai có thể tái lập, nhưng chưa hỗ trợ tuyên bố về physical replay, unseen dataset, thiết bị edge, đa seed hay sáu mô hình.
+Các detector giọng nói deepfake thường được so sánh trên các phân hoạch dữ liệu, quy ước điểm số, tiền xử lý và giao thức runtime khác nhau. LAVA tạo một biên đánh giá chung nhưng bảo toàn kiến trúc native. Nghiên cứu hiện tại đánh giá sáu artifact: bốn detector chuỗi Mel do LAVA huấn luyện—MobileNetV3Small-LSTM, ShuffleNetV2-1.0x-LSTM, EfficientNet-B0-LSTM và MnasNet-A1-LSTM—cùng RawNet2 và AASIST pretrained bên ngoài. Clean evaluation dùng toàn bộ 2.737 bản ghi test. ShuffleNet đạt kết quả clean tốt nhất (F1 0,9824; AUC 0,9929; EER 1,46%), còn MobileNet có độ trễ thấp nhất (43,8 ms); ShuffleNet đạt 62,5 ms và RTF 0,0208 trên cùng CPU desktop một luồng. Robustness chỉ được đo ở mức chẩn đoán trên tập con phân tầng cố định 100 bản ghi. Mean ΔF1 của ShuffleNet qua chín condition là 0,1623; nhiễu SNR thấp vẫn là điểm yếu chính. Pareto chẩn đoán gồm MobileNet, ShuffleNet và AASIST. Khác biệt provenance và input contract không cho phép diễn giải đây là so sánh thuần kiến trúc; physical replay, unseen dataset, edge device, đa seed và full-test robustness vẫn chưa có.
 
 **Từ khóa—** phát hiện giọng nói deepfake; chống giả mạo âm thanh; học sâu gọn nhẹ; độ bền vững; real-time factor; phân tích Pareto.
 
@@ -20,7 +20,7 @@ So sánh dễ sai lệch khi các hệ thống đảo thứ tự lớp, trả lo
 
 RawNet2 xử lý trực tiếp waveform [6], AASIST duy trì tương tác graph phổ–thời gian [7], còn các CNN di động được thiết kế theo các nguyên lý hiệu quả khác nhau [3–5]. Ép các hệ thống này vào một topology sẽ làm mất tính đa dạng có ý nghĩa. Ngược lại, đánh giá không có hợp đồng chung sẽ trộn lẫn tác động của kiến trúc, semantics điểm số, dữ liệu và cách đo.
 
-Repository hiện thực hóa biên chung đó nhưng bằng chứng vẫn mang tính trung gian. Ba artifact lightweight có lịch sử khởi tạo khác nhau, hai artifact tham chiếu được huấn luyện từ bên ngoài, ShuffleNetV2 chưa có artifact cuối hợp lệ, và robustness mới hoàn tất trên tập con chẩn đoán cố định. Bài báo báo cáo đúng phạm vi này, không giữ thiết kế sáu mô hình như thể đã được thực nghiệm.
+Repository hiện thực hóa biên chung đó cho bốn artifact lightweight có lịch sử khởi tạo khác nhau và hai artifact tham chiếu được huấn luyện từ bên ngoài. Clean đã hoàn tất cho cả sáu; robustness mới hoàn tất trên tập con chẩn đoán cố định.
 
 ### 1.3 Câu hỏi nghiên cứu
 
@@ -32,7 +32,7 @@ Repository hiện thực hóa biên chung đó nhưng bằng chứng vẫn mang 
 
 ### 1.4 Đóng góp
 
-Bài báo đóng góp: (1) hợp đồng `P(FAKE)` độc lập framework cho TensorFlow và detector PyTorch/ONNX bên ngoài; (2) giao thức toàn vẹn dữ liệu dựa trên checksum để cách ly xung đột nhãn và loại rò rỉ bản sao; (3) benchmark clean năm detector và robustness diagnostic có thể truy vết; (4) giao thức CPU chung tách preprocessing, model-only và end-to-end; (5) phân tích lỗi, bootstrap, agreement và Pareto từ số đo thật, không dùng điểm tổng hợp có trọng số tùy ý.
+Bài báo đóng góp: (1) hợp đồng `P(FAKE)` độc lập framework; (2) giao thức toàn vẹn dữ liệu dựa trên checksum; (3) benchmark clean sáu detector và robustness diagnostic có thể truy vết; (4) giao thức CPU chung; và (5) phân tích lỗi, bootstrap, agreement và Pareto từ số đo thật.
 
 ## 2. Công trình liên quan
 
@@ -50,7 +50,7 @@ AASIST tích hợp graph phổ và thời gian bằng heterogeneous graph attent
 
 ### 2.4 Kiến trúc tích chập gọn nhẹ
 
-MobileNetV3 kết hợp hardware-aware search với cải tiến kiến trúc [3]; EfficientNet scale đồng thời depth, width và resolution [4]; MnasNet đưa latency vào mục tiêu architecture search [5]. LAVA dùng chúng làm hàm embedding cho từng segment trong một meta-architecture audio–temporal có kiểm soát. Thành tích vision trong paper gốc không phải kết quả audio LAVA. ShuffleNetV2 [8] đã được implement cho registry tương lai nhưng bị loại khỏi toàn bộ bảng, đường cong và Pareto thực nghiệm do chưa có final artifact.
+MobileNetV3 kết hợp hardware-aware search với cải tiến kiến trúc [3]; EfficientNet scale đồng thời depth, width và resolution [4]; MnasNet đưa latency vào mục tiêu architecture search [5]; ShuffleNetV2 nhấn mạnh các nguyên tắc tốc độ thực tế [8]. LAVA dùng cả bốn làm embedding theo segment. ShuffleNet được huấn luyện scratch end-to-end và hiện đã tham gia benchmark.
 
 ### 2.5 Robustness và đánh giá hướng triển khai
 
@@ -62,7 +62,7 @@ Noise, codec và replay có thể phá vỡ các dấu hiệu mà detector dựa
 
 LAVA tách tính toán native của model khỏi tầng đánh giá chung (Hình 1). Detector specification khai báo framework, loại input, thời lượng, đường dẫn artifact và provenance. Benchmark khóa hash model, metadata, threshold, manifest và source inference trước khi chạy; báo cáo tính lại metrics từ scores theo từng sample.
 
-![Hình 1. Kiến trúc năm detector và biên đánh giá thống nhất của LAVA.](figures/lava_5_model_overview.png)
+![Hình 1. Kiến trúc sáu detector và biên đánh giá thống nhất của LAVA.](figures/lava_6_model_overview.png)
 
 Pipeline (Hình 2) kiểm tra manifest, load tuần tự từng artifact, đánh giá điểm không đổi, sinh stress audio dùng chung, đo runtime và tạo bảng/hình bằng chương trình.
 
@@ -152,7 +152,7 @@ Scores clean hỗ trợ 1.000 bootstrap phân tầng dùng chung seed 42, tạo 
 
 ### 4.1 Phạm vi artifact
 
-Năm artifact đều PASS load, kiểm tra score hữu hạn, probe hai lớp, hash và public-adapter parity. Hai reference PASS native checkpoint–ONNX parity. ShuffleNetV2 giữ `TRAINING_PENDING`, không được load hay đưa vào bất kỳ kết quả nào.
+Sáu artifact đều PASS load, kiểm tra score hữu hạn, probe hai lớp, hash và public-adapter parity. ShuffleNet khớp manifest chính tắc, có 1.868.441 tham số và PASS conversion parity.
 
 ### 4.2 RQ1—hiệu năng clean
 
@@ -163,14 +163,15 @@ Năm artifact đều PASS load, kiểm tra score hữu hạn, probe hai lớp, h
 | MobileNetV3 | 0,9766 | 0,9741 | 0,9707 | **0,9724** | **0,9761** | **0,9911** | **0,0250** | 1545/30/34/1128 |
 | EfficientNet-B0 | 0,9635 | 0,9724 | 0,9406 | 0,9563 | 0,9624 | 0,9877 | 0,0400 | 1544/31/69/1093 |
 | MnasNet-A1 | 0,9697 | 0,9599 | 0,9690 | 0,9645 | 0,9690 | 0,9886 | 0,0310 | 1528/47/36/1126 |
+| ShuffleNetV2 | **0,9850** | **0,9795** | **0,9854** | **0,9824** | **0,9847** | **0,9929** | **0,0146** | 1551/24/17/1145 |
 | RawNet2 ngoài | 0,4936 | 0,4380 | 0,6807 | 0,5330 | 0,4900 | 0,5178 | 0,4813 | 560/1015/371/791 |
 | AASIST ngoài | 0,5513 | 0,4758 | 0,5585 | 0,5139 | 0,5487 | 0,5597 | 0,4463 | 860/715/513/649 |
 
-Ba artifact lightweight vượt hai reference trong giao thức cụ thể này; MobileNet đứng đầu mọi aggregate clean. Đây không phải ranking thuần kiến trúc vì provenance, threshold, duration và preprocessing khác nhau.
+Bốn artifact lightweight vượt hai reference trong giao thức cụ thể này; ShuffleNet đứng đầu clean, còn MobileNet nhanh nhất. Đây không phải ranking thuần kiến trúc vì initialization, provenance, threshold, duration và preprocessing khác nhau.
 
-![Hình 3. ROC trên toàn bộ 2.737 test sample.](figures/roc_comparison_5_models.png)
+![Hình 3. ROC trên toàn bộ 2.737 test sample.](figures/roc_comparison_6_models.png)
 
-![Hình 4. DET và EER trên clean test.](figures/det_comparison_5_models.png)
+![Hình 4. DET và EER trên clean test.](figures/det_comparison_6_models.png)
 
 ### 4.3 RQ2—robustness diagnostic
 
@@ -181,14 +182,15 @@ Ba artifact lightweight vượt hai reference trong giao thức cụ thể này;
 | MobileNetV3 | 0,9756 | 0,6722 | 0,0095 | 0,0620 | 0,3099 |
 | EfficientNet-B0 | 0,9630 | 0,8053 | 0,0000 | 0,0641 | 0,3650 |
 | MnasNet-A1 | 0,9756 | 0,6119 | 0,0233 | 0,1489 | 0,2989 |
+| ShuffleNetV2 | 0,9756 | 0,3555 | 0,0032 | 0,0256 | 0,1623 |
 | RawNet2 ngoài | 0,5660 | 0,5077 | −0,0007 | −0,0109 | 0,2241 |
 | AASIST ngoài | 0,5060 | −0,0660 | −0,0074 | −0,0682 | −0,0402 |
 
 Codec chỉ làm thay đổi F1 nhỏ ở lightweight, trong khi AWGN gây suy giảm lớn. Replay đưa F1 về 0,9136/0,8989/0,8267 tương ứng MobileNet/EfficientNet/MnasNet. Suy giảm âm của baseline ngoài yếu không chứng minh robustness tốt; subset nhỏ có thể đổi score distribution ngẫu nhiên.
 
-![Hình 5. F1 diagnostic theo mức AWGN.](figures/noise_f1_vs_snr.png)
+![Hình 5. F1 diagnostic theo mức AWGN.](figures/noise_f1_vs_snr_6_models.png)
 
-![Hình 6. Heatmap ΔF1 theo condition.](figures/robustness_heatmap.png)
+![Hình 6. Heatmap ΔF1 theo condition.](figures/robustness_heatmap_6_models.png)
 
 ### 4.4 Hiệu quả tính toán
 
@@ -199,14 +201,15 @@ Codec chỉ làm thay đổi F1 nhỏ ở lightweight, trong khi AWGN gây suy g
 | MobileNetV3 | 1.308.401 | 5,64 | 554,6 | 13,43 | 30,07 | **43,81/52,12** | **22,83** | **0,0146** |
 | EfficientNet-B0 | 4.779.300 | 18,96 | 651,2 | 13,59 | 168,36 | 175,85/196,11 | 5,69 | 0,0586 |
 | MnasNet-A1 | 3.369.255 | 13,43 | 566,0 | 13,60 | 95,25 | 117,00/138,96 | 8,55 | 0,0390 |
+| ShuffleNetV2 | 1.868.441 | 7,74 | 501,8 | 15,57 | 48,05 | 62,52/75,37 | 15,99 | 0,0208 |
 | RawNet2 ngoài | 17.621.410 | 67,65 | 249,5 | 0,63 | 95,10 | 96,54/102,62 | 10,36 | 0,0239 |
 | AASIST ngoài | 297.866 | **1,61** | 442,5 | **0,47** | 359,61 | 362,91/398,45 | 2,76 | 0,0899 |
 
 MobileNet có latency/RTF tốt nhất; AASIST có file nhỏ nhất nhưng latency lớn nhất. Param hay size riêng lẻ không dự báo runtime. Mọi RTF<0,1 nhưng không phải streaming/edge validation.
 
-![Hình 7. Độ trễ end-to-end trong giao thức CPU chung.](figures/end_to_end_latency_bar.png)
+![Hình 7. Độ trễ end-to-end trong giao thức CPU chung.](figures/end_to_end_latency_bar_6_models.png)
 
-![Hình 8. Số tham số theo quy ước count đã nêu.](figures/parameters_bar.png)
+![Hình 8. Số tham số theo quy ước count đã nêu.](figures/parameters_bar_6_models.png)
 
 ### 4.5 RQ3—Pareto thăm dò
 
@@ -216,23 +219,24 @@ MobileNet có latency/RTF tốt nhất; AASIST có file nhỏ nhất nhưng late
 |---|---:|---:|---:|---|
 | MobileNetV3 | 0,0476 | 0,3099 | 0,0146 | Có |
 | EfficientNet-B0 | 0,0476 | 0,3650 | 0,0586 | Không |
-| MnasNet-A1 | 0,0476 | 0,2989 | 0,0390 | Có |
-| RawNet2 ngoài | 0,4138 | 0,2241 | 0,0239 | Có |
+| MnasNet-A1 | 0,0476 | 0,2989 | 0,0390 | Không |
+| ShuffleNetV2 | 0,0476 | 0,1623 | 0,0208 | Có |
+| RawNet2 ngoài | 0,4138 | 0,2241 | 0,0239 | Không |
 | AASIST ngoài | 0,3810 | −0,0402 | 0,0899 | Có |
 
-MobileNet trội EfficientNet ở cả ba mục tiêu diagnostic. Frontier bốn model không nghĩa là bốn model tốt ngang nhau: reference đạt degradation nhỏ một phần vì clean thấp. Cần đọc Pareto cùng chất lượng tuyệt đối và provenance.
+Frontier chẩn đoán gồm MobileNet, ShuffleNet và AASIST. ShuffleNet trội MnasNet và RawNet2; MobileNet trội EfficientNet. AASIST còn trên frontier một phần vì baseline clean yếu tạo degradation âm, nên phải đọc cùng chất lượng tuyệt đối.
 
-![Hình 9. Phép chiếu EER–RTF của Pareto diagnostic.](figures/pareto_2d_eer_rtf.png)
+![Hình 9. Phép chiếu EER–RTF của Pareto diagnostic.](figures/pareto_eer_rtf_6_models.png)
 
 ### 4.6 Phân tích lỗi và agreement
 
-Trên full clean test, 912 sample được cả năm model dự đoán đúng và 11 sample bị cả năm dự đoán sai. Ba lightweight đồng thuận đúng trong khi cả hai reference sai ở 788 sample; chiều ngược lại có tám sample. Agreement trong nhóm lightweight là 0,962–0,972; lightweight–RawNet2 khoảng 0,488–0,492; lightweight–AASIST 0,555–0,558; RawNet2–AASIST 0,658. Cấu trúc cụm phù hợp khác biệt pipeline nhưng agreement không đồng nghĩa correctness hay independence.
+Trên full clean test, 911 sample được cả sáu model dự đoán đúng và 10 sample bị cả sáu dự đoán sai. Bốn lightweight đồng thuận đúng trong khi cả hai reference sai ở 785 sample; chiều ngược lại có ba sample. ShuffleNet agreement với MobileNet/EfficientNet/MnasNet lần lượt là 0,979/0,970/0,977.
 
-![Hình 10. Agreement theo cặp trên cùng full-test ID.](figures/model_agreement_heatmap.png)
+![Hình 10. Agreement theo cặp trên cùng full-test ID.](figures/agreement_heatmap_6_models.png)
 
 ### 4.7 Bất định thống kê
 
-**Bảng 6. Percentile CI 95% từ 1.000 bootstrap phân tầng full test.**
+**Bảng 6. CI full-test của năm model cũ và CI diagnostic được bổ sung cho ShuffleNet (1.000 bootstrap phân tầng).**
 
 | Model | F1 CI | AUC CI | EER CI |
 |---|---|---|---|
@@ -241,20 +245,23 @@ Trên full clean test, 912 sample được cả năm model dự đoán đúng v�
 | MnasNet | [0,9573; 0,9717] | [0,9842; 0,9923] | [0,0250; 0,0379] |
 | RawNet2 | [0,5150; 0,5489] | [0,4944; 0,5395] | [0,4616; 0,5016] |
 | AASIST | [0,4928; 0,5349] | [0,5377; 0,5815] | [0,4279; 0,4660] |
+| ShuffleNetV2† | [0,9367; 1,0000] | [0,9006; 1,0000] | [0,0000; 0,1190] |
+
+†Dòng ShuffleNet dùng cùng subset diagnostic 100 mẫu; năm dòng lịch sử không được tính lại.
 
 Paired CI chênh F1 MobileNet–EfficientNet là [0,0088;0,0232], MobileNet–MnasNet [0,0003;0,0155]. Ý nghĩa thống kê trên test này không loại bỏ domain/provenance confounding.
 
 ### 4.8 Thảo luận
 
-RQ1 được trả lời trong phạm vi hẹp: ba hệ thống lightweight cục bộ vượt reference ngoài trên clean protocol, MobileNet có aggregate và runtime mạnh nhất. Điều này không mâu thuẫn paper gốc của RawNet2/AASIST vì dataset, threshold và adapter khác. RQ2 cho thấy codec ít gây hại hơn AWGN cho lightweight; negative degradation của AASIST không nên được gọi là ưu thế do clean baseline thấp. RQ3 cho thấy Pareto membership không phải xếp hạng; frontier có thể thay đổi theo hardware, calibration hay full-test robustness.
+RQ1 cho thấy bốn hệ thống lightweight cục bộ vượt reference ngoài trên clean protocol; ShuffleNet có detection aggregate tốt nhất và MobileNet có runtime thấp nhất. RQ2 cho thấy codec ít gây hại hơn AWGN. RQ3 cho thấy Pareto membership không phải xếp hạng; frontier có MobileNet, ShuffleNet và AASIST nhưng có thể đổi theo hardware hoặc full-test robustness.
 
 ## 5. Hạn chế
 
-Đây là đánh giá trung gian năm model; ShuffleNetV2 chưa có final artifact. Provenance training dị thể: MobileNet/EfficientNet dùng ImageNet, MnasNet scratch, EfficientNet chỉ warm-up, RawNet2/AASIST là checkpoint ngoài. Metadata speaker/source/generator thiếu nên chỉ claim checksum-group-disjoint. Robustness chỉ có 100 sample; full-test robustness là `NOT_RUN`. Noise là AWGN, replay chỉ mô phỏng, không có unseen dataset. Reference adapter khác loader gốc và threshold chưa calibrate. Timing chỉ trên một CPU Windows desktop, RSS là toàn tiến trình. Mỗi artifact chỉ đại diện một run; bootstrap test không thay multi-seed. Việc test set từng được xem trong quá trình phát triển cũng làm yếu cách hiểu independent hold-out tuyệt đối.
+Clean evaluation đã có sáu detector nhưng robustness chỉ có 100 sample; full-test robustness là `NOT_RUN`. Provenance dị thể: MobileNet/EfficientNet dùng ImageNet, MnasNet/ShuffleNet scratch, EfficientNet chỉ warm-up, RawNet2/AASIST là checkpoint ngoài. Metadata speaker/source/generator thiếu nên chỉ claim checksum-group-disjoint. Noise là AWGN, replay chỉ mô phỏng, không có unseen dataset. Timing chỉ trên một CPU Windows desktop, RSS là toàn tiến trình. Mỗi artifact chỉ đại diện một run; bootstrap test không thay multi-seed.
 
 ## 6. Kết luận
 
-LAVA cho thấy cách so sánh các detector giọng nói dị thể mà không phá kiến trúc native. Manifest theo checksum, score `P(FAKE)`, artifact được khóa hash, stress waveform dùng chung và timing CPU tạo thành benchmark trung gian năm detector có thể truy vết. MobileNetV3Small-LSTM đạt F1, AUC, EER và latency clean tốt nhất. Robustness diagnostic cho thấy codec ít gây suy giảm hơn AWGN SNR thấp trong nhóm lightweight. Pareto minh họa nhiều trade-off nhưng chỉ đúng với subset. Cần full-test robustness, physical replay, unseen dataset, edge hardware, nhiều seed và artifact ShuffleNet hợp lệ trước khi tuyên bố Full LAVA sáu mô hình.
+LAVA cho thấy cách so sánh sáu detector giọng nói dị thể mà không phá kiến trúc native. ShuffleNetV2-LSTM đạt F1, AUC và EER clean tốt nhất; MobileNetV3Small-LSTM có latency thấp nhất. Robustness diagnostic cho thấy codec ít gây suy giảm hơn AWGN SNR thấp. Cần full-test robustness, physical replay, unseen dataset, edge hardware và nhiều seed trước khi tuyên bố LAVA được xác minh đầy đủ.
 
 ## Lời cảm ơn
 
@@ -262,7 +269,7 @@ Phần mềm và artifact thực nghiệm được phát triển bởi Phan Kh�
 
 ## Phụ lục A. Khả năng tái lập và artifact phần mềm
 
-Manifest chính tắc nằm ở `data/manifests/`; detector registry/adapter ở `src/lava/`; bundle triển khai ở `models/`; clean scores và efficiency ở `outputs/lava_5/`; stress diagnostic và Pareto thăm dò ở `outputs/lava_5/diagnostic_100/`. `benchmark/lava5.py` điều phối inference; `lava5_stress.py` sinh condition; `lava5_report.py` tính lại số liệu/hình; `scripts/lava5_acceptance.py` kiểm tra alignment, hash, threshold, parity và scope. Tái lập benchmark này tuyệt đối không gọi `train.py`.
+LAVA-5 lịch sử được giữ ở `outputs/lava_5/`. ShuffleNet-only measurements và aggregate sáu model nằm ở `outputs/lava_6/`. `benchmark/lava6_incremental.py` chỉ chạy phần thiếu của ShuffleNet; `benchmark/lava6_report.py` ghép số liệu đã lưu. Quy trình không gọi `train.py`.
 
 ## Tài liệu tham khảo
 

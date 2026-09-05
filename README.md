@@ -146,6 +146,19 @@ Prediction output includes model, framework, predicted label, confidence, raw `P
 
 ## Benchmark
 
+The current measured aggregate is the six-detector incremental benchmark in
+`outputs/lava_6/`. It reuses the authoritative LAVA-5 clean/efficiency results and
+adds only ShuffleNet inference. Clean evaluation covers all 2,737 test files;
+robustness remains a fixed 100-sample diagnostic, so full-test robustness and the
+official Pareto frontier are still `NOT_RUN`. Historical LAVA-5 outputs are kept.
+
+To validate/regenerate aggregate tables and figures from stored scores (no model
+inference and no training):
+
+```powershell
+python -m benchmark.lava6_report
+```
+
 Clean benchmark, one model or all registered models:
 
 ```powershell

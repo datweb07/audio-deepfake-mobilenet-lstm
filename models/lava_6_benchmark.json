@@ -1,0 +1,15 @@
+{
+  "title": "LAVA six-detector incremental benchmark",
+  "clean_samples": 2737,
+  "robustness_scope": "DIAGNOSTIC_SUBSET_100",
+  "full_test_robustness": "NOT_RUN",
+  "manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "models": {
+    "mobilenetv3_lstm": {"model_sha256": "7345bdeb9542adb7686e3cefbf070ad30f2b0de0da77ef5e1d644dd743763c84", "CleanF1": 0.9724137931034482, "AUC": 0.9911466273256291, "EER": 0.02495697074010328, "LatencyMeanMs": 43.80635200002871, "RTF": 0.014602117333342903},
+    "efficientnet_b0_lstm": {"model_sha256": "853a428ad0280faa644aaad0b4d3d6e25d9130b70b4167dfed9a7193a1b053f2", "CleanF1": 0.9562554680664916, "AUC": 0.9877021009206896, "EER": 0.04, "LatencyMeanMs": 175.84591400001955, "RTF": 0.05861530466667318},
+    "mnasnet_lstm": {"model_sha256": "2c5301b2c3dc3e3faeb2e8ff11409c0b2dd637568a407c5a7b4eefba02055b02", "CleanF1": 0.9644539614561028, "AUC": 0.9886282545146572, "EER": 0.030981067125645412, "LatencyMeanMs": 117.00035999980173, "RTF": 0.03900011999993391},
+    "rawnet2_pretrained": {"model_sha256": "afdaf27fa4e010b8a6d3051b37ea8d6ffb27dbaa7678faf22fef53285d515671", "CleanF1": 0.5330188679245284, "AUC": 0.5178370625358577, "EER": 0.4812698412698413, "LatencyMeanMs": 96.54346800012718, "RTF": 0.023911694860712616},
+    "aasist_pretrained": {"model_sha256": "7e7bbe8baf2dd8f6a09dcb5236133c81ea7c9a74b12929d685b39fb0026d776c", "CleanF1": 0.5138558986539985, "AUC": 0.5596636887686801, "EER": 0.44634920634920633, "LatencyMeanMs": 362.906175999924, "RTF": 0.08988388260060039},
+    "shufflenetv2_lstm": {"model_sha256": "0a7dc43f6731e7c5c0379c2c9a341e7358a81bc37a7bedf4786e006942ec9442", "CleanF1": 0.9824109824109823, "AUC": 0.9928828238122558, "EER": 0.014629948364888179, "LatencyMeanMs": 62.52165199999581, "RTF": 0.02084055066666527}
+  }
+}
