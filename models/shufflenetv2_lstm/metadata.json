@@ -1,0 +1,130 @@
+{
+  "BN_total": 56,
+  "BN_trainable": 56,
+  "architecture": "6 chronological Mel images -> TimeDistributed(shufflenetv2_1_0x) -> LSTM(128) -> Dense(64, relu) -> Dropout(0.4) -> Dense(1, sigmoid)",
+  "backbone_total_params": 1269784,
+  "backbone_trainable_params_at_epoch1": 1253604,
+  "batch_normalization": {
+    "frozen": 0,
+    "total": 56,
+    "trainable": 56
+  },
+  "best_epoch": 16,
+  "best_val_loss": 0.08210305869579315,
+  "checkpoint": {
+    "best": "best.keras",
+    "directory": "outputs/checkpoints/shufflenetv2_lstm",
+    "lifecycle_state": "lifecycle_state.json"
+  },
+  "conversion": {
+    "converted_scores": [
+      0.0003563254722394049,
+      0.00011704216012731194,
+      0.9965145587921143,
+      0.996883749961853,
+      0.9896872639656067,
+      0.9932852983474731
+    ],
+    "converted_sha256": "0a7dc43f6731e7c5c0379c2c9a341e7358a81bc37a7bedf4786e006942ec9442",
+    "embedding_max_abs_difference": 2.1457672119140625e-06,
+    "input_shape": [
+      null,
+      6,
+      224,
+      224,
+      3
+    ],
+    "output_shape": [
+      null,
+      1
+    ],
+    "parameter_count": 1868441,
+    "parity_samples": 6,
+    "save_reload_max_abs_difference": 0.0,
+    "score_max_abs_difference": 1.7462298274040222e-10,
+    "source_keras": "3.13.2",
+    "source_scores": [
+      0.00035632564686238766,
+      0.00011704216012731194,
+      0.9965145587921143,
+      0.996883749961853,
+      0.9896872639656067,
+      0.9932852983474731
+    ],
+    "source_sha256": "2e1d7853886772928e3c73046d65ad012a17bf2681b2c1ca71cf2375dd582aa4",
+    "status": "PASS",
+    "target_tensorflow": "2.15.0",
+    "weight_layers": 115
+  },
+  "detector_name": "shufflenetv2_lstm",
+  "display_name": "ShuffleNetV2-1.0x-LSTM",
+  "epochs_run": 28,
+  "final_threshold": 0.12,
+  "framework": "tensorflow",
+  "framework_version": "2.15.0",
+  "git_commit": "UNKNOWN",
+  "group": "lightweight",
+  "hardware_summary": {
+    "visible_gpus": [
+      "/physical_device:GPU:0"
+    ]
+  },
+  "inference": {
+    "precision": "float32",
+    "training": false
+  },
+  "initial_lr": 0.0003,
+  "initialization": "scratch",
+  "input_contract": {
+    "audio_duration": 3.0,
+    "input_scale": [
+      0.0,
+      255.0
+    ],
+    "sample_rate": 22050,
+    "shape": [
+      6,
+      224,
+      224,
+      3
+    ]
+  },
+  "label_mapping": {
+    "FAKE": 1,
+    "REAL": 0
+  },
+  "load_smoke_test": "PASS",
+  "manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "optimization_profile": {
+    "clipnorm": null,
+    "initial_lr": 0.0003,
+    "label_smoothing": 0.0,
+    "optimizer": "Adam",
+    "weight_decay": 0.0
+  },
+  "optimizer": "Adam",
+  "parameter_count": 1868441,
+  "pretraining": "scratch",
+  "pretraining_status": "PRETRAINING_NOT_VERIFIED",
+  "pretraining_stratum": "scratch_experimental",
+  "primary_pretrained_comparison_eligible": false,
+  "scheduler": "reduce_lr_on_plateau",
+  "score_semantics": "sigmoid output = P(FAKE)",
+  "selection": {
+    "best_epoch": 16,
+    "best_stage": "scratch",
+    "best_value": 0.08210305869579315,
+    "mode": "min",
+    "monitor": "validation_loss",
+    "test_used": false
+  },
+  "serialized_size": 8114596,
+  "threshold_source": "validation FAKE-class F1",
+  "threshold_validation_f1": 0.9802405498281787,
+  "training_framework_version": "2.20.0",
+  "training_history": "outputs/plots/shufflenetv2_lstm/training_history.png",
+  "training_manifest_hash": "8b55591d58d3658b8cafe0e77b6ebdedbaa67be2e339730a7276fe9b10958df9",
+  "training_policy": "full_end_to_end_from_epoch_1",
+  "training_seed": 42,
+  "training_strategy": "single_stage_full_end_to_end"
+}
