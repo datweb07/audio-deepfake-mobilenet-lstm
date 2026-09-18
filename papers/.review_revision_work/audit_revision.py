@@ -17,7 +17,7 @@ def all_text(doc):
 
 
 def citation_ids(text):
-    """Return only bibliography identifiers 1..27, ignoring numeric data ranges."""
+    """Return only bibliography identifiers 1..24, ignoring numeric data ranges."""
     ids = []
     for match in re.finditer(r"\[([0-9,\-–\s]+)\]", text):
         values = []
@@ -28,7 +28,7 @@ def citation_ids(text):
                 lo, hi = item.split("-", 1)
                 if lo.isdigit() and hi.isdigit():
                     values.extend(range(int(lo), int(hi) + 1))
-        ids.extend(value for value in values if 1 <= value <= 27)
+        ids.extend(value for value in values if 1 <= value <= 24)
     return ids
 
 
@@ -58,11 +58,18 @@ for name in ["PaperID 804 final.docx", "Response_to_Reviewers_final.docx"]:
     if name.startswith("PaperID"):
         ref_idx = next((i for i,p in enumerate(doc.paragraphs) if p.text.strip() == "References"), None)
         body = "\n".join(p.text for p in doc.paragraphs[:ref_idx]) if ref_idx is not None else text
-        refs = doc.paragraphs[ref_idx+1:] if ref_idx is not None else []
+        refs = [
+            paragraph
+            for table in doc.tables
+            for row in table.rows
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+            if re.match(r"^\[\d+\]", paragraph.text.strip())
+        ]
         cited = set(citation_ids(body))
-        print("reference paragraphs", len([p for p in refs if p.text.strip()]))
+        print("reference paragraphs", len(refs))
         print("cited ids", sorted(cited))
-        print("missing citation ids 1..27", sorted(set(range(1,28)) - cited))
+        print("missing citation ids 1..24", sorted(set(range(1,25)) - cited))
         citation_violations = []
         for paragraph_index, paragraph in enumerate(doc.paragraphs[:ref_idx], 1):
             for sentence in re.split(r"(?<=[.!?])\s+", paragraph.text.strip()):

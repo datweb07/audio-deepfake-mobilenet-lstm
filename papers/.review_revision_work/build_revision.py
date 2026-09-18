@@ -3,6 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
+import argparse
+import re
 import shutil
 import tempfile
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -13,8 +15,9 @@ from PIL import Image
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt
+from docx.shared import Inches, Pt
 
 
 ROOT = Path(r"D:\audio-deepfake-mobilenet-lstm")
@@ -95,6 +98,48 @@ def remove_equation_paragraph(doc: Document, token: str) -> None:
             remove_paragraph(paragraph)
             return
     raise ValueError(f"Equation paragraph not found: {token}")
+
+
+def set_paragraph_size(paragraph, size: float) -> None:
+    paragraph.style.font.size = Pt(size)
+    for run in paragraph.runs:
+        run.font.size = Pt(size)
+
+
+def replace_citation_numbers(text: str, mapping: dict[int, int]) -> str:
+    def repl(match):
+        old = int(match.group(1))
+        return f"[{mapping[old]}]" if old in mapping else match.group(0)
+    return re.sub(r"\[(\d+)\]", repl, text)
+
+
+def renumber_citations(doc: Document, mapping: dict[int, int]) -> None:
+    for paragraph in doc.paragraphs:
+        updated = replace_citation_numbers(paragraph.text, mapping)
+        if updated != paragraph.text:
+            replace_text(paragraph, updated)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    updated = replace_citation_numbers(paragraph.text, mapping)
+                    if updated != paragraph.text:
+                        replace_text(paragraph, updated)
+
+
+def remove_table_borders(table) -> None:
+    tbl_pr = table._tbl.tblPr
+    borders = tbl_pr.find(qn("w:tblBorders"))
+    if borders is None:
+        borders = OxmlElement("w:tblBorders")
+        tbl_pr.append(borders)
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        tag = qn(f"w:{edge}")
+        node = borders.find(tag)
+        if node is None:
+            node = OxmlElement(f"w:{edge}")
+            borders.append(node)
+        node.set(qn("w:val"), "nil")
 
 
 def compact_table_numbering(doc: Document) -> None:
@@ -235,6 +280,11 @@ REFERENCES = [
     "[27] I.-P. Ciobanu et al., ‘XMAD-Bench: Cross-Domain Multilingual Audio Deepfake Benchmark,’ Findings of EACL, pp. 3109-3120, 2026. https://doi.org/10.18653/v1/2026.findings-eacl.162.",
 ]
 
+# Keep 24 primary/recent sources.  The removed entries are t-DCF [5], the
+# generic graph-attention paper [7], and the peripheral LCNN baseline [12].
+SELECTED_REFERENCE_IDS = [1, 2, 3, 4, 6, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+CITATION_MAP = {old: new for new, old in enumerate(SELECTED_REFERENCE_IDS, 1)}
+
 
 def revise_paper() -> None:
     shutil.copy2(PAPER_IN, PAPER_OUT)
@@ -257,7 +307,7 @@ def revise_paper() -> None:
     intro = find_paragraph(doc, "Synthetic and converted speech pose risks")
     replace_text(intro, "Synthetic and converted speech pose risks to speaker verification and human decision-making. Surveys document rapid progress in deepfake voice detection [1], [2]. Shared resources such as ASVspoof and WaveFake support evaluation [3], [4]. Comparisons nevertheless remain difficult because studies differ in partitions, labels, duration, preprocessing, calibration, and runtime boundaries; byte-identical recordings across splits add an integrity risk.")
     related1 = find_paragraph(doc, "ASVspoof 2019 separates")
-    replace_text(related1, "ASVspoof 2019 separates logical-access synthesis and conversion from replay-oriented physical access [3], [5]. ASVspoof 2021 adds channel, compression, and real-environment replay variation [6]. WaveFake covers multiple generators and two languages [4]. RawNet2 and SincNet represent raw-waveform modeling [8], [9]. AASIST and wav2vec 2.0 broaden graph and self-supervised representations [10], [11]. LCNN provides a complementary synthetic-speech baseline [12]. Scores remain tied to each dataset, attack partition, preprocessing, and decision protocol.")
+    replace_text(related1, "ASVspoof 2019 separates logical-access synthesis and conversion from replay-oriented physical access [3]. ASVspoof 2021 adds channel, compression, and real-environment replay variation [6]. WaveFake covers multiple generators and two languages [4]. RawNet2 and SincNet represent raw-waveform modeling [8], [9]. AASIST and wav2vec 2.0 broaden graph and self-supervised representations [10], [11]. Scores remain tied to each dataset, attack partition, preprocessing, and decision protocol.")
     robustness = find_paragraph(doc, "Robustness and generalization concern different shifts.")
     replace_text(robustness, "Robustness and generalization concern different shifts. ASVspoof tasks cover simulated or real-environment replay and channel variation [3], [6]. A wav2vec 2.0 system addresses unmatched codec, attack, and source-domain variation [11]. Cross-source studies test generalization beyond one partition [13], [14]. Other work examines attack-agnostic data and the nature of domain shift [15], [16]. Cross-domain corpora extend this evidence [17]. Recent studies examine non-semantic representations and physical speaker-microphone replay [25], [26]. Multilingual cross-domain evaluation is also emerging [27]. These protocols are not interchangeable.")
     deployment = find_paragraph(doc, "Deployment evidence requires")
@@ -270,7 +320,7 @@ def revise_paper() -> None:
     remove_paragraph(find_paragraph(doc, "Note. Yes = evaluation results reported"))
 
     framework = find_paragraph(doc, "LAVA separates canonical data")
-    replace_text(framework, "LAVA separates canonical data and integrity, registered detectors, conditions, measurements, and analyses. The registry records each artifact's input, duration, threshold, and provenance; adapters preserve native computation while exposing common scores and resource measures. Figure 1 summarizes the integrity-controlled evaluation flow.")
+    replace_text(framework, "LAVA separates canonical data and integrity, registered detectors, conditions, measurements, and analyses. The registry records each artifact's input, duration, threshold, and provenance; adapters preserve native computation while exposing common scores and resource measures. Figure 1 summarizes the six-detector contract, and Figure 2 shows the integrity-controlled data flow.")
 
     dataset = find_paragraph(doc, "The internal collection lacks speaker")
     replace_text(dataset, "The repository contains an internally assembled collection, but its manifest does not retain source-dataset, speaker, source, generator, parent-recording, or dataset identifiers; those provenance fields are therefore reported as UNKNOWN rather than inferred. LAVA scanned 18,722 recordings (10,550 REAL; 8,172 FAKE). Files were grouped by exact byte-level SHA-256. Every member of a checksum group carrying both labels was quarantined: 14 such groups contained the 30 cross-label files. Within each remaining same-label group, the lexicographically first path was retained as the canonical representative and the other byte-identical copies were excluded. The resulting 18,232 recordings (10,493 REAL; 7,739 FAKE) were split with seed 42 into 12,762/2,733/2,737 train/validation/test files (Table 2). The supported property is checksum-group disjointness, not speaker-, source-, generator-, or corpus-disjointness. For h(x) = SHA256(x) and split group sets Gs,")
@@ -278,7 +328,7 @@ def revise_paper() -> None:
     remove_paragraph(find_paragraph(doc, "8b55591d58d3658"))
 
     architecture = find_paragraph(doc, "For the lightweight family")
-    replace_text(architecture, "The lightweight family uses TimeDistributed MobileNetV3Small, ShuffleNetV2-1.0x, MnasNet-A1-1.0, or EfficientNet-B0 segment encoders. Each encoder produces six embeddings, an LSTM with 128 units aggregates them, and a 64-unit ReLU layer plus dropout 0.4 feeds a sigmoid. RawNet2 instead uses a Sinc-style waveform front end, residual temporal blocks, attention, a GRU, and a two-class head [8], [9]. AASIST combines a raw-waveform front end with spectral-temporal graph attention, heterogeneous graph interaction, pooling, and two-class readout [7], [10]:")
+    replace_text(architecture, "The lightweight family uses TimeDistributed MobileNetV3Small, ShuffleNetV2-1.0x, MnasNet-A1-1.0, or EfficientNet-B0 segment encoders. Each encoder produces six embeddings, an LSTM with 128 units aggregates them, and a 64-unit ReLU layer plus dropout 0.4 feeds a sigmoid. RawNet2 instead uses a Sinc-style waveform front end, residual temporal blocks, attention, a GRU, and a two-class head [8], [9]. AASIST combines a raw-waveform front end with spectral-temporal graph attention, heterogeneous graph interaction, pooling, and two-class readout [10]. Figure 3 summarizes architecture and provenance:")
 
     provenance = find_paragraph(doc, "MobileNet and EfficientNet use ImageNet")
     replace_text(provenance, "MobileNet and EfficientNet use ImageNet initialization; EfficientNet-B0 is the available warm-up checkpoint, not a completed fine-tuning result. MnasNet and ShuffleNet were trained from scratch, while RawNet2 and AASIST are external references (Table 2).")
@@ -352,29 +402,15 @@ def revise_paper() -> None:
     future = find_paragraph(doc, "LAVA provides an evidence-traceable comparison")
     replace_text(future, "LAVA compares six heterogeneous voice anti-spoofing artifacts under traceable contracts. MobileNetV3 and ShuffleNetV2 are non-dominated under the evaluated objectives, while low-SNR noise is the main weakness on the fixed diagnostic subset. Future work should add paired full-stress scores, multi-seed training, unseen corpora, physical replay, causal streaming, and representative edge hardware.")
 
-    remove_image_paragraph(doc, "media/image1.jpeg")
-    remove_image_paragraph(doc, "media/image3.jpeg")
-    remove_image_paragraph(doc, "media/image4.jpeg")
-    remove_image_paragraph(doc, "media/image5.jpeg")
-    remove_image_paragraph(doc, "media/image6.jpeg")
-    remove_image_paragraph(doc, "media/image8.jpeg")
-    # The submitted caption contains a space before the period ("Fig. 1 .").
-    remove_paragraph(find_paragraph(doc, "Fig. 1 ."))
-    replace_text(find_paragraph(doc, "Fig. 2."), "Fig. 1. SHA-256 conflict quarantine, canonicalization, and checksum-group-disjoint splitting.")
-    remove_paragraph(find_paragraph(doc, "(b) Artifact provenance"))
-    remove_paragraph(find_paragraph(doc, "Fig. 3."))
-    remove_paragraph(find_paragraph(doc, "ROC"))
-    remove_paragraph(find_paragraph(doc, "DET/EER"))
-    remove_paragraph(find_paragraph(doc, "Fig. 4."))
-    replace_text(find_paragraph(doc, "Fig. 5."), "Fig. 2. Fixed-subset degradation across the nine diagnostic conditions; replay is simulated.")
-    replace_text(find_paragraph(doc, "Fig. 6."), "Fig. 3. Exploratory Pareto space under the evaluated objectives; stars mark non-dominated artifacts.")
-    for paragraph in doc.paragraphs:
-        if "Figure 4" in paragraph.text:
-            replace_text(paragraph, paragraph.text.replace("; Figure 4", "").replace("Figure 4", "Table 3"))
-        elif "Figure 5" in paragraph.text:
-            replace_text(paragraph, paragraph.text.replace("Figure 5", "Figure 2"))
-        elif "Figure 6" in paragraph.text:
-            replace_text(paragraph, paragraph.text.replace("Figure 6", "Figure 3"))
+    # Preserve the accepted manuscript's six-figure, nine-image layout.  The
+    # architecture/provenance, ROC/DET, and robustness panels remain paired as
+    # in the accepted paper; only captions are shortened and corrected.
+    replace_text(find_paragraph(doc, "Fig. 1 ."), "Fig. 1. Six detectors under the unified LAVA evaluation contract.")
+    replace_text(find_paragraph(doc, "Fig. 2."), "Fig. 2. SHA-256 conflict quarantine, canonicalization, and checksum-group-disjoint splitting.")
+    replace_text(find_paragraph(doc, "Fig. 3."), "Fig. 3. Lightweight architecture and artifact provenance; evaluation is shared, training is not.")
+    replace_text(find_paragraph(doc, "Fig. 4."), "Fig. 4. Full-test ROC and DET comparisons for six detector artifacts.")
+    replace_text(find_paragraph(doc, "Fig. 5."), "Fig. 5. Fixed-subset degradation and AWGN F1; replay is simulated.")
+    replace_text(find_paragraph(doc, "Fig. 6."), "Fig. 6. Exploratory Pareto space under the evaluated objectives; stars mark non-dominated artifacts.")
     remove_equation_paragraph(doc, "P=TPTP+FP")
     remove_equation_paragraph(doc, "FRR=FNFN+TP")
     remove_equation_paragraph(doc, "Xtm,k")
@@ -382,23 +418,60 @@ def revise_paper() -> None:
     remove_equation_paragraph(doc, "Q=NTtotal")
     compact_table_numbering(doc)
 
+    renumber_citations(doc, CITATION_MAP)
     ref_paras = [p for p in doc.paragraphs if p.text.strip().startswith("[")]
     ref_style = ref_paras[0].style.name
     for p in ref_paras:
         remove_paragraph(p)
     anchor = find_paragraph(doc, "References")
+    selected_references = []
     for text in REFERENCES:
-        anchor = new_paragraph_near(anchor, text, ref_style)
-        anchor.paragraph_format.space_before = Pt(0)
-        anchor.paragraph_format.space_after = Pt(0)
-        anchor.paragraph_format.line_spacing = Pt(7.5)
-        for run in anchor.runs:
-            run.font.size = Pt(7.0)
+        old_id = int(re.match(r"\[(\d+)\]", text).group(1))
+        if old_id in CITATION_MAP:
+            selected_references.append(re.sub(r"^\[\d+\]", f"[{CITATION_MAP[old_id]}]", text))
+    selected_references = [text.replace("https://doi.org/", "doi:") for text in selected_references]
+    reference_table = doc.add_table(rows=1, cols=2)
+    reference_table.autofit = False
+    remove_table_borders(reference_table)
+    for cell in reference_table.rows[0].cells:
+        cell.width = Inches(2.38)
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
+    split_at = (len(selected_references) + 1) // 2
+    for column, references in enumerate((selected_references[:split_at], selected_references[split_at:])):
+        cell = reference_table.cell(0, column)
+        for index, text in enumerate(references):
+            paragraph = cell.paragraphs[0] if index == 0 else cell.add_paragraph()
+            paragraph.style = ref_style
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            paragraph.paragraph_format.line_spacing = Pt(6.4)
+            run = paragraph.add_run(text)
+            run.font.name = "Times New Roman"
+            run.font.size = Pt(6.25)
+    reference_table._tbl.getparent().remove(reference_table._tbl)
+    anchor._p.addnext(reference_table._tbl)
+
+    # Author-requested camera-ready typography.  Table and caption typography
+    # follows the accepted Springer layout; ordinary manuscript prose is 10 pt.
+    set_paragraph_size(doc.paragraphs[0], 12.0)
+    set_paragraph_size(find_paragraph(doc, "Abstract."), 9.0)
+    set_paragraph_size(find_paragraph(doc, "Keywords:"), 9.0)
+    for paragraph in doc.paragraphs:
+        if paragraph.style and paragraph.style.name in {"p1a", "Normal", "Normal (Web)"}:
+            set_paragraph_size(paragraph, 10.0)
+            if paragraph.paragraph_format.space_before and paragraph.paragraph_format.space_before.pt >= 11.5:
+                paragraph.paragraph_format.space_before = Pt(3)
+        elif paragraph.style and paragraph.style.name == "Caption":
+            if paragraph.paragraph_format.space_before and paragraph.paragraph_format.space_before.pt >= 11.5:
+                paragraph.paragraph_format.space_before = Pt(3)
+        elif paragraph.style and paragraph.style.name == "heading2":
+            if paragraph.paragraph_format.space_before and paragraph.paragraph_format.space_before.pt >= 11.5:
+                paragraph.paragraph_format.space_before = Pt(6)
 
     body = "\n".join(p.text for p in doc.paragraphs)
-    assert len(doc.tables) == 5
-    assert len(doc.inline_shapes) == 3
-    assert len([p for p in doc.paragraphs if p.text.strip().startswith("[")]) == 27
+    assert len(doc.tables) == 6
+    assert len(doc.inline_shapes) == 9
+    assert sum(1 for cell in reference_table.rows[0].cells for p in cell.paragraphs if p.text.strip().startswith("[")) == 24
     for token in ["2,737", "100-recording", "simulated replay", "UNKNOWN", "PR-AUC", "Specificity", "Limitations", "Practical and Societal Implications", "0.9929", "43.81"]:
         assert token in body, token
     doc.save(PAPER_OUT)
@@ -409,15 +482,15 @@ def add_response_item(doc: Document, number: str, comment: str, response: str, c
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(6)
     p.paragraph_format.space_after = Pt(2)
-    p.add_run(f"Comment {number}. ").bold = True
+    p.add_run(f"Reviewer Comment {number}: ").bold = True
     p.add_run(comment)
     p2 = doc.add_paragraph()
     p2.paragraph_format.space_after = Pt(2)
-    p2.add_run("Response. ").bold = True
+    p2.add_run("Response: ").bold = True
     p2.add_run(response)
     p3 = doc.add_paragraph()
     p3.paragraph_format.space_after = Pt(6)
-    p3.add_run("Changes in the manuscript. ").bold = True
+    p3.add_run("Revision in Manuscript: ").bold = True
     p3.add_run(change)
 
 
@@ -433,28 +506,28 @@ def revise_response() -> None:
     clear_body_keep_sections(doc)
     title = doc.add_paragraph("RESPONSE TO REVIEWERS", style="Heading 1")
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph("On behalf of all authors, we thank the reviewers for the careful and constructive evaluation. The manuscript has been revised point by point. Where a requested experiment is not supported by existing evidence, we strengthened the limitation and narrowed the claim instead of reporting unexecuted results. Location references use section/table/figure identifiers because pagination can vary slightly across Word versions.")
+    doc.add_paragraph("On behalf of all authors, we thank the reviewers for the careful and constructive evaluation. The manuscript has been revised point by point. Where a requested experiment is not supported by existing evidence, we strengthened the limitation and narrowed the claim instead of reporting unexecuted results. The page references below correspond to the final 11-page manuscript.")
 
     doc.add_paragraph("Response to Reviewer 1", style="Heading 2")
-    add_response_item(doc, "1", "Clearly specify the source datasets, recording counts, class balance, preprocessing pipeline, and criteria used to quarantine the 30 cross-label files.", "Addressed to the maximum supported by the repository. The manifest does not retain source-dataset identities, speakers, generators, or parent recordings; therefore, no dataset name was invented. We now state that the source is an internally assembled collection with provenance fields marked UNKNOWN, give scanned and retained class counts, explain every preprocessing parameter, and define the quarantine rule as exclusion of every file in an exact-SHA-256 group containing both labels.", "Section 3, Dataset Integrity and Canonical Split; Standardized Audio Preprocessing; Table 1.")
-    add_response_item(doc, "2", "Report precision, recall, specificity, F1, ROC-AUC, PR-AUC, and confidence intervals in addition to AUC and EER.", "Addressed from stored full-test scores without re-running models. Table 3 now reports precision, recall, specificity, F1, macro-F1, ROC-AUC, PR-AUC, and EER for all six artifacts, with stratified percentile-bootstrap 95% confidence intervals for F1, ROC-AUC, and EER (1,000 iterations; seed 42). The text explicitly identifies these as test-set intervals rather than multi-seed uncertainty.", "Abstract; Sections 3 and 4; Table 3.")
-    add_response_item(doc, "3", "Provide the exact architectures, pretrained weights, feature extraction settings, training hyperparameters, and calibration procedures for all six detector artifacts.", "Addressed. The revision specifies the four TimeDistributed backbones and shared LSTM head; RawNet2 and AASIST native waveform designs; exact Mel settings; local batch size, optimizer, learning rates, regularization and early-stopping outcomes; ImageNet versus scratch initialization; external-checkpoint provenance; ONNX parity; and validation-only versus default threshold sources. EfficientNet-B0 remains explicitly identified as the available warm-up checkpoint.", "Section 3, Standardized Audio Preprocessing, Evaluated Detector Architectures, and Training Artifact Provenance and Score Semantics; Table 2.")
-    add_response_item(doc, "4", "Strengthen robustness evaluation by testing multiple SNR levels, codec bitrates, replay conditions, and unseen attack types rather than a fixed 100-recording diagnostic subset.", "Partially addressed, with scope kept truthful. The executed protocol already includes AWGN at 20/10/5/0 dB, MP3 at 128/64 kb/s, Opus at 64 kb/s, AAC at 96 kb/s, and a documented simulated-replay channel, all on the same stratified 100-recording subset. No unseen-attack or full-test stress outputs exist, so they were not fabricated. The manuscript now consistently calls this evidence diagnostic and lists unseen/full-test/physical-replay evaluation as future work.", "Abstract; Section 3, Clean and Diagnostic Stress Evaluation; Section 4, RQ2; Limitations; Conclusion.")
-    add_response_item(doc, "5", "Perform multi-seed repeated experiments and statistical significance testing to establish whether differences are statistically reliable.", "Partially addressed without retraining. Stored paired full-test predictions support exact McNemar tests with Holm correction and stratified bootstrap intervals; these results are now summarized. Multi-seed training was not executed and cannot be inferred from one checkpoint per artifact. The manuscript therefore distinguishes paired test-set evidence from training-seed stability and retains multi-seed evaluation as a limitation and future-work item.", "Section 3, statistical protocol; Section 4, RQ1; Table 3; Limitations; Conclusion.")
-    add_response_item(doc, "6", "Evaluate external-corpus and cross-dataset generalization, physical replay attacks, streaming performance, and resource consumption on representative edge devices before making deployment claims.", "Not executed; claims were narrowed rather than overstated. The repository has no external-corpus benchmark, physical speaker-microphone replay, causal-streaming measurement, or representative edge-device run. The revision explicitly limits its claim to deployment-oriented offline comparison on one desktop CPU and makes these experiments prerequisites for future deployment validation.", "Abstract; Related Work; Section 3, efficiency/stress protocols; Practical and Societal Implications; Limitations; Conclusion.")
+    add_response_item(doc, "1", "Clearly specify the source datasets, recording counts, class balance, preprocessing pipeline, and criteria used to quarantine the 30 cross-label files.", "Fully addressed to the maximum supported by the repository. The manifest does not retain source-dataset identities, speakers, generators, or parent recordings; therefore, no dataset name was invented. We now state that the source is an internally assembled collection with provenance fields marked UNKNOWN, give scanned and retained class counts, explain every preprocessing parameter, and define the quarantine rule as exclusion of every file in an exact-SHA-256 group containing both labels.", "Section 3.2, Dataset Integrity and Canonical Split, pp. 3-4; Section 3.3, Standardized Audio Preprocessing, p. 4; Table 1, p. 4.")
+    add_response_item(doc, "2", "Report precision, recall, specificity, F1, ROC-AUC, PR-AUC, and confidence intervals in addition to AUC and EER.", "Fully addressed from stored full-test scores without re-running models. Table 3 now reports precision, recall, specificity, F1, macro-F1, ROC-AUC, PR-AUC, and EER for all six artifacts, with stratified percentile-bootstrap 95% confidence intervals for F1, ROC-AUC, and EER (1,000 iterations; seed 42). The text explicitly identifies these as test-set intervals rather than multi-seed uncertainty.", "Abstract, p. 1; Sections 3.6-3.7, pp. 6-7; Sections 4.1-4.2, p. 8; Table 3, p. 7.")
+    add_response_item(doc, "3", "Provide the exact architectures, pretrained weights, feature extraction settings, training hyperparameters, and calibration procedures for all six detector artifacts.", "Fully addressed. The revision specifies the four TimeDistributed backbones and shared LSTM head; RawNet2 and AASIST native waveform designs; exact Mel settings; local batch size, optimizer, learning rates, regularization and early-stopping outcomes; ImageNet versus scratch initialization; external-checkpoint provenance; ONNX parity; and validation-only versus default threshold sources. EfficientNet-B0 remains explicitly identified as the available warm-up checkpoint.", "Sections 3.3-3.5, pp. 4-6; Table 2, p. 5; Figure 3, p. 5.")
+    add_response_item(doc, "4", "Strengthen robustness evaluation by testing multiple SNR levels, codec bitrates, replay conditions, and unseen attack types rather than a fixed 100-recording diagnostic subset.", "Partially addressed, with scope kept truthful. The executed protocol already includes AWGN at 20/10/5/0 dB, MP3 at 128/64 kb/s, Opus at 64 kb/s, AAC at 96 kb/s, and a documented simulated-replay channel, all on the same stratified 100-recording subset. No unseen-attack or full-test stress outputs exist, so they were not fabricated. The manuscript now consistently calls this evidence diagnostic and lists unseen/full-test/physical-replay evaluation as future work.", "Abstract, p. 1; Section 3.6, pp. 6-7; Section 4.2, pp. 8-9; Section 6, Limitations, p. 10; Section 7, Conclusion, pp. 10-11.")
+    add_response_item(doc, "5", "Perform multi-seed repeated experiments and statistical significance testing to establish whether differences are statistically reliable.", "Partially addressed without retraining. Stored paired full-test predictions support exact McNemar tests with Holm correction and stratified bootstrap intervals; these results are now summarized. Multi-seed training was not executed and cannot be inferred from one checkpoint per artifact. The manuscript therefore distinguishes paired test-set evidence from training-seed stability and retains multi-seed evaluation as a limitation and future-work item.", "Section 3.7, pp. 6-7; Section 4.1, p. 8; Table 3, p. 7; Section 6, Limitations, p. 10; Section 7, Conclusion, pp. 10-11.")
+    add_response_item(doc, "6", "Evaluate external-corpus and cross-dataset generalization, physical replay attacks, streaming performance, and resource consumption on representative edge devices before making deployment claims.", "Retained as a limitation because the requested experiments were not executed. The repository has no external-corpus benchmark, physical speaker-microphone replay, causal-streaming measurement, or representative edge-device run. The revision explicitly limits its claim to deployment-oriented offline comparison on one desktop CPU and makes these experiments prerequisites for future deployment validation.", "Abstract, p. 1; Section 2, pp. 2-3; Sections 3.6-3.7, pp. 6-7; Sections 5-7, pp. 10-11.")
 
     doc.add_paragraph("Response to Reviewer 2", style="Heading 2")
-    add_response_item(doc, "General", "Maintain natural academic language; exclude nonsensical or unsupported data; complete references; and ensure captions and in-text figure/table references.", "Addressed through an editorial and evidence-consistency pass. Unsupported claims were removed or qualified. Bibliographic entries now consistently include venue, year, pages, volume/issue where applicable, and DOI; arXiv/OpenReview items use persistent identifiers where journal volume/issue or DOI does not apply. All tables remain native editable Word tables, all figures have captions, and their mentions were cross-checked in the text.", "Entire manuscript; References [1]-[27].")
-    add_response_item(doc, "1", "Strengthen the abstract with empirical or quantitative results.", "Addressed. The abstract now includes full-test F1, ROC-AUC, PR-AUC, specificity, and EER for ShuffleNetV2; MobileNetV3 latency and RTF; the diagnostic subset size and stress coverage; and the exploratory non-dominated set, together with limitations.", "Abstract.")
-    add_response_item(doc, "2", "Explicitly list the key contributions in bullet-point format.", "Addressed with three concise, evidence-backed bullets.", "Introduction.")
-    add_response_item(doc, "3", "Incorporate recent relevant studies, especially from 2024, 2025, and 2026 onward.", "Addressed. The revision discusses 2024 cross-domain and calibration work, a 2025 non-semantic representation study, a 2025 physical-replay study, and a 2026 multilingual cross-domain benchmark. Each source is cited only at the claim it supports; the compact narrative replaces the earlier oversized literature table.", "Related Work; References [13], [16], [17], [25]-[27].")
-    add_response_item(doc, "4", "Include a dedicated Limitations section before the conclusion.", "Addressed by moving and consolidating the limitations into a dedicated section immediately before the Conclusion.", "Limitations.")
-    add_response_item(doc, "5", "Strictly adhere to the 10-12 page Springer limit, preferably 12 pages.", "Addressed structurally by preserving the A4 single-column Springer layout, using compact editable tables, removing redundant visuals and equations, and avoiding a large appendix. The final pagination was verified in Microsoft Word before delivery.", "Whole manuscript.")
-    add_response_item(doc, "6", "Ensure all images are high resolution and publication-ready.", "Addressed. The three retained embedded figures use the corresponding repository-native 300-320 dpi sources; redundant figures were removed to meet the page limit without reducing the resolution of the scientific visuals that remain.", "Figures 1-3.")
-    add_response_item(doc, "7", "Provide all tables in editable format.", "Verified. All five tables are native Word tables; no table is embedded as a raster image.", "Tables 1-5.")
-    add_response_item(doc, "8", "Format equations with a standard math editor.", "Verified. Every retained equation remains a native editable Office Math (OMML) object; no equation was replaced by an image.", "Methodology equations.")
-    add_response_item(doc, "9", "Include a dedicated bullet-point contribution list in the Introduction.", "Addressed; this overlaps Comment 2 and is implemented once to avoid repetition.", "Introduction.")
-    add_response_item(doc, "10", "Add a section on practical implications and societal benefits.", "Addressed with a dedicated section explaining defensive use in voice authentication and media verification, the role of human oversight, and the limits of current offline diagnostic evidence.", "Practical and Societal Implications.")
+    add_response_item(doc, "General", "Maintain natural academic language; exclude nonsensical or unsupported data; complete references; and ensure captions and in-text figure/table references.", "Fully addressed through an editorial and evidence-consistency pass. Unsupported claims were removed or qualified. Bibliographic entries now consistently include venue, year, pages, volume/issue where applicable, and DOI; arXiv items use persistent identifiers where journal volume/issue does not apply. All scientific tables remain native editable Word tables, all six numbered figures have captions, and their mentions were cross-checked in the text.", "Entire manuscript, pp. 1-11; References [1]-[24], p. 11.")
+    add_response_item(doc, "1", "Strengthen the abstract with empirical or quantitative results.", "Fully addressed. The abstract now includes full-test F1, ROC-AUC, PR-AUC, specificity, and EER for ShuffleNetV2; MobileNetV3 latency and RTF; the diagnostic subset size and stress coverage; and the exploratory non-dominated set, together with limitations.", "Abstract, p. 1.")
+    add_response_item(doc, "2", "Explicitly list the key contributions in bullet-point format.", "Fully addressed with three concise, evidence-backed bullets.", "Section 1, Introduction, p. 2.")
+    add_response_item(doc, "3", "Incorporate recent relevant studies, especially from 2024, 2025, and 2026 onward.", "Fully addressed. The revision discusses 2024 cross-domain and calibration work, a 2025 non-semantic representation study, a 2025 physical-replay study, and a 2026 multilingual cross-domain benchmark. Each source is cited only at the claim it supports; the compact narrative replaces the earlier oversized literature table.", "Section 2, Related Work, pp. 2-3; References [10], [13], [14], and [22]-[24], p. 11.")
+    add_response_item(doc, "4", "Include a dedicated Limitations section before the conclusion.", "Fully addressed by moving and consolidating the limitations into a dedicated section immediately before the Conclusion.", "Section 6, Limitations, p. 10.")
+    add_response_item(doc, "5", "Strictly adhere to the 10-12 page Springer limit, preferably 12 pages.", "Fully addressed. The A4 single-column Springer layout, compact editable tables, paired figures, and concise prose produce an 11-page manuscript, which remains within the requested 10-12 page range. Pagination was verified in Microsoft Word.", "Whole manuscript, 11 A4 pages.")
+    add_response_item(doc, "6", "Ensure all images are high resolution and publication-ready.", "Fully addressed. The six numbered figures use nine repository-native source images at approximately 300 dpi. Three accepted side-by-side figure pairs were restored to preserve scientific evidence while meeting the page limit; aspect ratios and labels remain intact.", "Figures 1-6, pp. 3, 5, 7-8, and 10.")
+    add_response_item(doc, "7", "Provide all tables in editable format.", "Fully addressed and verified. All five scientific tables are native Word tables; no scientific table is embedded as a raster image.", "Tables 1-5, pp. 4-5 and 7-9.")
+    add_response_item(doc, "8", "Format equations with a standard math editor.", "Fully addressed and verified. Every retained equation remains a native editable Office Math (OMML) object; no equation was replaced by an image.", "Section 3, Methodology, pp. 4 and 6-7.")
+    add_response_item(doc, "9", "Include a dedicated bullet-point contribution list in the Introduction.", "Fully addressed; this overlaps Comment 2 and is implemented once to avoid repetition.", "Section 1, Introduction, p. 2.")
+    add_response_item(doc, "10", "Add a section on practical implications and societal benefits.", "Fully addressed with a dedicated section explaining defensive use in voice authentication and media verification, the role of human oversight, and the limits of current offline diagnostic evidence.", "Section 5, Practical and Societal Implications, p. 10.")
 
     doc.add_paragraph("Final Remarks", style="Heading 3")
     doc.add_paragraph("The revision does not retrain any detector or invent unseen-corpus, physical-replay, streaming, edge-device, or multi-seed results. All added quantitative values are derived from saved full-test score files or existing benchmark artifacts, and all limitations remain explicit.")
@@ -462,7 +535,13 @@ def revise_response() -> None:
 
 
 if __name__ == "__main__":
-    revise_paper()
-    revise_response()
-    print(PAPER_OUT)
-    print(RESPONSE_OUT)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--paper-only", action="store_true")
+    parser.add_argument("--response-only", action="store_true")
+    args = parser.parse_args()
+    if not args.response_only:
+        revise_paper()
+        print(PAPER_OUT)
+    if not args.paper_only:
+        revise_response()
+        print(RESPONSE_OUT)
