@@ -8,7 +8,7 @@ from zipfile import ZipFile, BadZipFile
 from docx import Document
 from docx.oxml.ns import qn
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 PAPER = ROOT / "PaperID 804 final.docx"
 BASE = ROOT / "PaperID 804.docx"
 BACKUP = ROOT / "PaperID 804 final_before_last_review.docx"
@@ -76,13 +76,11 @@ print("body size chars", body_sizes)
 print("non-10 body examples", body_examples)
 
 body_text = "\n".join(p.text for p in doc.paragraphs)
-for table in doc.tables[:-1]:
-    body_text += "\n" + "\n".join(cell.text for row in table.rows for cell in row.cells)
 
 sentence_violations = []
 for sentence in re.split(r"(?<=[.!?])\s+", body_text):
     ids = set()
-    for group in re.findall(r"\[([0-9,\-\s]+)\]", sentence):
+    for group in re.findall(r"\[((?:\d{1,2})(?:\s*[-,]\s*\d{1,2})*)\]", sentence):
         for part in re.split(r"[,\s]+", group.strip()):
             if not part:
                 continue
@@ -95,9 +93,16 @@ for sentence in re.split(r"(?<=[.!?])\s+", body_text):
         sentence_violations.append((sorted(ids), sentence[:180]))
 print("citation sentence violations", len(sentence_violations), sentence_violations[:5])
 
-refs = []
-for cell in doc.tables[-1].rows[0].cells:
-    refs.extend(p.text.strip() for p in cell.paragraphs if re.match(r"^\[\d+\]", p.text.strip()))
+table_citation_violations = []
+for table_index, table in enumerate(doc.tables, 1):
+    for row_index, row in enumerate(table.rows, 1):
+        for cell_index, cell in enumerate(row.cells, 1):
+            ids = {int(x) for x in re.findall(r"\[(\d{1,2})\]", cell.text)}
+            if len(ids) > 2:
+                table_citation_violations.append((table_index, row_index, cell_index, sorted(ids)))
+print("table-cell citation violations", table_citation_violations)
+
+refs = [p.text.strip() for p in doc.paragraphs if re.match(r"^\[\d+\]", p.text.strip())]
 years = [int(y) for ref in refs for y in re.findall(r"\b(20\d{2})\b", ref)]
 recent = [ref for ref in refs if re.search(r"\b202[4-6]\b", ref)]
 print("references", len(refs), "recent_2024_2026", len(recent))
@@ -109,10 +114,26 @@ required = [
     "Reviewer Comment 1:",
     "Response:",
     "Revision in Manuscript:",
-    "11-page manuscript",
     "References [1]-[24]",
     "Figures 1-6",
     "Partially addressed",
     "Retained as a limitation",
 ]
 print("response markers", {token: token in response_text for token in required})
+
+all_text = body_text + "\n" + "\n".join(
+    cell.text for table in doc.tables for row in table.rows for cell in row.cells
+)
+paper_required = {
+    "dataset counts": all(token in all_text for token in ["18,722", "18,232", "10,493", "7,739", "12,762", "2,733", "2,737"]),
+    "cross-label rule": all(token in all_text for token in ["exact byte-level SHA-256", "14 such groups", "30 cross-label files", "quarantined"]),
+    "preprocessing": all(token.lower() in all_text.lower() for token in ["22,050 Hz", "3.0 s", "six chronological", "Hann STFT", "hop 512", "128 HTK-style Mel", "224 × 224"]),
+    "metrics": all(token in all_text for token in ["Precision", "Recall", "Specificity", "PR-AUC", "EER [95% CI]"]),
+    "six artifacts": all(token in all_text for token in ["MobileNetV3", "ShuffleNetV2", "MnasNet", "EffNet-B0", "RawNet2", "AASIST"]),
+    "robustness scope": all(token in all_text for token in ["100-recording", "20, 10, 5, 0 dB", "MP3", "Opus", "AAC", "simulated replay"]),
+    "statistics scope": all(token in all_text for token in ["1,000 iterations", "McNemar", "Holm correction", "multi-seed"]),
+    "deployment limits": all(token in all_text for token in ["unseen-corpus", "physical replay", "streaming", "edge hardware"]),
+    "reviewer-2 sections": all(token in all_text for token in ["Limitations", "Practical and Societal Implications"]),
+}
+print("paper reviewer evidence", paper_required)
+

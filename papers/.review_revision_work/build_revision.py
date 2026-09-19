@@ -331,7 +331,9 @@ def revise_paper() -> None:
     replace_text(architecture, "The lightweight family uses TimeDistributed MobileNetV3Small, ShuffleNetV2-1.0x, MnasNet-A1-1.0, or EfficientNet-B0 segment encoders. Each encoder produces six embeddings, an LSTM with 128 units aggregates them, and a 64-unit ReLU layer plus dropout 0.4 feeds a sigmoid. RawNet2 instead uses a Sinc-style waveform front end, residual temporal blocks, attention, a GRU, and a two-class head [8], [9]. AASIST combines a raw-waveform front end with spectral-temporal graph attention, heterogeneous graph interaction, pooling, and two-class readout [10]. Figure 3 summarizes architecture and provenance:")
 
     provenance = find_paragraph(doc, "MobileNet and EfficientNet use ImageNet")
-    replace_text(provenance, "MobileNet and EfficientNet use ImageNet initialization; EfficientNet-B0 is the available warm-up checkpoint, not a completed fine-tuning result. MnasNet and ShuffleNet were trained from scratch, while RawNet2 and AASIST are external references (Table 2).")
+    # Table numbering is compacted once below after removing the literature
+    # table, so this pre-compaction reference intentionally points to Table 3.
+    replace_text(provenance, "MobileNet and EfficientNet use ImageNet initialization; EfficientNet-B0 is the available warm-up checkpoint, not a completed fine-tuning result. MnasNet and ShuffleNet were trained from scratch, while RawNet2 and AASIST are external references (Table 3).")
 
     conversion = find_paragraph(doc, "RawNet2 and AASIST were strictly loaded")
     new_paragraph_near(conversion, "All local runs used batch size 16, seed 42, validation-loss checkpointing, early stopping, and ReduceLROnPlateau; Table 3 gives artifact-specific initialization, learning rates, regularization, stopping outcomes, and calibration. RawNet2 and AASIST were not locally trained; their external checkpoints were loaded in PyTorch and exported to ONNX.", "Normal", before=True)
@@ -349,7 +351,7 @@ def revise_paper() -> None:
     ]
     for row_index, (row, values) in enumerate(zip(specification.rows, specification_rows)):
         for cell, value in zip(row.cells, values):
-            set_table_cell(cell, value, bold=(row_index == 0), size=5.5 if row_index else 5.8)
+            set_table_cell(cell, value, bold=(row_index == 0), size=9.0)
 
     clean = doc.tables[2]
     # Add one editable column to the existing eight-column table.
@@ -357,7 +359,7 @@ def revise_paper() -> None:
         row._tr.append(deepcopy(row.cells[-1]._tc))
     headers = ["Artifact", "Precision", "Recall", "Specificity", "F1 [95% CI]", "Macro-F1", "ROC-AUC [95% CI]", "PR-AUC", "EER [95% CI]"]
     for c, value in zip(clean.rows[0].cells, headers):
-        set_table_cell(c, value, bold=True, size=6.3)
+        set_table_cell(c, value, bold=True, size=9.0)
     existing = {
         "MobileNetV3": [".9741", ".9707", ".9724", ".9761", ".9911", ".0250"],
         "ShuffleNetV2": [".9795", ".9854", ".9824", ".9847", ".9929", ".0146"],
@@ -377,7 +379,7 @@ def revise_paper() -> None:
         eer_ci = f"{eer} [{ci_row['EER_lower']:.4f},{ci_row['EER_upper']:.4f}]"
         data = [label, precision, recall, f"{extra[label]['specificity']:.4f}".lstrip("0"), f1_ci, macro, auc_ci, f"{extra[label]['pr_auc']:.4f}".lstrip("0"), eer_ci]
         for c, value in zip(row.cells, data):
-            set_table_cell(c, value, size=5.5)
+            set_table_cell(c, value, size=9.0)
     caption4 = find_paragraph(doc, "Table 4.")
     replace_text(caption4, "Table 4. Clean performance on all 2,737 canonical test recordings. Specificity, precision, recall, F1, and macro-F1 use each artifact's threshold; ROC-AUC, PR-AUC, and EER use raw P(FAKE) scores.")
 
@@ -385,7 +387,7 @@ def revise_paper() -> None:
     new_paragraph_near(pareto, "Uncertainty uses a stratified test-set percentile bootstrap (1,000 iterations; seed 42) for F1, ROC-AUC, and EER (Table 4). Paired correctness uses exact McNemar tests with Holm correction; this fixed-test evidence does not replace repeated training over independent seeds.", "Normal", before=True)
 
     results1 = find_paragraph(doc, "All artifacts passed load")
-    replace_text(results1, "All artifacts passed load, score, hash, and adapter checks. ShuffleNetV2 had the highest ROC-AUC (0.9929), PR-AUC (0.9898), specificity (0.9848), and lowest EER (0.0146), followed by MobileNetV3, MnasNet-A1, and the available EfficientNet-B0 warm-up checkpoint (Table 4). Table 4 reports the corresponding bootstrap intervals.")
+    replace_text(results1, "All artifacts passed load, score, hash, and adapter checks. ShuffleNetV2 had the highest ROC-AUC (0.9929), PR-AUC (0.9898), specificity (0.9848), and lowest EER (0.0146), followed by MobileNetV3, MnasNet-A1, and the available EfficientNet-B0 warm-up checkpoint (Table 4). Table 4 reports the corresponding bootstrap intervals, and Figure 4 shows the full-test ROC and DET curves.")
     results2 = find_paragraph(doc, "This is not a controlled architecture study.")
     replace_text(results2, "This is not a controlled architecture study. Training data, initialization, duration, representation, loaders, and calibration differ across artifacts; the results neither rank the RawNet2 or AASIST architectures nor estimate retrained performance. On fixed test predictions, ShuffleNetV2 differed from MobileNetV3 after Holm correction (adjusted p = 0.0096), and both differed strongly from the two external checkpoints; this is paired test-set evidence, not multi-seed training significance.")
     failure = find_paragraph(doc, "Aggregate failure-pattern analysis")
@@ -430,26 +432,19 @@ def revise_paper() -> None:
         if old_id in CITATION_MAP:
             selected_references.append(re.sub(r"^\[\d+\]", f"[{CITATION_MAP[old_id]}]", text))
     selected_references = [text.replace("https://doi.org/", "doi:") for text in selected_references]
-    reference_table = doc.add_table(rows=1, cols=2)
-    reference_table.autofit = False
-    remove_table_borders(reference_table)
-    for cell in reference_table.rows[0].cells:
-        cell.width = Inches(2.38)
-        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.TOP
-    split_at = (len(selected_references) + 1) // 2
-    for column, references in enumerate((selected_references[:split_at], selected_references[split_at:])):
-        cell = reference_table.cell(0, column)
-        for index, text in enumerate(references):
-            paragraph = cell.paragraphs[0] if index == 0 else cell.add_paragraph()
-            paragraph.style = ref_style
-            paragraph.paragraph_format.space_before = Pt(0)
-            paragraph.paragraph_format.space_after = Pt(0)
-            paragraph.paragraph_format.line_spacing = Pt(6.4)
-            run = paragraph.add_run(text)
-            run.font.name = "Times New Roman"
-            run.font.size = Pt(6.25)
-    reference_table._tbl.getparent().remove(reference_table._tbl)
-    anchor._p.addnext(reference_table._tbl)
+    # References are a genuine single-column bibliography, not a two-column
+    # layout table.  Nine-point type matches the accepted manuscript's compact
+    # Springer typography without making the bibliography unreadably small.
+    insertion_anchor = anchor
+    for text in selected_references:
+        paragraph = new_paragraph_near(insertion_anchor, "", ref_style)
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(1)
+        paragraph.paragraph_format.line_spacing = 1.0
+        run = paragraph.add_run(text)
+        run.font.name = "Times New Roman"
+        run.font.size = Pt(9.0)
+        insertion_anchor = paragraph
 
     # Author-requested camera-ready typography.  Table and caption typography
     # follows the accepted Springer layout; ordinary manuscript prose is 10 pt.
@@ -462,6 +457,7 @@ def revise_paper() -> None:
             if paragraph.paragraph_format.space_before and paragraph.paragraph_format.space_before.pt >= 11.5:
                 paragraph.paragraph_format.space_before = Pt(3)
         elif paragraph.style and paragraph.style.name == "Caption":
+            set_paragraph_size(paragraph, 9.0)
             if paragraph.paragraph_format.space_before and paragraph.paragraph_format.space_before.pt >= 11.5:
                 paragraph.paragraph_format.space_before = Pt(3)
         elif paragraph.style and paragraph.style.name == "heading2":
@@ -469,9 +465,17 @@ def revise_paper() -> None:
                 paragraph.paragraph_format.space_before = Pt(6)
 
     body = "\n".join(p.text for p in doc.paragraphs)
-    assert len(doc.tables) == 6
+    # The five scientific tables remain editable Word tables.  References are
+    # now ordinary one-column paragraphs and therefore are not counted here.
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    set_paragraph_size(paragraph, 9.0)
+
+    assert len(doc.tables) == 5
     assert len(doc.inline_shapes) == 9
-    assert sum(1 for cell in reference_table.rows[0].cells for p in cell.paragraphs if p.text.strip().startswith("[")) == 24
+    assert sum(1 for p in doc.paragraphs if p.text.strip().startswith("[")) == 24
     for token in ["2,737", "100-recording", "simulated replay", "UNKNOWN", "PR-AUC", "Specificity", "Limitations", "Practical and Societal Implications", "0.9929", "43.81"]:
         assert token in body, token
     doc.save(PAPER_OUT)
@@ -479,6 +483,9 @@ def revise_paper() -> None:
 
 
 def add_response_item(doc: Document, number: str, comment: str, response: str, change: str):
+    # Typography restoration can repaginate the manuscript.  Keep stable
+    # section/table/figure locators until the author confirms final Word pages.
+    change = re.sub(r",?\s*pp?\.\s*\d+(?:-\d+)?", "", change)
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(6)
     p.paragraph_format.space_after = Pt(2)
@@ -506,7 +513,7 @@ def revise_response() -> None:
     clear_body_keep_sections(doc)
     title = doc.add_paragraph("RESPONSE TO REVIEWERS", style="Heading 1")
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph("On behalf of all authors, we thank the reviewers for the careful and constructive evaluation. The manuscript has been revised point by point. Where a requested experiment is not supported by existing evidence, we strengthened the limitation and narrowed the claim instead of reporting unexecuted results. The page references below correspond to the final 11-page manuscript.")
+    doc.add_paragraph("On behalf of all authors, we thank the reviewers for the careful and constructive evaluation. The manuscript has been revised point by point. Where a requested experiment is not supported by existing evidence, we strengthened the limitation and narrowed the claim instead of reporting unexecuted results. Revision locations use stable section, table, and figure identifiers; final page locators will be synchronized after the camera-ready pagination check.")
 
     doc.add_paragraph("Response to Reviewer 1", style="Heading 2")
     add_response_item(doc, "1", "Clearly specify the source datasets, recording counts, class balance, preprocessing pipeline, and criteria used to quarantine the 30 cross-label files.", "Fully addressed to the maximum supported by the repository. The manifest does not retain source-dataset identities, speakers, generators, or parent recordings; therefore, no dataset name was invented. We now state that the source is an internally assembled collection with provenance fields marked UNKNOWN, give scanned and retained class counts, explain every preprocessing parameter, and define the quarantine rule as exclusion of every file in an exact-SHA-256 group containing both labels.", "Section 3.2, Dataset Integrity and Canonical Split, pp. 3-4; Section 3.3, Standardized Audio Preprocessing, p. 4; Table 1, p. 4.")
@@ -522,7 +529,7 @@ def revise_response() -> None:
     add_response_item(doc, "2", "Explicitly list the key contributions in bullet-point format.", "Fully addressed with three concise, evidence-backed bullets.", "Section 1, Introduction, p. 2.")
     add_response_item(doc, "3", "Incorporate recent relevant studies, especially from 2024, 2025, and 2026 onward.", "Fully addressed. The revision discusses 2024 cross-domain and calibration work, a 2025 non-semantic representation study, a 2025 physical-replay study, and a 2026 multilingual cross-domain benchmark. Each source is cited only at the claim it supports; the compact narrative replaces the earlier oversized literature table.", "Section 2, Related Work, pp. 2-3; References [10], [13], [14], and [22]-[24], p. 11.")
     add_response_item(doc, "4", "Include a dedicated Limitations section before the conclusion.", "Fully addressed by moving and consolidating the limitations into a dedicated section immediately before the Conclusion.", "Section 6, Limitations, p. 10.")
-    add_response_item(doc, "5", "Strictly adhere to the 10-12 page Springer limit, preferably 12 pages.", "Fully addressed. The A4 single-column Springer layout, compact editable tables, paired figures, and concise prose produce an 11-page manuscript, which remains within the requested 10-12 page range. Pagination was verified in Microsoft Word.", "Whole manuscript, 11 A4 pages.")
+    add_response_item(doc, "5", "Strictly adhere to the 10-12 page Springer limit, preferably 12 pages.", "Addressed structurally. The manuscript preserves the A4 single-column Springer layout, compact editable tables, side-by-side figures, and concise prose. Final pagination will be confirmed in Microsoft Word after the requested restoration of table and reference typography.", "Whole manuscript.")
     add_response_item(doc, "6", "Ensure all images are high resolution and publication-ready.", "Fully addressed. The six numbered figures use nine repository-native source images at approximately 300 dpi. Three accepted side-by-side figure pairs were restored to preserve scientific evidence while meeting the page limit; aspect ratios and labels remain intact.", "Figures 1-6, pp. 3, 5, 7-8, and 10.")
     add_response_item(doc, "7", "Provide all tables in editable format.", "Fully addressed and verified. All five scientific tables are native Word tables; no scientific table is embedded as a raster image.", "Tables 1-5, pp. 4-5 and 7-9.")
     add_response_item(doc, "8", "Format equations with a standard math editor.", "Fully addressed and verified. Every retained equation remains a native editable Office Math (OMML) object; no equation was replaced by an image.", "Section 3, Methodology, pp. 4 and 6-7.")
