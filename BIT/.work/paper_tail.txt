@@ -1,0 +1,92 @@
+P078	[heading2]	RQ2 Diagnostic Performance under Executed Distortions
+P079	[p1a]	On the fixed 100-recording diagnostic subset, AWGN caused the largest observed losses for the four high-performing lightweight artifacts. Mean noise ΔF1 ranged from 0.3555 for ShuffleNetV2 to 0.8053 for the available EfficientNet-B0 warm-up checkpoint and rose sharply at 5 and 0 dB. Table 4 and Figure 5 report the condition-level patterns.
+P080	[Caption]	Table 4. Fixed 100-recording diagnostic stress results. ΔF1 is clean minus stressed perfor-mance; replay is simulated.
+P083	[Caption]	(a) Nine-condition degradation
+P084	[Caption]	(b) AWGN F1 trajectory
+P085	[Caption]	Fig. 5. Fixed-subset degradation and AWGN F1; replay is simulated.
+P086	[Normal]	On the fixed subset, codec effects were small for the lightweight artifacts (mean ΔF1: 0.0000-0.0233). Under simulated replay, ShuffleNetV2 retained F1 = 0.9500 (ΔF1 = 0.0256), versus ΔF1 values of 0.0620, 0.0641, and 0.1489 for MobileNetV3, the EfficientNet-B0 warm-up checkpoint, and MnasNet-A1. Negative external-artifact deltas reflect score redistribution around weak baselines, not general robustness.
+P087	[Normal]	Because paired clean/stressed scores were not retained, prediction flips cannot be identified; the reported condition-level trends are aggregate failure patterns, not per-recording error analysis.
+P088	[heading2]	Computational Efficiency
+P089	[p1a]	On the single-thread desktop CPU (Table 5), MobileNetV3 had the lowest end-to-end latency and RTF; ShuffleNetV2 ranked second among local artifacts. AASIST combined the smallest file with the largest latency, whereas RawNet2 combined the most parameters with moderate latency. Size and parameter count did not predict runtime; RSS is whole-process memory.
+P090	[Caption]	Table 5. Float32 batch-one desktop-CPU efficiency on AMD Ryzen 9 8940HX (10 warm-ups, 50 timed runs). RSS is whole-process memory.
+P091	[heading2]	RQ3 Corrected Pareto Trade-offs
+P092	[p1a]	Figure 6 identifies MobileNetV3 and ShuffleNetV2 as non-dominated under the evaluated objectives. MobileNetV3 has the lowest RTF (0.0146); ShuffleNetV2 has the highest mean stressed F1 (0.8133) at RTF 0.0208 and dominates the other four artifacts under these objectives. The frontier is exploratory, not a generally optimal ranking, because it uses 100 stress recordings and one desktop host.
+P094	[Caption]	Fig. 6. Exploratory Pareto space under the evaluated objectives; stars mark non-dominated artifacts.
+P095	[heading1]	Conclusion
+P096	[heading2]	Practical and Societal Implications
+P097	[p1a]	LAVA can support transparent artifact selection for defensive voice-authentication and media-verification screening, while retaining human review for consequential decisions. Its offline diagnostic evidence is not a guarantee of field security, demographic fairness, or edge-device readiness.
+P098	[heading2]	Limitations
+P099	[Normal]	Evidence is limited by heterogeneous training and calibration, a fixed 100-recording diagnostic subset, simulated rather than physical replay, and one desktop CPU. The dataset cannot establish speaker, source, generator, parent-recording, or cross-dataset independence. No unseen-corpus, edge-device, streaming, or multi-seed evaluation was conducted; RSS is whole-process memory, EfficientNet-B0 is an available warm-up checkpoint, and paired scores for sample-level prediction-flip analysis are unavailable.
+P100	[heading2]	Concluding Remarks
+P101	[Normal]	Recommendations remain artifact-, objective-, and platform-specific. Under the evaluated objectives, ShuffleNetV2 is the stronger predictive-performance candidate: it achieved the highest clean AUC, lowest clean EER, highest mean stressed F1, and remained non-dominated at RTF 0.0208. MobileNetV3 is the lower-latency candidate on the measured host. These findings do not identify a universally optimal model or rank architectures independently of their available artifacts.
+P102	[Normal]	LAVA compares six heterogeneous voice anti-spoofing artifacts under traceable contracts. MobileNetV3 and ShuffleNetV2 are non-dominated under the evaluated objectives, while low-SNR noise is the main weakness on the fixed diagnostic subset. Future work should add paired full-stress scores, multi-seed training, unseen corpora, physical replay, causal streaming, and representative edge hardware.
+P103	[heading1]	Acknowledgement
+P104	[p1a]	This research was supported by the University of Economics Ho Chi Minh City (UEH), Vietnam.
+P105	[heading1]	References
+P106	[EndNote Bibliography]	[1] J. Yi et al., ‘Audio Deepfake Detection: A Survey,’ arXiv:2308.14970, 2023. doi:10.48550/arXiv.2308.14970.
+P107	[EndNote Bibliography]	[2] M. Li, Y. Ahmadiadli, and X.-P. Zhang, ‘A Survey on Speech Deepfake Detection,’ ACM Computing Surveys, vol. 57, no. 7, pp. 1-38, 2025. doi:10.1145/3711898.
+P108	[EndNote Bibliography]	[3] M. Todisco et al., ‘ASVspoof 2019: Future Horizons in Spoofed and Fake Audio Detection,’ Proc. Interspeech, pp. 1008-1012, 2019. doi:10.21437/Interspeech.2019-2249.
+P109	[EndNote Bibliography]	[4] J. Frank and L. Schönherr, ‘WaveFake: A Data Set to Facilitate Audio Deepfake Detection,’ NeurIPS Datasets and Benchmarks, 2021, arXiv:2111.02813. doi:10.48550/arXiv.2111.02813.
+P110	[EndNote Bibliography]	[5] J. Yamagishi et al., ‘ASVspoof 2021: Accelerating Progress in Spoofed and Deepfake Speech Detection,’ Proc. ASVspoof 2021 Workshop, pp. 47-54, 2021. doi:10.21437/ASVSPOOF.2021-8.
+P111	[EndNote Bibliography]	[6] H. Tak et al., ‘End-to-End Anti-Spoofing with RawNet2,’ Proc. ICASSP, pp. 6369-6373, 2021. doi:10.1109/ICASSP39728.2021.9414234.
+P112	[EndNote Bibliography]	[7] M. Ravanelli and Y. Bengio, ‘Speaker Recognition from Raw Waveform with SincNet,’ Proc. IEEE SLT Workshop, pp. 1021-1028, 2018. doi:10.1109/SLT.2018.8639585.
+P113	[EndNote Bibliography]	[8] J.-w. Jung et al., ‘AASIST: Audio Anti-Spoofing Using Integrated Spectro-Temporal Graph Attention Networks,’ Proc. ICASSP, pp. 6367-6371, 2022. doi:10.1109/ICASSP43922.2022.9747766.
+P114	[EndNote Bibliography]	[9] H. Tak et al., ‘Automatic Speaker Verification Spoofing and Deepfake Detection Using wav2vec 2.0 and Data Augmentation,’ Proc. Odyssey, pp. 112-119, 2022. doi:10.21437/Odyssey.2022-16.
+P115	[EndNote Bibliography]	[10] O. Pascu et al., ‘Towards Generalisable and Calibrated Audio Deepfake Detection with Self-Supervised Representations,’ Proc. Interspeech, pp. 4828-4832, 2024. doi:10.21437/Interspeech.2024-1302.
+P116	[EndNote Bibliography]	[11] N. M. Müller, P. Czempin, F. Dieckmann, A. Froghyar, and K. Böttinger, ‘Does Audio Deepfake Detection Generalize?’ Proc. Interspeech, pp. 2783-2787, 2022. doi:10.21437/Interspeech.2022-108.
+P117	[EndNote Bibliography]	[12] P. Kawa, M. Plata, and P. Syga, ‘Attack Agnostic Dataset: Towards Generalization and Stabilization of Audio Deepfake Detection,’ Proc. Interspeech, pp. 4023-4027, 2022. doi:10.21437/Interspeech.2022-10078.
+P118	[EndNote Bibliography]	[13] N. M. Müller et al., ‘Harder or Different? Understanding Generalization of Audio Deepfake Detection,’ Proc. Interspeech, pp. 2705-2709, 2024. doi:10.21437/Interspeech.2024-247.
+P119	[EndNote Bibliography]	[14] Y. Li et al., ‘Cross-Domain Audio Deepfake Detection: Dataset and Analysis,’ Proc. EMNLP, pp. 4977-4983, 2024. doi:10.18653/v1/2024.emnlp-main.286.
+P120	[EndNote Bibliography]	[15] A. Howard et al., ‘Searching for MobileNetV3,’ Proc. ICCV, pp. 1314-1324, 2019. doi:10.1109/ICCV.2019.00140.
+P121	[EndNote Bibliography]	[16] N. Ma et al., ‘ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design,’ Proc. ECCV, pp. 116-131, 2018. doi:10.1007/978-3-030-01264-9_8.
+P122	[EndNote Bibliography]	[17] M. Sandler et al., ‘MobileNetV2: Inverted Residuals and Linear Bottlenecks,’ Proc. CVPR, pp. 4510-4520, 2018. doi:10.1109/CVPR.2018.00474.
+P123	[EndNote Bibliography]	[18] X. Zhang et al., ‘ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices,’ Proc. CVPR, pp. 6848-6856, 2018. doi:10.1109/CVPR.2018.00716.
+P124	[EndNote Bibliography]	[19] M. Tan et al., ‘MnasNet: Platform-Aware Neural Architecture Search for Mobile,’ Proc. CVPR, pp. 2820-2828, 2019. doi:10.1109/CVPR.2019.00293.
+P125	[EndNote Bibliography]	[20] M. Tan and Q. V. Le, ‘EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks,’ Proc. ICML, PMLR, vol. 97, pp. 6105-6114, 2019. https://proceedings.mlr.press/v97/tan19a.html.
+P126	[EndNote Bibliography]	[21] B. McFee et al., ‘librosa: Audio and Music Signal Analysis in Python,’ Proc. 14th Python in Science Conference, pp. 18-25, 2015. doi:10.25080/Majora-7b98e3ed-003.
+P127	[EndNote Bibliography]	[22] A. Das et al., ‘Generalizable Audio Spoofing Detection Using Non-Semantic Representations,’ Proc. Interspeech, pp. 4553-4557, 2025. doi:10.21437/Interspeech.2025-1555.
+P128	[EndNote Bibliography]	[23] N. Müller et al., ‘Replay Attacks Against Audio Deepfake Detection,’ Proc. Interspeech, pp. 2245-2249, 2025. doi:10.21437/Interspeech.2025-20.
+P129	[EndNote Bibliography]	[24] I.-P. Ciobanu et al., ‘XMAD-Bench: Cross-Domain Multilingual Audio Deepfake Benchmark,’ Findings of EACL, pp. 3109-3120, 2026. doi:10.18653/v1/2026.findings-eacl.162.
+
+TABLE 1
+Inventory | Count | Split | Count
+Scanned / retained | 18,722 / 18,232 | Train | 12,762
+Retained REAL / FAKE | 10,493 / 7,739 | Validation | 2,733
+Duplicate groups / redundant | 435 / 476 | Test | 2,737
+Cross-label groups / files | 14 / 30 | Split property | checksum-group-disjoint
+
+TABLE 2
+Detector | Framework/input | Architecture/params | Initialization/provenance | Training/artifact policy | Threshold | Threshold
+MobileNetV3-LSTM [15] | TF/Keras; 6×Mel RGB, 3.0 s | MobileNetV3Small → LSTM(128); 1.308M | ImageNet; local | 50×10-4 warm-up; 50×10-5 last-20-layer fine-tune; BN frozen | .82; val-F1
+ShuffleNetV2-LSTM [16] | TF/Keras; 6×Mel RGB, 3.0 s | ShuffleNetV2-1.0x → LSTM(128); 1.868M | scratch; local | Adam 3×10-4; end-to-end; 28 epochs, best 16 | .12; val-F1
+MnasNet-A1-LSTM [19] | TF/Keras; 6×Mel RGB, 3.0 s | MnasNet-A1 → LSTM(128); 3.369M | scratch; local | Adam 10-4; clip 1; WD 10-5; LS .1; 39 epochs, best 27 | .90; val-F1
+EffNet-B0 warm-up [20] | TF/Keras; 6×Mel RGB, 3.0 s | EfficientNet-B0 → LSTM(128); 4.779M | ImageNet; local | available warm-up checkpoint: epoch 47 at 10-4; fine-tune incomplete | .90; val-F1
+RawNet2 [6] | PyTorch→ONNX; waveform, 4.04 s | Sinc + residual blocks + attention + GRU; 17.621M | external reference | no local training; exported checkpoint | .50; default
+AASIST [8] | PyTorch→ONNX; waveform, 4.04 s | spectro-temporal graph attention; 0.298M | external reference | no local training; exported checkpoint | .50; default
+
+TABLE 3
+Artifact | Precision | Recall | Specificity | F1 [95% CI] | Macro-F1 | ROC-AUC [95% CI] | PR-AUC | EER [95% CI]
+MobileNetV3 | .9741 | .9707 | .9810 | .9724 [0.9654,0.9788] | .9761 | .9911 [0.9871,0.9947] | .9864 | .0250 [0.0178,0.0311]
+ShuffleNetV2 | .9795 | .9854 | .9848 | .9824 [0.9768,0.9875] | .9847 | .9929 [0.9894,0.9960] | .9898 | .0146 [0.0103,0.0207]
+MnasNet-A1 | .9599 | .9690 | .9702 | .9645 [0.9573,0.9717] | .9690 | .9886 [0.9842,0.9923] | .9823 | .0310 [0.0250,0.0379]
+EffNet-B0 warm-up | .9724 | .9406 | .9803 | .9563 [0.9477,0.9651] | .9624 | .9877 [0.9833,0.9917] | .9802 | .0400 [0.0311,0.0482]
+RawNet2 ext. | .4380 | .6807 | .3556 | .5330 [0.5150,0.5489] | .4900 | .5178 [0.4944,0.5395] | .4161 | .4813 [0.4616,0.5016]
+AASIST ext. | .4758 | .5585 | .5460 | .5139 [0.4928,0.5349] | .5487 | .5597 [0.5377,0.5815] | .4269 | .4463 [0.4279,0.4660]
+
+TABLE 4
+Artifact | Clean F1 | Diagnostic EER | Noise ΔF1 | Codec ΔF1 | Sim. replay ΔF1 | Mean stressed F1
+MobileNetV3 | .9756 | .0476 | .6722 | .0095 | .0620 | .6657
+ShuffleNetV2 | .9756 | .0476 | .3555 | .0032 | .0256 | .8133
+MnasNet-A1 | .9756 | .0476 | .6119 | .0233 | .1489 | .6767
+EffNet-B0 warm-up | .9630 | .0476 | .8053 | .0000 | .0641 | .5980
+RawNet2 ext. | .5660 | .4138 | .5077 | -.0007 | -.0109 | .3419
+AASIST ext. | .5060 | .3810 | -.0660 | -.0074 | -.0682 | .5462
+
+TABLE 5
+Artifact | Params | Size (MiB) | RSS (MiB) | Model ms | E2E ms | P95 ms | clips/s | RTF
+MobileNetV3 | 1.31M | 5.64 | 554.6 | 30.07 | 43.81 | 52.12 | 22.83 | .0146
+ShuffleNetV2 | 1.87M | 7.74 | 501.8 | 48.05 | 62.52 | 75.37 | 15.99 | .0208
+MnasNet-A1 | 3.37M | 13.43 | 566.0 | 95.25 | 117.00 | 138.96 | 8.55 | .0390
+EffNet-B0 warm-up | 4.78M | 18.96 | 651.2 | 168.36 | 175.85 | 196.11 | 5.69 | .0586
+RawNet2 ext. | 17.62M | 67.65 | 249.5 | 95.10 | 96.54 | 102.62 | 10.36 | .0239
+AASIST ext. | 0.30M | 1.61 | 442.5 | 359.61 | 362.91 | 398.45 | 2.76 | .0899
