@@ -1,0 +1,29 @@
+{
+  "experiment_id": "c1_noise_opus_pilot_v2",
+  "model_id": "mobilenetv3_lstm",
+  "per_class": 6,
+  "seed": 804,
+  "bootstrap_replicates": 2000,
+  "sample_rate": 22050,
+  "max_seconds": 3.0,
+  "common_peak": 0.25,
+  "transform_a": {
+    "key": "noise10",
+    "kind": "awgn",
+    "parameters": {
+      "snr_db": 10.0
+    }
+  },
+  "transform_b": {
+    "key": "opus24",
+    "kind": "codec",
+    "parameters": {
+      "encoder": "libopus",
+      "bitrate": "24k",
+      "extension": ".ogg"
+    }
+  },
+  "split_manifest": "data/manifests/split_manifest.csv",
+  "scope": "PILOT",
+  "expected_manifest_sha256": "71fecd9ae66f6561f92d9dc94dd1d357fce8c2f3ae8486044b45eb34e097060c"
+}

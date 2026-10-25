@@ -1,0 +1,6 @@
+claim_id,claim,scope,evidence,status,limitation
+E01,Accepted baseline SHA256 verified,INTEGRITY,outputs/jaes_v2/audit/baseline_freeze.json,SUPPORTED_INTEGRITY,Does not prove scientific correctness
+E02,Real MobileNet scores persisted for all 60 pilot variants,PILOT,outputs/jaes_v2/c1_noise_opus_pilot_v3/scores.csv,SUPPORTED_IMPLEMENTATION,12 legacy development sources only
+E03,Descriptive order-error contrast computed from paired scores,PILOT,outputs/jaes_v2/c1_noise_opus_pilot_v3/statistics.json,SUPPORTED_COMPUTATION,Interval includes zero; generator identities unknown
+E04,V2 numerical and integration tests pass,TEST,outputs/jaes_v2/audit/validation_v2/validation.json,SUPPORTED_TEST,Selected legacy regression suite has three inherited failures
+E05,Three new scientific contributions established,JOURNAL,NONE,NOT_SUPPORTED,Novelty and independent validation gates not met

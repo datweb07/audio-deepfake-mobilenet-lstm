@@ -1,0 +1,13 @@
+{
+  "experiment_id": "c1_noise_opus_pilot_v1",
+  "model_id": "mobilenetv3_lstm",
+  "per_class": 6,
+  "seed": 804,
+  "bootstrap_replicates": 2000,
+  "sample_rate": 22050,
+  "max_seconds": 3.0,
+  "common_peak": 0.25,
+  "scope": "PILOT",
+  "transform_a": {"key": "noise10", "kind": "awgn", "parameters": {"snr_db": 10.0}},
+  "transform_b": {"key": "opus24", "kind": "codec", "parameters": {"encoder": "libopus", "bitrate": "24k", "extension": ".ogg"}}
+}
