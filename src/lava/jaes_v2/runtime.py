@@ -47,11 +47,26 @@ def preflight(root: Path, *, verify_freeze: bool = True) -> dict:
         import json
         path = root / "outputs/jaes_v2/audit/baseline_freeze.json"
         frozen = json.loads(path.read_text(encoding="utf-8"))
+        amendment_path = root / "outputs/jaes_v2/audit/phase2_baseline_amendment.json"
+        exceptions = {}
+        if amendment_path.is_file():
+            amendment = json.loads(amendment_path.read_text(encoding="utf-8"))
+            if amendment["parent_snapshot_sha256"] != file_hash(path):
+                raise ValueError("Baseline amendment references a different original snapshot")
+            exceptions = amendment["approved_changes"]
+            allowed = {"src/lava/benchmark_display.py", "tests/test_decision_display.py", "tests/test_streamlit_ui.py"}
+            if set(exceptions) - allowed:
+                raise ValueError("Unapproved legacy amendment paths")
+            for name, change in exceptions.items():
+                if change["before_sha256"] != frozen["protected_files"][name]["sha256"] or not change.get("reason"):
+                    raise ValueError("Invalid baseline amendment provenance")
         changed = [name for name, info in frozen["protected_files"].items()
-                   if not (root / name).is_file() or file_hash(root / name) != info["sha256"]]
+                   if not (root / name).is_file() or file_hash(root / name) != exceptions.get(name, {}).get("after_sha256", info["sha256"])]
         if changed:
             raise ValueError(f"Protected baseline changed: {changed[:10]}")
         freeze_status = f"PASS ({len(frozen['protected_files'])} files)"
+        if exceptions:
+            freeze_status += f"; {len(exceptions)} explicit Phase 2 source/test amendments; original snapshot retained"
     return {"python": sys.version, "python_executable": sys.executable, "platform": platform.platform(),
             "cpu_count": os.cpu_count(), "gpu_inventory_not_used_by_c1": gpu, "packages": packages,
             "free_disk_bytes": shutil.disk_usage(root).free, "ffmpeg": executable, "ffmpeg_version": version,

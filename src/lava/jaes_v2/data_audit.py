@@ -66,6 +66,20 @@ def audit_sources(root: Path, records: list[SourceRecord]) -> tuple[dict, list[d
             summary["shortcut_baseline"] = {"scope": "DEVELOPMENT_DIAGNOSTIC_ONLY", "features": list(keys),
                                             "validation": "leave-one-local-parent-out; 5 numeric features; no tuning",
                                             "accuracy": float(np.mean(predicted == labels)), "samples": len(labels)}
+            summary["shortcut_baselines"] = {}
+            groups_of_features = {"duration_only": ("duration",), "sample_rate_only": ("sample_rate",),
+                                  "silence_only": ("silence_fraction_below_1e-4",), "rms_level_only": ("rms",),
+                                  "metadata_combined": keys}
+            for name, selected_keys in groups_of_features.items():
+                selected_matrix = np.array([[row[key] for key in selected_keys] for row in features])
+                predictions = np.empty(len(labels), dtype=int)
+                for train, validation in LeaveOneGroupOut().split(selected_matrix, labels, groups):
+                    model = make_pipeline(StandardScaler(), LogisticRegression(C=1, solver="liblinear", random_state=0))
+                    model.fit(selected_matrix[train], labels[train])
+                    predictions[validation] = model.predict(selected_matrix[validation])
+                summary["shortcut_baselines"][name] = {"accuracy": float(np.mean(predictions == labels)),
+                                                         "features": list(selected_keys), "samples": len(labels),
+                                                         "validation": "leave-one-local-parent-out, development only; no tuning"}
     return summary, features
 
 

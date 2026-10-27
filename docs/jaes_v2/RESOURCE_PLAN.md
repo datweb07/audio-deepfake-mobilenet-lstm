@@ -15,3 +15,9 @@ Tier 2 pending: teacher evaluation, student training, ablations and multiple see
 Tier 3 pending: physical replay, real edge runtime, streaming state/latency and instrumented energy. None has been measured. There is no rental, cloud charge, external upload or full-training job in this execution.
 
 Next resource decision: choose a license-compatible metadata-rich corpus that fits disk, validate a teacher and run a bounded dry run. Do not retrain all six conference artifacts merely to begin V2.
+
+## Phase 2 measured workload
+
+The 64-record / 14-condition CPU development run completed in 362.12 s (about 6 minutes), with 896 successful predictions and no exclusions. Total run artifacts occupied 214,810,029 bytes (about 205 MiB). Its preflight reserved one additional GiB beyond a conservative uncompressed-audio estimate; roughly 39 GB remained available. Full waveform reproduction was model-free and did not retrain anything. Diagnostic per-row timing is not a warm repeated latency benchmark.
+
+No public audio or archive was downloaded. The small Edinburgh license request failed HTTP 403 after an approved network retry. No multi-GB download, GPU workload, dependency upgrade or paid service was started. Public-corpus extraction/cache size remains unverified and must be budgeted before acquisition.

@@ -29,3 +29,9 @@ Confidence rejection, entropy, temperature scaling and cascades are mandatory es
 C3 algorithm implementation is deferred according to the user's phase order: a validated C2 student and independent calibration cohort do not yet exist. Implementing an arbitrary cascade now would not satisfy the contribution gate.
 
 No candidate has passed TECHNICALLY_DISTINCT, EXTERNALLY_VALIDATED or SUPPORTED. Negative literature overlap is a result of the audit, not a reason to rename an existing technique.
+
+## Phase 2 update
+
+C1 engineering status is now DEVELOPMENT_EVALUATED for confounder-aware channel controls. Noise-power policies, codec net-delay diagnostics, component controls, official-schema importer, candidate overlap screening and cluster-aware factorial code are implemented. This is a scientific-validity improvement over the pilot, not proof of novelty. The executed 64-record study remains legacy development with unknown generator lineage; the generator×channel estimator has only correctness-fixture evidence so far.
+
+The normalization comparison changed absolute noise power slightly but not threshold decisions on this cohort; order effects persisted under fixed power. This does not establish a codec-forensic mechanism or novelty relative to RADAR/ADD-C/FP-NAC. External replication and nearest-work order-estimator comparison remain necessary. C2's concrete teacher feasibility and remaining license/environment gates are in C2_TEACHER_FEASIBILITY.md. C3 remains prerequisites-only; no new training loss or policy was added.

@@ -8,3 +8,5 @@
 | C3 selective inference | Baselines/constraints defined | No candidate policy implemented | Calibration/data/student pending | VALIDATION_BLOCKER and novelty search incomplete |
 
 These statuses deliberately distinguish engineering progress from claims. Pilot class-asymmetric errors do not establish a mechanism or a method improvement. No state is SUPPORTED, EXTERNALLY_VALIDATED or journal-ready. The phase order prohibits implementing an arbitrary C3 policy before a validated student.
+
+Phase 2 supersedes the engineering rows above: C1 channel controls are DEVELOPMENT_EVALUATED (64 recordings, 14 conditions); the public importer and factorial estimator are implemented/tested. Public audio integration and real generator-factor estimation remain EXTERNAL_DATA_PENDING. C2 has an audited teacher candidate, without a downloaded/loaded/validated checkpoint; C3 has no policy implementation. Scientific support for all three contributions remains NOT_ESTABLISHED.

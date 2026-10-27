@@ -15,3 +15,14 @@
 11. Final reproduction audit discovered libsndfile float-WAV files contained a timestamped PEAK chunk: v1/v2 decoded waveforms and scores matched, but container SHA-256 changed. Replaced only the V2 writer with deterministic IEEE float32 WAV serialization, added a test, and retained v1/v2 unchanged. Final pilot v3 completed 60/60 predictions in approximately 41.23 s with the same cohort and perturbations. The final reproduction tool checks all sealed files, rebuilds all 60 actual waveforms and compares file hashes, and rebuilds reports without importing a model framework.
 
 No C2 training, C3 policy fitting, public-corpus download, physical recording, paid computation, manuscript results section or external submission was performed.
+
+## Phase 2 — 25 October 2026
+
+1. Read the 1,981-line request and prior code/docs/evidence. Verified the original freeze, backed up the three legacy files, reproduced all failures and recorded an explicit source/test amendment without replacing the historical snapshot.
+2. Fixed the optional None spec bug; corrected stale renderer mock and informational-expander expectations. Legacy selected regression improved 37/40→40/40; application rendering/thresholds were preserved.
+3. Added two noise-amplitude policies, actual PCM/FFmpeg identity and resampling/headroom controls, impulse and speech-delay diagnostics, plus explicit native/aligned codec conditions. Encoder and decoder component delays remain separately unidentifiable; no component value was invented.
+4. Inspected official ASVspoof, In-the-Wild, WaveFake and ASVspoof 5 sources. The bounded official license request failed DNS inside the sandbox, then HTTP 403 on the approved retry; downloaded bytes remained zero. Activated the request's permitted legacy-development fallback.
+5. Implemented ASVspoof2019 LA official-format importer, versioned manifest/status outputs, separate official/research partition fields, candidate-only near-duplicate screening, separate overlap dimensions and guarded cluster-aware factorial estimation. Unknown generator/original-parent lineage remains unknown. Official-format fixtures are unit/integration tests only.
+6. Locked and executed `c1_channel_controls_dev_v1`: 64 source recordings, 896/896 predictions, no exclusions, 362.12 s, approximately 205 MiB. No Phase 1 pilot was rerun. Added development-only shortcut models and a new 64-source audit.
+7. Final suites: 37/37 V2 tests, 40/40 selected legacy tests. Reports: `outputs/jaes_v2/audit/phase2_validation_v2/validation.json`. Full reproduction regenerated 896 waveform files with matching hashes, verified 907 sealed files and rebuilt reports without a model framework. All 71 pilot-v3 files and original immutable artifact hashes remain unchanged.
+8. Prepared the blocked confirmation protocol and teacher feasibility gates. No C2/C3 algorithm, new neural training, confirmation claim or journal Results text was created.

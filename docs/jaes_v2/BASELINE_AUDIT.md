@@ -25,3 +25,7 @@ Selected tests ran against unchanged baseline files: 37 of 40 passed outside the
 3. `test_streamlit_ui.StreamlitUITest.test_available_models_do_not_show_missing_artifact_panel`: an existing benchmark expander violates the test's expectation of no expander.
 
 These are not evidence that V2 broke the UI: neither legacy implementations nor tests import V2, and their before/after hashes match. They do prevent an all-green regression claim. Full tracebacks and suite counts are in `outputs/jaes_v2/audit/validation_v2/validation.json`. Five additional permission errors seen inside the sandbox disappeared outside it; those are reported separately from the three persistent failures. The legacy code was preserved instead of changing unrelated historical behavior in this research slice.
+
+## Phase 2 amendment (25 October 2026)
+
+The preceding failure description is historical Phase 1 status. The user explicitly authorized resolving these three issues with backups and a separately recorded freeze exception. All three were reproduced and resolved; selected legacy tests now pass 40/40. See LEGACY_REGRESSION_RESOLUTION.md and `outputs/jaes_v2/audit/phase2_baseline_amendment.json`. The original snapshot remains unchanged. Only the benchmark-card source and two stale/mismatched tests have approved hash changes; paper, models, canonical manifests, historical outputs and all 71 files of pilot v3 retain their prior hashes.

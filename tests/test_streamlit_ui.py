@@ -13,7 +13,11 @@ class StreamlitUITest(unittest.TestCase):
         self.assertEqual(list(page.exception), [])
         self.assertEqual(list(page.error), [])
         self.assertEqual(list(page.warning), [])
-        self.assertEqual(list(page.expander), [])
+        # A measured, hash-validated benchmark is informational, not a missing-artifact warning.
+        expander_labels = [element.label for element in page.expander]
+        self.assertTrue(set(expander_labels) <= {"LAVA-5 measured benchmark"})
+        self.assertNotIn("Detector diagnostics", expander_labels)
+        self.assertNotIn("Unavailable detectors", expander_labels)
         self.assertEqual(len(page.selectbox), 1)
         self.assertEqual(len(page.toggle), 2)
         self.assertEqual(len(page.radio), 1)

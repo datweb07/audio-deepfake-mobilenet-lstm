@@ -31,9 +31,11 @@ class DecisionDisplayTest(unittest.TestCase):
 
     def test_single_score_chart(self):
         from app import render_probability
-        with patch("app.st.pyplot") as pyplot:
+        # Production now renders figures through the interactive image helper.
+        with patch("app.render_interactive_plot") as renderer:
             render_probability(0.5952, 0.9)
-        axis = pyplot.call_args.args[0].axes[0]
+        renderer.assert_called_once()
+        axis = renderer.call_args.args[0].axes[0]
         self.assertEqual(len(axis.collections), 1)
         np.testing.assert_allclose(axis.collections[0].get_offsets(), [[0.5952, 0.5]])
         self.assertEqual(len(axis.get_yticks()), 0)

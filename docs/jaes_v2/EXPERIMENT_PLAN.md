@@ -22,3 +22,11 @@ Risk diagnostics: fixed-threshold classification error and raw-score squared err
 6. C3 comparisons: confidence/entropy rejection, calibrated confidence, fixed ensemble, standard cascade and random matched-cost routing. Fit on development/calibration only; compare matched coverage and total measured cost. No arbitrary-shift conformal guarantee.
 
 Do not run the confirmation using this pilot runner by relabeling scope. It currently cannot support generator-held-out inference.
+
+## Phase 2 development protocol (separately locked and executed)
+
+Config `configs/jaes_v2/c1_channel_controls_dev_v1.json` was saved before inference: 32 records/class, seed 2804, 14 conditions, MobileNet legacy threshold, 2,000 descriptive bootstrap replicates, exact split-manifest file hash. Conditions and estimands are specified in C1_CONFOUNDER_CONTROLS.md. The 64-record size was bounded for local CPU/storage and a wider development check, not chosen from a power calculation or test results. Worst-case independent Bernoulli SE at N=64 would be 0.0625; true original group independence is unverified, so this is only an arithmetic reference, not a power claim.
+
+Primary: fixed-absolute-noise A→B minus B→A classification-error contrast, equally weighted by local parent key. Secondary: the local-SNR contrast and policy difference, classwise errors, score/ranking measures, and explicit component controls. All intervals remain exploratory; no multiple-comparison significance claims are made. No test/calibration cohort is used for threshold tuning.
+
+The new public importer/runner path accepts only official dev → research development manifests for this phase. Factorial attack/generator estimation is implemented and unit-tested, but **not run on legacy UNKNOWN identities**. Its cluster/corpus guards and official-vs-model familiarity distinction are detailed in C1_CONFIRMATORY_PROTOCOL.md.

@@ -9,6 +9,8 @@ import config
 
 def _packaged_card(spec):
     """Read the small tracked summary when ignored local outputs are unavailable."""
+    if spec is None:
+        return None
     path = Path(config.BASE_DIR) / "models/lava_6_benchmark.json"
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -25,6 +27,8 @@ def _packaged_card(spec):
 
 
 def benchmark_card(spec, directory=None):
+    if spec is None:
+        return None
     if directory is None:
         six = Path(config.OUTPUTS_DIR) / "lava_6"
         directory = six if (six / "lava_6_results.csv").is_file() else Path(config.OUTPUTS_DIR) / "lava_5"

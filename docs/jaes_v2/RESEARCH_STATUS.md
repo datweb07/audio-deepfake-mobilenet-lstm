@@ -1,62 +1,75 @@
-# LAVA Journal V2 research status
+# LAVA Journal V2 Phase 2 research status
 
 Updated 25 October 2026, Asia/Novosibirsk.
 
-Conference baseline: **FROZEN** (integrity verified, not all legacy tests green).
-Journal V2: **IN DEVELOPMENT**.
-C1: **PILOT_EVALUATED — CHANNEL ORDER ONLY**.
-C2: **DESIGNED — NOVELTY/TEACHER GATES PENDING**.
-C3: **DESIGNED — DEPENDS ON VALIDATED STUDENT AND CALIBRATION DATA**.
+**Phase 2: CODE COMPLETE — EXTERNAL DATA PENDING.**
+Conference scientific artifacts: preserved. Three explicit legacy source/test amendments are backed up and registered separately; the original freeze was not overwritten.
+C1: **DEVELOPMENT_EVALUATED — CONFOUNDER-AWARE CHANNEL STUDY**.
+C2: teacher/prior-art feasibility only; no learner trained.
+C3: prerequisites/metrics/baselines only; no policy implemented.
+Scientific novelty: **NOT ESTABLISHED**. No external confirmation was performed.
 
-## Delivered execution
+## Actual new execution
 
-The actual MobileNet pilot is `outputs/jaes_v2/c1_noise_opus_pilot_v3/`. It contains 12 development source records, 60 condition waveforms, 60 paired scores, metrics/statistics, 27 descriptive contrasts, PNG/SVG and run metadata with source/config/checkpoint hashes. Six examples per class is a feasibility cohort, not independent evaluation. Baseline v1 evidence is preserved.
+Run: `outputs/jaes_v2/c1_channel_controls_dev_v1/`.
+Config: `configs/jaes_v2/c1_channel_controls_dev_v1.json`.
+64 legacy validation recordings (32 REAL/32 FAKE), seed 2804, MobileNet existing checkpoint and inherited threshold 0.82. There are 64 checksum-local parent keys; the number of truly independent original recordings/speakers is UNKNOWN. No new training or threshold fitting occurred.
 
-Pilot v1/v2 remain historical execution evidence. Their decoded samples/scores agree, but a timestamped PEAK chunk made libsndfile WAV container hashes change. V3 fixes this writer issue. Verification evidence is `outputs/jaes_v2/audit/reproduction_verification.json`; tests are recorded in `outputs/jaes_v2/audit/validation_v2/validation.json` (19 V2 passes; 37/40 selected legacy passes).
+Fourteen conditions yield **896/896 successful predictions, 0 failures, 0 exclusions**: no-headroom clean, prepared clean, lower-headroom sensitivity, PCM16, FFmpeg PCM identity, resampling-only, native/aligned Opus, and noise plus both orders under two noise policies. Runtime was 362.12 s; artifacts approximately 205 MiB. This is a bounded exploratory study, not a warm latency benchmark or powered confirmation.
 
-For this small cohort only: clean 0/12 errors, AWGN 3/12, codec 0/12, noise→codec 6/12, codec→noise 4/12. All six noise→codec errors are FAKE misses; there are no REAL false alarms at the inherited 0.82 threshold. Overall order-error contrast is 2/12 with descriptive parent-bootstrap interval [0, 5/12]. It does not establish a nonzero population effect. At this fixed threshold, error ordering and diagnostic EER ordering differ: threshold transfer and ranking must be analyzed separately.
+Paired raw scores, condition evidence, component diagnostics, 60 descriptive contrasts and PNG/SVG are stored. The primary fixed-power order error difference was 0.125 with descriptive local-parent bootstrap 95% interval approximately [0.046875, 0.219141]. Local-SNR gave the same decisions and error contrast, despite after-codec noise power ranging 0.91486–1.00499 times the fixed reference (mean 0.96852). Raw-score effects were not identical. Unknown source grouping and development selection prevent population/causal/novelty claims.
 
-The source audit finds mean original durations about 4.33 s (REAL) versus 104.42 s (FAKE), although the detector sees at most the first 3 s. This flags collection heterogeneity; it is not proof the classifier uses duration. Metadata-only leave-one-parent-out accuracy is 7/12 on this tiny cohort, so no population shortcut conclusion is justified. Original lineage remains UNKNOWN.
+Impulse and all 64 speech diagnostics selected residual lag 0. Opus skip metadata was 312 samples at a 48 kHz encoded clock. Encoder/decoder component delay is NOT_SEPARATELY_IDENTIFIABLE. The native codec path was never silently aligned.
 
-## Exact commands (PowerShell, repository root)
+## Regression and reproduction
+
+- Before: V2 19/19, selected legacy 37/40.
+- After: **V2 37/37, selected legacy 40/40**, no skips. Evidence: `outputs/jaes_v2/audit/phase2_validation_v2/validation.json`.
+- Reproduction: 907 sealed files verified; all 896 waveform files regenerated with hash parity; model-free aggregation passed. Evidence: `outputs/jaes_v2/audit/phase2_reproduction.json`.
+- Original 2,376-file snapshot retained, with exactly three approved source/test exceptions recorded in `phase2_baseline_amendment.json`. All model/manifest/paper/historical-result hashes match. All 71 files of Phase 1 pilot v3 remain unchanged; that pilot was not rerun.
+
+## Public data integration
+
+ASVspoof 2019 LA is the primary official-source importer target. Typed official-protocol parsing, audio availability/labels, source records, separate official/research splits, checksums and partition/decoded audits are implemented. Generator identity and model-relative familiarity are not inferred from attack IDs. Public development execution rejects train/eval/test/calibration records.
+
+Actual external audio installed/downloaded in this phase: **0 bytes**. The official small license request failed DNS inside the sandbox and HTTP 403 on an approved retry. There was no access-control bypass or bulk download. Protocol fixtures test correctness only and are not a public corpus. Acquisition evidence: `outputs/jaes_v2/datasets/asvspoof2019_acquisition_v1/source_metadata.json`.
+
+The factorial estimator is implemented and tested on hand-computed fixtures, including unequal cluster sizes, shared speaker dependence, missing cells, one-class handling and corpus/factor confounding. It was deliberately not run on legacy UNKNOWN attack/generator identities.
+
+The 64-source audit found no exact decoded duplicate or high-correlation candidate under its limited prefix screen; it cannot prove speaker/generator/original-parent independence. Shortcut accuracies were duration .515625, sample rate .53125, silence .625, RMS .59375 and combined .640625, using development-only leave-one-local-parent-out folds. See DATASET_SHORTCUT_AUDIT.md.
+
+## Exact next commands
+
+Run from the repository root, using the existing `.venv`:
 
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 -m src.lava.jaes_v2.runner --preflight
-.\.venv\Scripts\python.exe -X utf8 -m src.lava.jaes_v2.runner --aggregate outputs/jaes_v2/c1_noise_opus_pilot_v3
+.\.venv\Scripts\python.exe -X utf8 -m src.lava.jaes_v2.phase2 --aggregate outputs/jaes_v2/c1_channel_controls_dev_v1
 .\.venv\Scripts\python.exe -X utf8 -m unittest discover -s tests/jaes_v2 -v
 ```
 
-The aggregation command reads persisted scores and does not import TensorFlow/PyTorch or run a model. Rebuilding derived statistics/figures is explicit; input score/manifest/config hashes must match. Baseline paths are never written.
-
-To regenerate every waveform, verify file hashes and rebuild the figures/statistics without a model, use a new report filename:
+For explicit full waveform reproduction, use a new report filename:
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.reproduce --run outputs/jaes_v2/c1_noise_opus_pilot_v3 --report outputs/jaes_v2/audit/reproduction_verification_next.json
+.\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.reproduce_phase2 --run outputs/jaes_v2/c1_channel_controls_dev_v1 --report outputs/jaes_v2/audit/phase2_reproduction_next.json --waveforms
 ```
 
-For an independent execution check using the **same pilot cohort**, choose a new ID:
+For a persisted full selected regression check, use a new output directory:
 
 ```powershell
-.\.venv\Scripts\python.exe -X utf8 -m src.lava.jaes_v2.runner --config configs/jaes_v2/c1_pilot_v3.json --experiment-id c1_noise_opus_replication_v1
+.\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.validate --output outputs/jaes_v2/audit/phase2_validation_next
 ```
 
-Expected output: `outputs/jaes_v2/c1_noise_opus_replication_v1/`. It remains a PILOT and does not create independent scientific confirmation. Reusing an existing ID fails deliberately. For tests in the managed Windows sandbox, temporary-file replacement can require an approved unsandboxed run.
+Tests manipulating temporary files may require an approved unsandboxed run on this Windows setup. Do not rerun the original 12-item pilot or rerun inference simply to read results. Existing run directories are never overwritten. Aggregation intentionally rebuilds derived reports after hash validation.
 
-To persist both test suites in a new audit directory:
+For future actual public audio, see PUBLIC_DATASET_IMPORTER.md. Its CLI is implemented, but the actual local release and selection-file paths are explicitly pending. The bounded runner supports a validated public dev manifest through `ControlConfig.public_manifest`; no confirmation flag is exposed.
 
-```powershell
-.\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.validate --output outputs/jaes_v2/audit/validation_v3
-```
+## Remaining blockers
 
-Expect nonzero exit until the three inherited legacy test failures described in BASELINE_AUDIT.md are separately reconciled. This is not a V2 unit-test failure.
+- DATA_BLOCKER: accessible official protocol/audio subset, release checksums and verified attack/source lineage needed. No real public integration claim yet.
+- COMPUTE_BLOCKER: existing Torch is CPU-only; the 4 GiB physical GPU is not a validated teacher runtime. No environment upgrade or full training was attempted.
+- NOVELTY_BLOCKER: protocol hardening and development effects do not establish a distinction from close prior work.
+- VALIDATION_BLOCKER: generator-factor external evaluation, controlled trained baselines, multi-seed, component-delay separation and independent confirmation remain absent. True original grouping remains unknown.
+- JOURNAL_ELIGIBILITY_BLOCKER: accepted venue/copyright/publication details and official current indexing confirmation remain unresolved.
 
-## Next research steps and blockers
-
-- **SOURCE_BLOCKER:** no blocker for this C1 slice. Public-dataset importer, generator-factor estimator and codec delay/control experiments are not implemented. Frozen baseline has three inherited regression failures.
-- **DATA_BLOCKER:** no acquired metadata-rich independent generator/corpus cohort; UNKNOWN identities cannot be repaired by filenames. Near-duplicate audit and teacher pretraining-overlap review remain.
-- **COMPUTE_BLOCKER:** 4 GiB GPU present but teacher training feasibility unmeasured; no full-training estimate. CPU pilot is complete.
-- **NOVELTY_BLOCKER:** paired consistency/distillation, class asymmetry and sequential channels all have close prior work. No three-contribution novelty claim is supported.
-- **VALIDATION_BLOCKER:** no external confirmation, matched trained baselines, multi-seed results, teacher validation, C2 ablation or C3 matched-cost evaluation.
-- **JOURNAL_ELIGIBILITY_BLOCKER:** accepted conference venue/copyright/publication details missing; official current Clarivate profile not verified.
-
-Proceed by selecting an actual small license-compatible public corpus and inspecting its metadata, then implement its importer and hold-out protocol. Before training C2, finish the nearest-work technical distinction and bounded teacher validation. Do not invent a long training command for an objective not yet specified; a truthful blocked research stage is preferable to an empty executable.
+Next milestone: provide a license-compatible official ASVspoof LA development subset with its original CM protocol, validate it through the importer, lock factor membership relative to actual checkpoint training evidence, and execute public development before registering an untouched confirmation cohort. C1_CONFIRMATORY_PROTOCOL.md is deliberately NOT LOCKED.

@@ -1,0 +1,16 @@
+{
+  "experiment_id": "c1_channel_controls_dev_v1",
+  "per_class": 32,
+  "seed": 2804,
+  "model_id": "mobilenetv3_lstm",
+  "sample_rate": 22050,
+  "max_seconds": 3.0,
+  "common_peak": 0.25,
+  "sensitivity_peak": 0.125,
+  "noise_snr_db": 10,
+  "bootstrap_replicates": 2000,
+  "split_manifest": "data/manifests/split_manifest.csv",
+  "expected_manifest_sha256": "71fecd9ae66f6561f92d9dc94dd1d357fce8c2f3ae8486044b45eb34e097060c",
+  "scope": "LEGACY_DEVELOPMENT",
+  "public_manifest": null
+}

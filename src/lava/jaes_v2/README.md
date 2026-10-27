@@ -22,3 +22,16 @@ All run IDs and audit output directories must be new. The existing first deliver
 No new dependencies were installed. FFmpeg is required for codecs; FFprobe additionally records the encoded stream's actual rate. Absence of either is explicit. Supported conventional codecs are Opus, MP3 and AAC, not neural resynthesis. Environmental-noise and measured-RIR transforms require supplied, licensed assets; they were unit-tested with fixtures and are not claimed as a measured-room research dataset.
 
 Scientific status, protocol caveats, known baseline test failures and next commands: `docs/jaes_v2/RESEARCH_STATUS.md`.
+
+## Phase 2 continuation
+
+`controls.py` adds reference-anchored absolute noise and local-SNR noise policies, headroom/PCM/resampling/identity controls and net-delay diagnostics. `phase2.py` executes the 14-condition bounded study and `control_analysis.py` validates full paired cohorts before analysis. None changes the sealed Phase 1 protocol or artifacts.
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -m src.lava.jaes_v2.phase2 --aggregate outputs/jaes_v2/c1_channel_controls_dev_v1
+.\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.reproduce_phase2 --run outputs/jaes_v2/c1_channel_controls_dev_v1 --report outputs/jaes_v2/audit/phase2_reproduction_next.json --waveforms
+```
+
+`datasets.py` implements official ASVspoof 2019 LA parsing with separate public-source fields and an adapter interface. It never downloads/copies audio or infers generators from attack IDs. Its local-release CLI and pending inputs are documented in PUBLIC_DATASET_IMPORTER.md. `overlap.py` separately reports identity overlaps and candidate-only acoustic near duplicates. `factorial.py` computes cluster-aware generator/attack × channel contrasts; missing/unknown/confounded factors fail rather than being invented.
+
+The optional-spec production bug and two stale legacy tests are resolved by three explicitly recorded baseline amendments. Current final tests: 37 V2 / 40 selected legacy, all passing. The original snapshot remains immutable. Encoder/decoder component delays are not separately measured; the codec diagnostic reports net residual lag and available preskip metadata. No public audio was acquired, so the executed study is LEGACY DEVELOPMENT, not external confirmation.
