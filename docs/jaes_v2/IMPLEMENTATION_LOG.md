@@ -16,6 +16,8 @@
 
 No C2 training, C3 policy fitting, public-corpus download, physical recording, paid computation, manuscript results section or external submission was performed.
 
+The preceding statement describes Phase 1; real noncommercial public-audio acquisition subsequently occurred in Phase 3.
+
 ## Phase 2 — 25 October 2026
 
 1. Read the 1,981-line request and prior code/docs/evidence. Verified the original freeze, backed up the three legacy files, reproduced all failures and recorded an explicit source/test amendment without replacing the historical snapshot.
@@ -26,3 +28,16 @@ No C2 training, C3 policy fitting, public-corpus download, physical recording, p
 6. Locked and executed `c1_channel_controls_dev_v1`: 64 source recordings, 896/896 predictions, no exclusions, 362.12 s, approximately 205 MiB. No Phase 1 pilot was rerun. Added development-only shortcut models and a new 64-source audit.
 7. Final suites: 37/37 V2 tests, 40/40 selected legacy tests. Reports: `outputs/jaes_v2/audit/phase2_validation_v2/validation.json`. Full reproduction regenerated 896 waveform files with matching hashes, verified 907 sealed files and rebuilt reports without a model framework. All 71 pilot-v3 files and original immutable artifact hashes remain unchanged.
 8. Prepared the blocked confirmation protocol and teacher feasibility gates. No C2/C3 algorithm, new neural training, confirmation claim or journal Results text was created.
+
+## Phase 3 — 27 October 2026
+
+1. Read the new request, current implementation and sealed evidence. Saved baseline/environment/Git/history hashes in phase3_before.json before changes. No legacy source, checkpoint, accepted manuscript or canonical data manifest was changed.
+2. Retrieved pinned MLAAD-tiny repository metadata, 79 per-system annotations and four license/attribution files. Persisted actual release counts. Inspected RADAR dev protocol/license and renewed one official ASVspoof README request (403); no evaluation labels/audio or bulk archives acquired.
+3. Added acquisition.py, mlaad.py and public_data CLI for metadata-only discovery, deterministic selection, byte-bounded acquisition and local import. Extended PublicSourceRecord with optional revision/family/source-corpus fields. Retained ASVspoof adapter and old manifest compatibility.
+4. Locked the English four-system 192-record cohort before inference. Downloaded 43,492,994 real audio bytes; all upstream hashes verified. Kept unknown REAL lineage explicit. No test fixture counted as a public corpus.
+5. Added public-only shared-cache runner, complete paired-score analysis, class-appropriate metrics and existing factorial integration with language/source guards. Prepared 1,344 waveforms once; both detectors reused exact hashes/noise instances.
+6. Executed MobileNet and ShuffleNet: 1,344 successful predictions each, no failures/exclusions, retained thresholds .82/.12. Saved 24 total descriptive group/channel interaction contrasts and source-cluster intervals. No retraining/calibration or significance/causality claim.
+7. Added grouped shortcuts for original recordings and prepared inputs, with known source-component folds and explicit constant-feature status. Preserved and explained reused LOPO's majority-inversion artifact. No test/calibration fitting.
+8. Generated provenance/coverage/heatmap/order/ranking SVG and 300-DPI PNG and six programmatic tables. Both model-free reproduction checks passed: 19 sealed files per run plus shared cache, exact statistics parity, no neural-framework import.
+9. Final suites: 58/58 V2, 40/40 selected legacy, zero failures/errors/skips. Baseline: 2,376 protected files, same three Phase 2 exceptions. All 979 historical run files unchanged; no old inference repeated.
+10. Updated source/license/provenance/novelty/confirmation documents and runnable follow-ups. External development is technically complete; novelty and independent confirmation remain unestablished. C2/C3 remain gated.

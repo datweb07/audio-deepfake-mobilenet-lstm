@@ -1,5 +1,15 @@
 # Contribution status
 
+## Current Phase 3 state — supersedes historical rows
+
+| Candidate | Actual evidence | Scientific gate |
+|---|---|---|
+| C1 | Pinned public import; 192 recordings; shared seven-condition cache; 2,688 predictions; 24 descriptive group/channel contrasts | EXTERNAL_DEVELOPMENT_EVALUATED; NOVELTY_NOT_ESTABLISHED; independent confirmation pending |
+| C2 | Real public diagnostic input now available; teacher still not loaded/validated | TEACHER_FEASIBILITY_ONLY; no new learner |
+| C3 | Dependencies documented; no calibration/routing policy | PREREQUISITES_ONLY |
+
+External execution does not establish three international contributions. Four FAKE source-text speakers, UNKNOWN REAL lineage and shortcut availability remain limitations. Regression: 58 V2 / 40 selected legacy, all passed. Full evidence: PHASE3_RESEARCH_FINDINGS.md.
+
 | Contribution | Design | Code | Validation | Scientific gate |
 |---|---|---|---|---|
 | C1 ordered-channel slice | Defined | Implemented | 19 V2 tests; real 12×5 pilot | PROTOCOL EXTENSION; NOT_SUPPORTED as novelty |

@@ -20,7 +20,7 @@ def generator_channel_interaction(rows: list[dict], *, channel: str, factor_defi
     """
     if factor_kind not in {"attack", "generator"} or not factor_definition.strip() or class_label not in {None, 0, 1}:
         raise ValueError("Explicit factor definition/type and valid class stratum required")
-    if replicates < 100 or cluster_field not in {"speaker_id", "parent_recording_id"}:
+    if replicates < 100 or cluster_field not in {"speaker_id", "source_speaker_id", "parent_recording_id"}:
         raise ValueError("Use explicit independent-unit clusters and >=100 bootstrap draws")
     paired = defaultdict(dict)
     for row in rows:
@@ -46,6 +46,21 @@ def generator_channel_interaction(rows: list[dict], *, channel: str, factor_defi
         paired[identity][row["condition_id"]] = row
     if not paired:
         raise ValueError("No factorial observations")
+    # Public factors must have common language/source support. Dataset IDs alone
+    # cannot detect generators nested inside different underlying corpora.
+    for field in ("language", "source_corpus"):
+        if any(field in row for conditions in paired.values() for row in conditions.values()):
+            support = {group: set() for group in ("G0", "G1")}
+            for conditions in paired.values():
+                for row in conditions.values():
+                    value = str(row.get(field, "UNKNOWN"))
+                    if not known(value):
+                        raise ValueError(f"NOT_IDENTIFIABLE: unknown {field}")
+                    support[row["factor_group"]].add(value)
+                if len({str(row.get(field)) for row in conditions.values()}) != 1:
+                    raise ValueError(f"Pairing mismatch: {field}")
+            if support["G0"] != support["G1"]:
+                raise ValueError(f"CONFOUNDED_FACTOR: unequal {field} support")
     groups = defaultdict(lambda: defaultdict(list))
     counts = {}
     model_strata = set()

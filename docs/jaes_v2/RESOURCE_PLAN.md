@@ -1,5 +1,11 @@
 # Resource preflight and tiers
 
+## Phase 3 measured continuation
+
+Pre-acquisition free disk: 39,548,977,152 bytes, rechecked rather than assumed. Raw selected audio: 43,492,994 bytes; shared cache/audits: 349,010,430 bytes; metadata/license payloads: 2,634,680 bytes plus API inventories. No full audio archive, dependency upgrade or paid computation.
+
+Preparation: 189.59 s after integrity/shortcut audit. Concurrent CPU artifact jobs: 524.15 s MobileNet / 648.89 s ShuffleNet including load/reports; not latency comparisons. Saved environment/FFmpeg/disk evidence: phase3_before.json and phase3_resource_preflight.json. New acquisitions require a current free-disk check and byte budget.
+
 Measured environment: Python 3.11.9; TensorFlow 2.15.0; NumPy 1.24.3; SciPy 1.11.4; soundfile 0.12.1; scikit-learn 1.3.2; matplotlib 3.8.2; ONNX Runtime 1.17.3; FFmpeg 8.0.1 full build. All were already installed; no dependency versions were changed.
 
 This execution host reports 12 logical CPUs, an NVIDIA RTX 3050 Laptop GPU with 4,096 MiB VRAM and approximately 40.3 GB free on D: before the pilot. These are **current host measurements**, not the conference paper's Ryzen desktop specifications. C1 uses CPU-only TensorFlow, one intra-op and one inter-op thread. GPU presence does not imply a validated TensorFlow CUDA runtime; it was not used.

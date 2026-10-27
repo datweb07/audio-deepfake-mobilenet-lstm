@@ -1,5 +1,13 @@
 # LAVA Journal V2 implementation
 
+## Phase 3 current extension
+
+`acquisition.py` + `mlaad.py` implement pinned official metadata discovery, author annotation parsing, deterministic language/group selection, bounded noncommercial acquisition and local import. `scripts.jaes_v2.public_data` exposes those operations. `datasets.py` keeps ASVspoof compatibility and adds optional public-source provenance fields.
+
+`phase3.py` provides `prepare`, `infer`, `aggregate` and `verify`. One sealed seven-condition waveform cache serves both MobileNet/ShuffleNet artifacts. `public_analysis.py` enforces complete paired cohorts, single-class denominators and existing guarded factorial estimation; `public_figures.py` exports executed SVG/300-DPI PNG. `shortcut.py` and audit_public_shortcuts group known source components and mark constant features noninformative. No new neural training, threshold fitting or confirmatory CLI is introduced.
+
+Delivered Phase 3: real 192-record MLAAD-tiny development, 2,688/2,688 successful scores, 58 V2 / 40 selected legacy passing tests. Public development is not independent confirmation or a novelty certificate. Commands/inputs/resources: `docs/jaes_v2/PHASE3_NEXT_COMMANDS.md`. Earlier sections below record historical phases.
+
 This package is an isolated research extension. Existing registry IDs, artifacts, entry points and conference results are unchanged. Importing the package, provenance/analysis or aggregate command does not load a neural framework. Only the live predictor bridge imports TensorFlow; PyTorch remains isolated in its existing environment.
 
 Run from the repository root using the existing `.venv`:

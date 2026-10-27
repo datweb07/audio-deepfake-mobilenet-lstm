@@ -1,0 +1,18 @@
+{
+  "revision": "9143e5ea709575ebab6bec52840a1043aada7bb1",
+  "audio_records": 15290,
+  "class_counts": {
+    "1": 7900,
+    "0": 7390
+  },
+  "language_label_counts": {
+    "de/1": 1500,
+    "en/1": 6400,
+    "de/0": 1320,
+    "en/0": 6070
+  },
+  "fake_model_names": 69,
+  "missing_fake_annotations": 0,
+  "metadata_rows_not_in_tiny_audio": 0,
+  "identity_limit": "Author model_name identifies a released system annotation, not a verified checkpoint hash or detector familiarity"
+}

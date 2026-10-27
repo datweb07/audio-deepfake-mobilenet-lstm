@@ -1,4 +1,8 @@
-# Experiment plan version 1
+# Experiment plan — Phase 3 continuation
+
+Current executed study (27 October 2026): `c1_mlaad_tiny_dev_v1`. Selection and actual manifest hashes preceded inference; 192 same-language public recordings, four author-annotated systems and seven paired conditions. Primary MobileNet and secondary ShuffleNet reused one cache, without a matched-training/architecture claim. Both completed 1,344 predictions with zero failures/exclusions and inherited thresholds.
+
+The bounded cohort supports descriptive development: four original source-text speakers, 24 FAKE per system (ideal independent-binomial half-width ~.20), no powered confirmation. Classwise/ranking/score/order and all 12 pairwise group/channel estimates per artifact are retained. No public labels fitted conditions, weights or thresholds. Full evidence: PHASE3_RESEARCH_FINDINGS.md; next gate: PHASE3_CONFIRMATION_GATE.md. The dated plan below is historical.
 
 This plan separates the executed pilot from a future locked confirmation. No journal hypothesis has been accepted on pilot performance.
 

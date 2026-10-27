@@ -34,6 +34,9 @@ class PublicSourceRecord(SourceRecord):
     provenance_confidence: str = "OFFICIAL_FIELDS_ONLY"
     official_recording_id: str = UNKNOWN
     attack_familiarity: str = UNKNOWN
+    source_revision: str = UNKNOWN
+    generator_family: str = UNKNOWN
+    source_corpus: str = UNKNOWN
 
 
 class DatasetAdapter(Protocol):

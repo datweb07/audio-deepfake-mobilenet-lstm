@@ -1,5 +1,11 @@
 # Novelty gate and ranked decisions
 
+## Current Phase 3 gate — 27 October 2026
+
+C1 engineering: **EXTERNAL_DEVELOPMENT_EVALUATED** on licensed real public audio. Novelty: **NOT_ESTABLISHED**. Factorial code ran on four author-annotated MLAAD-tiny system groups; four source-text speakers and unknown REAL/synthesized identity limit evidence. Class-asymmetric order behavior largely cancels in pooled error; headroom and shortcut effects remain material. These observations establish neither causality nor a new mechanism.
+
+NEAREST_PRIOR_ART.md compares RADAR, RawBoost, fixed-threshold/class-asymmetry work, source tracing and codec-consistency methods. The candidate distinction remains a replicated generator-conditional reversal surviving source/preprocessing/threshold controls and supporting an explanatory method or insight. Confirmation/novelty clearance has not passed; C2/C3 have no validated novel method. The dated review below is historical.
+
 Review date: 25 October 2026. Status has separate engineering and scientific dimensions.
 
 | Priority | Candidate | Engineering status | Literature status | Scientific support |

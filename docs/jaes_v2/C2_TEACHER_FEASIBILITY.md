@@ -1,5 +1,11 @@
 # C2 teacher feasibility and prior-art gate
 
+## Phase 3 update
+
+The real public development cohort/cache now exists. Existing artifacts show noisy-chain FAKE misses, aggregate class cancellation and preprocessing sensitivity. A candidate teacher needs classwise quality on this distribution and its channel views; checkpoint availability/clean accuracy alone is insufficient.
+
+Weight license/hash, isolated loading, measured inference feasibility and a mechanism distinct from PCL-NET/DK-CAST remain pending. No teacher weights were downloaded, environment upgraded or C2 learner trained. C3 still needs a validated student/independent calibration. The inventory below is historical evidence.
+
 No C2 loss/training or C3 policy was implemented in Phase 2.
 
 Candidate: the authors' [SSL_Anti-spoofing implementation](https://github.com/TakHemlata/SSL_Anti-spoofing) of the wav2vec 2.0/RawBoost anti-spoofing system. The repository identifies ASVspoof 2019 LA training, 2021 LA/DF evaluation, links XLS-R-300M frontend weights and a folder of anti-spoofing checkpoints. The **code** license is MIT. Checkpoint/frontend-weight license and redistributability must be verified separately; code licensing is not a blanket weight license.

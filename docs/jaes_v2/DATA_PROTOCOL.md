@@ -1,5 +1,11 @@
 # Data protocol V2
 
+## Phase 3 continuation — 27 October 2026
+
+MLAAD-tiny real public development is imported/evaluated: 192 English records with pinned content hashes and author labels/model annotations. Official split UNKNOWN versus research development is intentional: no formal dev partition is supplied by the tiny audiofolder. The Phase 3 runner requires its exact imported, hashed development cohort. ASVspoof split handling is unchanged.
+
+PublicSourceRecord adds backward-compatible revision/family/source-corpus fields. `path` is local audio; `official_recording_id` retains the relative remote source path. Unknown REAL source/voice/parent identity is never inferred from a basename. Details: PHASE3_PROVENANCE_AUDIT.md. The earlier pilot protocol below is historical.
+
 The executed cohort is a **development feasibility pilot**: six REAL and six FAKE from the legacy `validation` partition, selected with seed 804 before model execution. `test` is never a fallback. Source file checksums are recomputed and compared to the canonical split manifest. No legacy manifest is rewritten. The existing model was already selected/calibrated on legacy validation; thus this cohort cannot estimate independent performance.
 
 `SourceRecord` explicitly records dataset/version, split, label, original checksum/rate/duration, known identities, source record, license and provenance status. Legacy dataset origin, license, generator and speakers remain UNKNOWN. The label `LAVA_LEGACY_INTERNAL` names the local collection, not a recovered public corpus.

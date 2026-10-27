@@ -1,0 +1,19 @@
+{
+  "experiment_id": "c1_mlaad_tiny_dev_v1",
+  "manifest": "outputs/jaes_v2/datasets/mlaad_tiny_dev_v1/provenance_manifest.csv",
+  "manifest_sha256": "68e0a5adf6dc2e03ef0a74878c7b00145c2d0f35696e8ab174068b27ba0f08f5",
+  "selection_sha256": "4579ad29b15692b344520a39a045f7309f00d0c54080b8ccaac443db4e678d60",
+  "per_class": 96,
+  "seed": 3804,
+  "bootstrap_replicates": 2000,
+  "scope": "PUBLIC_DEVELOPMENT",
+  "conditions": [
+    "clean_native",
+    "clean",
+    "pcm16",
+    "codec",
+    "fixed_noise",
+    "fixed_A_then_B",
+    "fixed_B_then_A"
+  ]
+}
