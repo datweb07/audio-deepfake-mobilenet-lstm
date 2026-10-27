@@ -1,5 +1,9 @@
 # Resource preflight and tiers
 
+## Phase 4 measured continuation
+
+Initial free disk: 39,125,602,304 bytes; saved current preflight. No audio/teacher weight acquisition or dependency upgrade. New nuisance cache: 74,368,583 bytes including 288 shared waveforms; preparation 84.69 s. Each detector performed 288 new scored predictions plus one warm-up and reused 224 scores. Concurrent CPU jobs took 118.79 / 148.61 s including loading/reporting, not a speed benchmark. Model-free diagnostics/planning use small additional outputs. Scientific scaling remains gated by source support and independent-group precision, not available disk alone.
+
 ## Phase 3 measured continuation
 
 Pre-acquisition free disk: 39,548,977,152 bytes, rechecked rather than assumed. Raw selected audio: 43,492,994 bytes; shared cache/audits: 349,010,430 bytes; metadata/license payloads: 2,634,680 bytes plus API inventories. No full audio archive, dependency upgrade or paid computation.

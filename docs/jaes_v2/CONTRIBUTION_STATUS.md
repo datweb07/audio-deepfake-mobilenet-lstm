@@ -1,5 +1,15 @@
 # Contribution status
 
+## Current Phase 4 state
+
+| Candidate | Actual evidence | Decision |
+|---|---|---|
+| C1 | Source audit; blocked fixed-pair matched design; 32-record paired nuisance pilot; feature-level counterfactual | Supporting validation/engineering; **not primary novelty**; confirmation absent |
+| C2 | Two teacher provenance/license/contract audits; no compatible loaded/validated teacher | NOT_READY for full learner implementation/training |
+| C3 | Validated student/independent calibration still absent | Deferred |
+
+576 new predictions and reusable analysis infrastructure do not supply three international scientific contributions. The tested nuisance contrast remains descriptive with four source-text clusters. Full decision and strongest next direction: PHASE4_NOVELTY_DECISION.md. Prior phase tables below are historical.
+
 ## Current Phase 3 state — supersedes historical rows
 
 | Candidate | Actual evidence | Scientific gate |

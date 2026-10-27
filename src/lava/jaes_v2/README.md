@@ -1,5 +1,11 @@
 # LAVA Journal V2 implementation
 
+## Phase 4 current extension
+
+Source matching and matched-cohort/interaction contracts are in `source_matching.py` and `matched_analysis.py`. `nuisance_controls.py`, `phase4.py`, `phase4_analysis.py` and `phase4_figures.py` implement a sealed bounded within-record fallback, reusing Phase 3 scores. `precision.py` plans from cluster means; `confirmation_gate.py` reviews metadata without opening labels. Feature diagnostics use production-parity replicas only; no production preprocessing is replaced.
+
+Delivered: matched fixed-pair study blocked; 32-record nuisance pilot, 576 successful new scores and 448 reused scores; 79 V2 / 40 selected legacy passing tests. This is supporting validation/engineering, not international novelty or confirmation. CLI: `python -m src.lava.jaes_v2.phase4` with prepare/infer/aggregate/verify. Reproducible audit/planning commands: docs/jaes_v2/PHASE4_NEXT_COMMANDS.md. Historical phases follow.
+
 ## Phase 3 current extension
 
 `acquisition.py` + `mlaad.py` implement pinned official metadata discovery, author annotation parsing, deterministic language/group selection, bounded noncommercial acquisition and local import. `scripts.jaes_v2.public_data` exposes those operations. `datasets.py` keeps ASVspoof compatibility and adds optional public-source provenance fields.

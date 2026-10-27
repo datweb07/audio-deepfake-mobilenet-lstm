@@ -1,4 +1,28 @@
-# LAVA Journal V2 Phase 3 research status
+# LAVA Journal V2 Phase 4 research status
+
+Updated 27 October 2026, Asia/Novosibirsk. **WITHIN_RECORD_DEVELOPMENT_EVALUATED; SOURCE_MATCHED_EXPERIMENT_BLOCKED; CONFIRMATION_NOT_LOCKED.** C1 recommendation: **supporting validation / engineering contribution**, not an established primary international novelty. The Phase 3 status below is preserved as historical.
+
+## Current Phase 4 evidence
+
+- Independent audit verifies zero selected source-ID overlap for all six Phase 3 system pairs. Full tiny metadata has 290 same-language multi-system source groups, but a fixed English system pair shares at most three sources. There are no certified level-4 matches or verified REAL source mappings. Sparse matches exist; the chosen fixed-pair pilot lacks adequate support.
+- Added source-matching levels, matched-cohort/interaction contracts, unknown/confounding/cluster guards, metadata-only confirmation review and development-variance planning. No fake matched cohort or generator-effect estimate was produced.
+- Executed a bounded **32-record within-record nuisance pilot**: 16 REAL / 16 FAKE, four system×four source-text-speaker cells, one seeded FAKE each. Three policies×three channels produce 288 shared new waveforms. **576/576 new predictions successful**, zero failures/exclusions; **448 Phase 3 scores reused**. Existing thresholds and preprocessing remain unchanged; no extra audio downloaded.
+- MobileNet primary edge-repack change in FAKE order contrast: **+.0625**, descriptive 95% **[0,.1875]**. ShuffleNet: **+.1875**, **[-.125,.4375]**. Four original source-text clusters, not certified synthesized-voice independence; no significance/causal/generator superiority claim.
+- Exact half-amplitude input changes the production Mel tensor (max **19.190689**, mean abs **3.440610** on 0–255 scale). A **model-free only** scaled-floor diagnostic reduces max residual to **.0000610352**. No detector used altered preprocessing; this is an engineering diagnosis, not evidence of improved detection.
+- Conditional precision extrapolations are highly unstable with four clusters; actual cluster-mean variance/ICC/assumptions and zero-variance guard are retained. Confirmation A (matched-system hypothesis) remains distinct from B (transfer).
+- C2: primary checkpoint terms unresolved; an explicitly licensed NII alternative already trained on MLAAD and requires missing fairseq. No weights/environment changes/load/quality claims. C3 remains deferred.
+
+## Phase 4 verification and evidence
+
+Final measured regression: **79/79 V2; 40/40 selected legacy**, zero failures/errors/skips, in `outputs/jaes_v2/audit/phase4_validation_final/validation.json`. Both new artifact runs reproduce exact statistics/figures from sealed inputs without neural-framework imports. Historical Phase 1–3 run directories and baseline are preserved; final integrity is recorded separately.
+
+Main evidence: PHASE4_RESEARCH_FINDINGS.md, PHASE4_SOURCE_MATCHING_AUDIT.md, PHASE4_MATCHED_COHORT_PROTOCOL.md, PHASE4_SHORTCUT_DECONFOUNDING.md, PHASE4_IDENTIFIABILITY_REPORT.md, PHASE4_PRECISION_PLAN.md, PHASE4_CONFIRMATION_READINESS.md, PHASE4_NOVELTY_DECISION.md and PHASE4_C2_TEACHER_READINESS.md. Exact implemented commands/required inputs/resources: **PHASE4_NEXT_COMMANDS.md**.
+
+No three primary international contributions or journal readiness have been established. Next scientific action is to secure a defensible content-supported independent design or explicitly pursue narrower validation, and validate a teacher/teacher-free C2 mechanism before training. Do not continue scaling the present unmatched fixed-pair C1 hypothesis indefinitely.
+
+---
+
+## Historical Phase 3 status
 
 Updated 27 October 2026, Asia/Novosibirsk.
 

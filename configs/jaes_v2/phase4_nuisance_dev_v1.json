@@ -1,0 +1,18 @@
+{
+  "experiment_id": "c1_nuisance_controls_dev_v1",
+  "selection_path": "configs/jaes_v2/phase4_nuisance_selection_v1.json",
+  "selection_sha256": "81204a652207c79092f1d0aeb3387a07e374a6c13b2246ebef23be3b02f0678d",
+  "phase3_cache": "outputs/jaes_v2/c1_mlaad_tiny_dev_v1_waveforms",
+  "phase3_cache_metadata_sha256": "d10b5e573fab9a5083d062c8b5fb5260d6aef96215258501c552cdb8f96e98f9",
+  "source_matching_report": "outputs/jaes_v2/audit/phase4_source_matching/matching_coverage.json",
+  "source_matching_sha256": "6c94c8472c31b06ff2514ea3179d1341f1cfefee0d54413a28765b2e3594f330",
+  "scope": "EXPLORATORY_WITHIN_RECORD_DEVELOPMENT",
+  "seed": 4804,
+  "transform_seed": 3804,
+  "policies": [
+    "global_half_v1",
+    "rms_anchor_v1",
+    "edge_repack_v1"
+  ],
+  "replicates": 2000
+}

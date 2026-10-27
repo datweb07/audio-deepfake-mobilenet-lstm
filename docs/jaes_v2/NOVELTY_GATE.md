@@ -1,5 +1,9 @@
 # Novelty gate and ranked decisions
 
+## Current Phase 4 decision
+
+C1 is recommended as **SUPPORTING_VALIDATION / ENGINEERING**, not a demonstrated primary international novelty. Source-controlled fixed-pair support is inadequate; nuisance and feature-floor sensitivities caution against a pure generator/channel mechanism. The proposed matched scientific hypothesis remains untested. ASVspoof 5 and CVPR2025 already address silence/level shortcuts; RADAR already uses sequential media pipelines. The exact feature-floor diagnosis is useful engineering evidence, not a new trained method. See PHASE4_NOVELTY_DECISION.md. C2 requires controlled data, teacher feasibility or justified teacher-free learning and a distinct mechanism; C3 remains gated. Historical reviews follow.
+
 ## Current Phase 3 gate — 27 October 2026
 
 C1 engineering: **EXTERNAL_DEVELOPMENT_EVALUATED** on licensed real public audio. Novelty: **NOT_ESTABLISHED**. Factorial code ran on four author-annotated MLAAD-tiny system groups; four source-text speakers and unknown REAL/synthesized identity limit evidence. Class-asymmetric order behavior largely cancels in pooled error; headroom and shortcut effects remain material. These observations establish neither causality nor a new mechanism.

@@ -1,5 +1,9 @@
 # Experiment plan — Phase 3 continuation
 
+## Phase 4 current continuation
+
+The source audit blocks the proposed fixed-system-pair matched cohort (best English overlap three IDs). Executed fallback config `configs/jaes_v2/phase4_nuisance_dev_v1.json` was sealed before inference: 32 existing recordings, three preprocessing policies×three channels, two existing artifacts, 576 successful new predictions and 448 reused scores. Primary descriptive contrast is edge-repack change in FAKE order miss difference, equal known source-text-speaker weight. All other 18-per-artifact risk/class/policy descriptions are retained. There is no inference of a matched generator effect or independent confirmation. See PHASE4_MATCHED_COHORT_PROTOCOL.md and PHASE4_RESEARCH_FINDINGS.md. Earlier plans below are dated history.
+
 Current executed study (27 October 2026): `c1_mlaad_tiny_dev_v1`. Selection and actual manifest hashes preceded inference; 192 same-language public recordings, four author-annotated systems and seven paired conditions. Primary MobileNet and secondary ShuffleNet reused one cache, without a matched-training/architecture claim. Both completed 1,344 predictions with zero failures/exclusions and inherited thresholds.
 
 The bounded cohort supports descriptive development: four original source-text speakers, 24 FAKE per system (ideal independent-binomial half-width ~.20), no powered confirmation. Classwise/ranking/score/order and all 12 pairwise group/channel estimates per artifact are retained. No public labels fitted conditions, weights or thresholds. Full evidence: PHASE3_RESEARCH_FINDINGS.md; next gate: PHASE3_CONFIRMATION_GATE.md. The dated plan below is historical.

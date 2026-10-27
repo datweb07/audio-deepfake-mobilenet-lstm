@@ -1,5 +1,16 @@
 # Implementation log
 
+## Phase 4 — 27 October 2026
+
+1. Read the 2,325-line request and actual Phase 3 implementation/evidence; saved preflight plus 2,374 historical run-file hashes before edits. Initial Git tree was clean. No accepted artifact or production preprocessing was changed.
+2. Independently reproduced all six zero selected-source overlaps. Audited all pinned tiny annotations/transcripts, 290 same-language multi-system source groups, max three common English sources per fixed pair, unknown REAL mapping and matching strengths. Preserved machine candidates/verified/rejected/matrix/coverage reports.
+3. Implemented source-match/cohort/estimator contracts, conservative nuisance controls, cluster-variance precision planner and metadata-only confirmation checker. A deterministic output-order defect was exposed by a new test and corrected before final validation. No unsupported matched run was created.
+4. Locked metadata-only fallback selection/config and resource budget. Generated 288 shared nuisance waveforms for 32 existing sources; ran both artifacts with 576/576 successful new predictions and reused 448 sealed Phase 3 scores. Kept thresholds .82/.12. No new audio/teacher download or training.
+5. Persisted classwise/ranking/raw-score/paired-order effects, four-cluster uncertainty, precision assumptions and six programmatic tables. Exact feature diagnostics and a model-free scaled-floor counterfactual localize amplitude feature non-invariance; no altered-preprocessor model inference occurred.
+6. Parallel bounded C2 audit verified score-orientation/contract pitfalls, licensed NII alternative with MLAAD training overlap and missing fairseq compatibility. No weights, installs, teacher quality claim or C3 policy.
+7. Reproduction passed for both new runs, checking 10 sealed run files each, shared waveform cache and exact statistics parity without neural-framework imports. Final suites: 79 V2 / 40 selected legacy, all passed, no errors/skips. Historical integrity checked separately at finalization.
+8. Updated scientific source/shortcut/identifiability/precision/confirmation/novelty decisions and runnable follow-ups. C1 is supporting validation/engineering; primary international novelty and independent confirmation remain unestablished.
+
 ## 24–25 October 2026
 
 1. Read the complete attached master prompt in sequential chunks and verified the authoritative Word hash. Captured pre-change hashes for 2,376 legacy files, initial Git state and source/experiment inventory.
