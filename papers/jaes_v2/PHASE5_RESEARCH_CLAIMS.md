@@ -1,0 +1,7 @@
+# Phase 5 evidence-to-paper constraints
+
+The accepted conference manuscript remains unchanged. Current C2 results support an exploratory engineering/mechanism section and a controlled standard-baseline pilot, not a novel method, SOTA or independent journal confirmation. Cite the full PHASE5_RESEARCH_FINDINGS.md tables and retain negative results, including P1+ERM Noise5 FAKE miss.90625 and classwise clean operating-point changes.
+
+Describe128 train and64 development originals, one seed, frozen ImageNet backbone, six epochs/48 updates, fixed.5 and validation-clean-BCE selection.384 conditions per run are paired observations of64 originals. Explicitly disclose development REAL16/FAKE7 speaker support, UNKNOWN original utterance/generator lineage, reserved calibration and unopened ASV evaluation. The separate28-record speaker-support sensitivity is post-hoc and cannot be sold as independent source matching.
+
+Only main v2 cells enter the factorial report. Preliminary budget-stopped/interrupted runs remain resource evidence. B1/B4 have implementation tests but no completed scientific comparison. No teacher quality, new loss, risk guarantee or three internationally novel contributions may be inferred. Update the manuscript only after a technically distinct method survives strong controls, ablations, training seeds and unused external evaluation. CLAIM_EVIDENCE_MAP.csv records scoped Phase5 claims; it must not upgrade them to novelty.

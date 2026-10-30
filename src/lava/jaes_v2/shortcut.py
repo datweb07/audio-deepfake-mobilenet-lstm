@@ -22,7 +22,7 @@ def available_source_clusters(manifest: list[dict]) -> list[str]:
         return index
     seen = {}
     for index,row in enumerate(manifest):
-        for field in ('source_speaker_id','parent_recording_id'):
+        for field in ('source_speaker_id','speaker_id','source_recording_id','parent_recording_id'):
             value = row.get(field,'UNKNOWN')
             if known(value):
                 key = (field,value)

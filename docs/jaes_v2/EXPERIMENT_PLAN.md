@@ -1,3 +1,13 @@
+# Phase 5 current update — 28 October 2026
+
+**C1: SUPPORTING_VALIDATION / ENGINEERING. C2: STANDARD_BASELINES_PILOT_EVALUATED; NOVELTY_NOT_ESTABLISHED. C3: DEFERRED. INDEPENDENT_CONFIRMATION: NOT_LOCKED. THREE_INTERNATIONAL_CONTRIBUTIONS: NOT_ESTABLISHED.**
+
+ASV controlled foundation:50,224 official CM records; train/dev extraction only; calibration reserved and evaluation unopened. Main pilot:128 train/64 dev, frozen ImageNet MobileNet-LSTM, four6-epoch/48-update cells, one seed. P1 removes gain flips but can worsen noise misses; augmentation changes clean classwise trade-offs. Development FAKE covers7 speakers versus16 for REAL, so support imbalance remains a scientific limitation. Teacher runtime/quality gates are unresolved; no KD/new loss/C3 routing was run.
+
+Measured regression:92/92 JAES V2 and40/40 selected legacy, no failures/errors/skips. Current evidence and full metrics: **PHASE5_RESEARCH_FINDINGS.md**; commands and remaining gates: **PHASE5_NEXT_COMMANDS.md**. Standard controls and software correctness do not establish journal novelty. Earlier sections below are historical and preserved.
+
+---
+
 # Experiment plan — Phase 3 continuation
 
 ## Phase 4 current continuation

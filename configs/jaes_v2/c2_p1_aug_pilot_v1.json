@@ -1,0 +1,16 @@
+{
+  "experiment_id": "c2_p1_aug_pilot_v1",
+  "cache": "outputs/jaes_v2/c2_feature_cache_v2",
+  "policy": "P1",
+  "baseline": "B2",
+  "initialization": "imagenet",
+  "trainable_scope": "temporal_head_only",
+  "seed": 5804,
+  "epochs": 20,
+  "batch_size": 16,
+  "learning_rate": 0.001,
+  "consistency_weight": 0.1,
+  "maximum_seconds": 180,
+  "phase": "TIER2_RESEARCH_PILOT",
+  "threshold": 0.5
+}

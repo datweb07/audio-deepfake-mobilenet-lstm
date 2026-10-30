@@ -1,0 +1,11 @@
+# Phase 5 teacher feasibility
+
+Decision: **TEACHER_RUNTIME_NOT_READY; TEACHER_OVERLAP_NOT_EXCLUDED; teacher-free baselines permitted**. No teacher checkpoint was downloaded, loaded or scored. No teacher is fabricated. Strict checkpoint loading, frozen-teacher gradient behavior, observed output shape, clean quality, classwise failures and CPU/GPU memory/latency remain NOT_MEASURED rather than passed.
+
+The [NII current model card](https://huggingface.co/nii-yamagishilab/wav2vec-small-anti-deepfake), rechecked for Phase 5, retains CC-BY-NC-SA-4.0 weight terms, a custom fairseq implementation and corpus-level ASVspoof/MLAAD training overlap. The Phase 4 audit retains the advertised ~380 MB artifact, remote advertised SHA and source links; no local hash is claimed. Loading safetensors through a generic Transformers class is not a verified replacement for the author wrapper.
+
+Existing local runtime: Python 3.11.9, Torch 2.2.2+cpu, no fairseq/Transformers, no Torch CUDA. The author NII installation targets a separate Python 3.9/fairseq setup. Existing .venv and .venv-torch were not modified. Creating a new environment before resolving the interpreter/recipe would incur an unvalidated download/install budget; no teacher quality conclusion follows from deferring it.
+
+Tak SSL remains blocked by unresolved fine-tuned-checkpoint terms in addition to its older runtime recipe. Its code uses bonafide class 1. NII example uses fake class 0. The tested helper applies numerically stable softmax to both logits and selects the **documented FAKE index**; it never subtracts an arbitrary raw score from one. Synthetic orientation tests do not certify a real checkpoint's output semantics.
+
+To clear the gate: obtain compatible isolated Python 3.9 and author-pinned fairseq, lock code and exact weight digest, retain code/weight licenses, enforce strict state-dict keys/shapes and frozen inference, test mono 16 kHz author normalization, then measure a bounded two-class development cohort with explicit overlap disclosures. Check free disk for environment, weights, loader copies and activations separately. No independent teacher-generalization claim on ASVspoof or MLAAD is authorized. Knowledge distillation remains disabled until useful behavior is actually measured.
