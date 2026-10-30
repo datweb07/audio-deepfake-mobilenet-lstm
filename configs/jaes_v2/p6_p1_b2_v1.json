@@ -1,0 +1,13 @@
+{
+  "experiment_id": "p6_p1_b2_v1",
+  "policy": "P1",
+  "baseline": "B2",
+  "seed": 5806,
+  "epochs": 6,
+  "batch_size": 16,
+  "learning_rate": 0.001,
+  "consistency_weight": 0.1,
+  "maximum_seconds": 180,
+  "scope": "CONTROLLED_PILOT",
+  "training_policy": "HEAD_ONLY"
+}

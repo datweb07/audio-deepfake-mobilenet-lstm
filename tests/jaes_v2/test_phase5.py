@@ -4,6 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 import zipfile
 
 import numpy as np
@@ -55,7 +56,10 @@ class ArchiveTests(unittest.TestCase):
             def checked_open(instance,member,*args,**kwargs):
                 self.assertNotIn('eval',member.filename if hasattr(member,'filename') else member)
                 return real_open(instance,member,*args,**kwargs)
-            with patch('src.lava.jaes_v2.asv_archive.RESERVE_BYTES',0),patch.object(zipfile.ZipFile,'open',checked_open):
+            # Tiny safety fixture must not depend on the host temp volume's
+            # production 512MiB operational allowance (audio is only bytes here).
+            with patch('src.lava.jaes_v2.asv_archive.RESERVE_BYTES',0),patch.object(zipfile.ZipFile,'open',checked_open),\
+                 patch('src.lava.jaes_v2.asv_archive.shutil.disk_usage',return_value=SimpleNamespace(free=16*1024**3)):
                 result=extract_train_dev(archive,root/'data',root/'audit')
             self.assertEqual(result['extracted_files'],2)
             self.assertFalse((root/'data/LA/ASVspoof2019_LA_eval').exists())

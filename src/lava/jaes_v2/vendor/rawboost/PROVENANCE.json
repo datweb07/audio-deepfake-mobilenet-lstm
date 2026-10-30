@@ -1,0 +1,14 @@
+{
+  "author": "Hemlata Tak et al.",
+  "source": "https://github.com/TakHemlata/RawBoost-antispoofing",
+  "original_file": "RawBoost.py",
+  "retrieved": "2026-10-30",
+  "license": "MIT; Copyright (c) 2021 Hemlata",
+  "reference_sha256": "6180282ec0289f26b505cdc5af1c174015bb6679f60615f3ec4e9ad867bdbdc7",
+  "license_sha256": "39387466f968944b5fd11f6b15e4d2a827276553a09941c41089d0028dd6a8f4",
+  "reference_code_changes": "NONE",
+  "wrapper": "src/lava/jaes_v2/rawboost.py: seeded locked reference RNG/restoration, silence guard, finite/shape validation",
+  "algorithm": "5: linear/nonlinear convolutive followed by impulsive signal-dependent noise",
+  "sample_rate": "Author functions parameterized by fs; this study uses22050Hz/maxF8000, not exact16kHz paper pipeline",
+  "exposure": "Two precomputed realizations/source; not online stochastic RawBoost"
+}

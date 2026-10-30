@@ -1,3 +1,13 @@
+# Phase6 current update —30 October2026
+
+C1: SUPPORTING_VALIDATION_ENGINEERING. C2: STRONG_BASELINES_PILOT_EVALUATED; NOVELTY_NOT_ESTABLISHED. C3: DEFERRED. Confirmation: NOT_LOCKED. Three international contributions: NOT_ESTABLISHED.
+
+New speaker-balanced cohort160train/56dev (four/class/speaker), nine60-update standard baselines and real partial-backbone sanity completed. A01–A04-only coverage, one seed and UNKNOWN original lineage limit claims. Equal-view consistency improves the declared development contrast; channel/RawBoost reduce misses with false-alarm trade-offs. New loss remains gated. Sequential execution/microbatching address the observed memory-pressure failure; no production environment or sealed historical evidence is overwritten.
+
+Current handoff: LAVA_JOURNAL_V2_MASTER_RESEARCH_REPORT.md and LAVA_JOURNAL_V2_RESEARCH_INVENTORY.json, generated from structured evidence. See PHASE6_EXPERIMENT_RESULTS.md and PHASE6_NEXT_COMMANDS.md. Earlier sections below remain historical.
+
+---
+
 # Phase 5 current update — 28 October 2026
 
 **C1: SUPPORTING_VALIDATION / ENGINEERING. C2: STANDARD_BASELINES_PILOT_EVALUATED; NOVELTY_NOT_ESTABLISHED. C3: DEFERRED. INDEPENDENT_CONFIRMATION: NOT_LOCKED. THREE_INTERNATIONAL_CONTRIBUTIONS: NOT_ESTABLISHED.**
