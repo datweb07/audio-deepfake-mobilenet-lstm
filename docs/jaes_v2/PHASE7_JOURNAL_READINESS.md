@@ -1,0 +1,9 @@
+# Phase7 journal readiness — 31 October 2026
+
+The [official AES journal site](https://aes.org/publications/journal/) remains active and provides a submission link. The [official masthead](https://aes.org/publications/journal/journal-masthead/) identifies ISSN1549-4950 and2026publication information. This establishes the publisher's current publication/submission presence, not a current Clarivate indexing certificate.
+
+The [author guidelines, Convention & Conference Papers section](https://aes.org/publications/journal-author-guidelines/) permit consideration of substantially revised conference work: extend the treatment and literature review, cite the event paper, and use a different title. Acceptance remains editorial; an accepted but unreleased manuscript does not resolve rights, disclosure or simultaneous-submission questions. The exact conference venue, publication/DOI status and rights terms are still required. The publisher does not specify a universal extension percentage or a minimum of three international contributions on this page.
+
+Current SCIE/JCR status remains NOT_VERIFIED from Clarivate: the [official MJL lookup](https://mjl.clarivate.com/search-results?issn=1549-4950) was inaccessible through the research web tool. Third-party directories are not substituted for an authenticated current record, and no current JIF/quartile is certified. This limitation does not mean the journal is invalid or delisted.
+
+LAVA is NOT_READY_FOR_SUBMISSION as a newly established methodological paper. Phase7 provides controlled development evidence and software traceability; it does not establish three distinct international novelties, independent external confirmation or calibrated operational risk. The conference manuscript and all conference models remain unchanged. No submission, author communication, rights transfer or publication action occurred.

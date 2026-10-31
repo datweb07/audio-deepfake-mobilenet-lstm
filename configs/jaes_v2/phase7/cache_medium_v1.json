@@ -1,0 +1,11 @@
+{
+  "selection_path": "outputs/jaes_v2/phase7/selections/medium_all_attack_v1",
+  "selection_sha256": "029ca108fe05f14971c5dba02468fe555699ab41871f94d443184a63c44df319",
+  "cache_id": "medium_p0_v1",
+  "policies": [
+    "P0"
+  ],
+  "waveform_version": "c2-view-1-rb5-finite2",
+  "maximum_seconds": 2400,
+  "disk_reserve_gib": 15
+}
