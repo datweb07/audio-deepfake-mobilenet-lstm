@@ -1,0 +1,53 @@
+{
+  "experiment_id": "p8_foundation_consistency_partial_s6307_v1",
+  "research_phase": 8,
+  "dataset_version": "ASVspoof2019_LA",
+  "source_manifest": "outputs/jaes_v2/datasets/asv2019_foundation_v1/train_manifest.csv",
+  "manifest_sha256": "7d24153c35c3867b02a5f99ee60b8ba6c0a67bfbb910e69f6e68611f28796e72",
+  "development_manifest": "outputs/jaes_v2/datasets/asv2019_foundation_v1/development_manifest.csv",
+  "development_sha256": "dcbcf4dd3583c24590246323f2e8fd943fcc4607030698069c9a0aa11b25a55a",
+  "training_scope": "DEVELOPMENT_RESEARCH",
+  "architecture": "MobileNetV3Small-LSTM128",
+  "pretrained_weights": "imagenet_fresh_head",
+  "preprocessing_policy": "P0",
+  "augmentation_policy": "channel",
+  "training_objective": "CONSISTENCY",
+  "objective_parameters": {
+    "class_weights": [
+      1.0,
+      1.5
+    ],
+    "dro_rate": 0.01,
+    "dro_floor": 0.05,
+    "consistency_weight": 0.1
+  },
+  "trainable_backbone_policy": "WARMUP_PARTIAL",
+  "BatchNorm_policy": "ALL_FROZEN",
+  "training_seed": 6307,
+  "augmentation_seed": 5804,
+  "sampling": "natural",
+  "learning_rate": 0.001,
+  "finetune_learning_rate": 0.0001,
+  "scheduler": "linear_half_per_stage",
+  "batch_size": 16,
+  "microbatch_size": 1,
+  "gradient_accumulation": 16,
+  "warmup_epochs": 1,
+  "finetune_epochs": 20,
+  "maximum_updates": 100000,
+  "checkpoint_policy": "CLEAN_BCE",
+  "checkpoint_every_updates": 500,
+  "validation_policy": "A_EVERY_EPOCH_ALL_CONDITIONS_FINAL_ALL_DEV",
+  "early_stopping_patience": 5,
+  "clean_REAL_FA_cap": 0.1,
+  "clean_FAKE_miss_cap": 0.15,
+  "resource_limits": {
+    "seconds_per_invocation": 86400,
+    "disk_reserve_gib": 15,
+    "max_process_mib": 4000,
+    "tensor_lru_items": 8
+  },
+  "runtime": "cpu",
+  "protocol_path": "outputs/jaes_v2/phase8/protocol/baselines_v1.json",
+  "tiny_per_attack": 0
+}

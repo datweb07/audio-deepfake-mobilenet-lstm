@@ -1,0 +1,5 @@
+# Visual QA note
+
+The first sealed model-free `statistics`/`statistics_reproduced` editions were retained. Visual inspection found overlapping point annotations at identical classwise errors in the frontier figure. The final rendering uses a legend and explicitly notes coincident points, without jittering or changing data. Final figures/tables are in `outputs/jaes_v2/phase8/statistics_final`; byte reproduction is in `statistics_final_reproduced`. Scores, metrics, trained models, protocols and master-report numerical content are unchanged. The original statistics summary JSON is byte-identical to the final edition; the older figure rendering is superseded for presentation only.
+
+The training code and scientific decisions were not changed. Report rendering and final handoff scripts changed after the149+40regression run; a further validation is retained in `validation_visual_final` alongside actual model-free reproduction. The final source snapshot contains the corrected renderer. No prior phase or sealed run was edited.
