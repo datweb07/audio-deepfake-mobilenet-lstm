@@ -1,0 +1,21 @@
+# Phase 9 — Dataset and acquisition decision
+
+**Use existing ASVspoof 2019 LA for engineering and prospective development replication. Defer all new downloads.** Medium-plus is a separate deterministic manifest. ASVspoof 2019 official evaluation and reserved calibration stayed closed.
+
+| Level | Train | Allowed development | Status |
+| --- | ---: | ---: | --- |
+| Medium | 640, 320/class | 368, A=224 and B=144 | Existing manifest checksum verified. |
+| Medium-plus | 2,560, 1,280/class, 20 speakers | Same 368 | Seed 9109, 64/class/speaker, A01–A06 support 213/214/214/214/213/212. Byte and decoded PCM checked over all 2,928 sources, speaker overlap zero. |
+| Foundation | 25,380, 2,580 REAL and 22,800 FAKE | 17,503 incl. 987 REAL-only | Read-only preflight validates 42,883 train/dev records. The 7,341 calibration rows are reserved per historical metadata. No claim of independent generator or global parent lineage. |
+
+Medium-plus manifest SHA-256 `d14f9da12581a001ab501509943218835ea80f5a57e64c7a57037ab6cc47f085`, development SHA-256 `f036b6facf0cdb278f215d85a70bf80b711ef212cef82fade6cd9d2907dedf47`. The medium-plus file is for review and has no registered training config. [Contract](../../outputs/jaes_v2/phase9/medium_plus_v1/contract.json) · [Foundation preflight](../../outputs/jaes_v2/phase9/foundation_preflight_v1.json) · [Official 2019 archive](https://datashare.ed.ac.uk/handle/10283/3336)
+
+| Candidate and upstream metadata | Role and decision |
+| --- | --- |
+| MLAAD-tiny, upstream viewer ~15.3k English rows, repo 3.54 GB, CC BY-NC 4.0, M-AILABS-derived. Existing local Phase 3 subset 192 under pinned revision `9143e5ea709575ebab6bec52840a1043aada7bb1`. | Existing subset is development only. New full release needs pinned revision, per-file hashes, speaker/generator mapping and overlap analysis. Expanded footprint and official digest unknown. [Dataset card](https://huggingface.co/datasets/mueller91/MLAAD-tiny) · [File inventory](https://huggingface.co/datasets/mueller91/MLAAD-tiny/tree/main) |
+| In-The-Wild, English, 8.16 GB archive. Current upstream card lists CC BY-SA 4.0. Underlying recording permissions, file hashes and generator lineage still require audit. | Potential independent external audio after checking speaker/source/checkpoint overlap. Archive alone exceeds the free space above the 15 GiB reserve. [Author release](https://huggingface.co/datasets/mueller91/In-The-Wild/tree/main) · [Primary study](https://arxiv.org/abs/2203.16263) |
+| ASVspoof 2021 LA, Zenodo 4837263, 7.8 GB archive, ODC Attribution. 2021 organizer keys and 2019/VCTK maps available. The evaluation uses 48 speakers corresponding to 2019 eval speaker identities. | Potential channel transfer test with verified maps. Never use as a training source in this protocol. Archive exceeds current headroom. Verify official archive checksum, decoded footprint and exact trial counts before acquisition. [Zenodo](https://zenodo.org/records/4837263) · [Organizer](https://www.asvspoof.org/index2021.html) · [Challenge paper](https://www.isca-archive.org/asvspoof_2021/yamagishi21_asvspoof.pdf) |
+| PhonemeDF, parallel LibriSpeech/VCTK and TTS/VC. Published experiment selected 1,000 real LibriSpeech utterances from 251 speakers and paired synthetic counterparts. The public author repository shows samples. Full licensed release, checksum and sizes unresolved. | Best fit among reviewed sources for cue identification if lawful source-linked audio and generator/version labels become available. Screen VCTK overlap before using data with 2019. [Paper](https://arxiv.org/html/2603.15037v1) · [Author repository](https://github.com/Vamshi-Nallaguntla/PhonemeDF) |
+| RADAR challenge release | Metadata-only lead for external evaluation after fingerprint, permissions and overlap checks. Exact usable subset, storage and lineage unverified here. [Release](https://zenodo.org/records/22110815) |
+
+External lock requires pinned dataset bytes, separate development/evaluation roles, known overlap exclusions for all candidate checkpoints, prespecified threshold and metrics, clustered uncertainty, exact sample support and author-side rights review. Minimum 15 GiB D reserve applies to archive, extraction and cache together. Current Phase 9 training-ready lock remains pending because engine, metric and cohort contracts have not been jointly frozen.

@@ -1,0 +1,341 @@
+{
+  "phase": 9,
+  "as_of": "2026-11-08",
+  "deadline": "2026-12-20",
+  "timezone": "Asia/Novosibirsk",
+  "conference": {
+    "path": "papers/PaperID_804_final.docx",
+    "sha256": "91fa8753025895bbf88470f4ebe7e6c283e897c8370fa8e91b1719abaac61073",
+    "bytes": 410608
+  },
+  "phase8_master": {
+    "path": "docs/jaes_v2/LAVA_JOURNAL_V2_MASTER_RESEARCH_REPORT_PHASE8.md",
+    "sha256": "633572c15f3acd8df50d393e1691c4b905bb7222d165344144a9d5370cc39773",
+    "bytes": 154602
+  },
+  "history": {
+    "path": "docs/jaes_v2/LAVA_JOURNAL_V2_MASTER_RESEARCH_REPORT_POST_TRAINING.md",
+    "sha256": "fc28e9b3f87e00a0228bf99bee654627e0acf589e0d960a50d7ff829283bf4ca",
+    "bytes": 5412
+  },
+  "gates": {
+    "GRADIENT_PARITY_PASS": {
+      "decision": "NO",
+      "reason": "Two cases and fresh Adam only. Multi-update and same-engine resume pending."
+    },
+    "VALIDATION_PARITY_PASS": {
+      "decision": "NO",
+      "reason": "Four views only. Whole-cohort score, guard and selection parity pending."
+    },
+    "TRAINING_ENGINE_FROZEN": {
+      "decision": "NO",
+      "reason": "No registered prospective trainer contract."
+    },
+    "RESOURCE_BUDGET_APPROVED": {
+      "decision": "NO",
+      "reason": "C drive/pagefile pressure and no sustained resource benchmark."
+    },
+    "DATA_PROTOCOL_LOCKED": {
+      "decision": "NO",
+      "reason": "Input manifests audited. End-to-end prospective selection and execution contract pending."
+    },
+    "MEDIUM_REPLICATION_READY": {
+      "decision": "NO",
+      "reason": "Requires fixed engine, parity and bounded benchmark."
+    },
+    "FULL_FOUNDATION_READY": {
+      "decision": "NO",
+      "reason": "Engineering gates and matched medium evidence pending."
+    },
+    "C2_METHOD_IMPLEMENTED": {
+      "decision": "NO",
+      "reason": "No identified mechanism-qualified training loss."
+    },
+    "C2_METHOD_NOVELTY_SUPPORTED": {
+      "decision": "NO",
+      "reason": "Controlled parallel lineage data blocker and nearby prior art."
+    },
+    "C3_READY": {
+      "decision": "NO",
+      "reason": "Selective inference deferred. Calibration untouched."
+    },
+    "EXTERNAL_CONFIRMATION_READY": {
+      "decision": "NO",
+      "reason": "No locked independent corpus and overlap audit."
+    }
+  },
+  "contributions": {
+    "C1": "SUPPORTING_DEVELOPMENT_EVIDENCE",
+    "C2": "DATA_BLOCKER / NOVELTY_NOT_ESTABLISHED",
+    "C3": "DEFERRED"
+  },
+  "calibration_used": false,
+  "official_evaluation_used": false,
+  "registered_training_run": false,
+  "selected_models": {
+    "erm": {
+      "experiment_id": "p8_medium_erm_partial_s6107_v1",
+      "selected": {
+        "path": "best_epoch_017.keras",
+        "sha256": "07ca34b40a2bffefbb3525c140060420d712f048d83d8c67089ab5a1025958f2",
+        "epoch": 17,
+        "selection_value": 0.12534614112630996,
+        "criterion": "CLEAN_BCE"
+      },
+      "seal_entries": 993,
+      "checkpoints": 43,
+      "files": [
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_erm_partial_s6107_v1/metrics.json",
+          "sha256": "d544ac231b5482363e7a72faa665a47f918e3baf83a8bc137cf01b72a2c59dad",
+          "bytes": 12318
+        },
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_erm_partial_s6107_v1/attack_metrics.json",
+          "sha256": "07a28f0343efca06d4b561ff82e746868091e4b07729cb6047220efd36d72456",
+          "bytes": 34694
+        },
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_erm_partial_s6107_v1/history.json",
+          "sha256": "d00baaf4a5eb38190b6e7bd9d343034de028e953ed3bf2233ea98777de37af5d",
+          "bytes": 25772
+        }
+      ]
+    },
+    "channel": {
+      "experiment_id": "p8_medium_channel_partial_s6107_v1",
+      "selected": {
+        "path": "best_epoch_016.keras",
+        "sha256": "88fd8be62d08c0817d46469cba19ff270f02436508fc4dbb36838c701973b70a",
+        "epoch": 16,
+        "selection_value": 0.16297258094621722,
+        "criterion": "CLEAN_BCE"
+      },
+      "seal_entries": 1181,
+      "checkpoints": 104,
+      "files": [
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_channel_partial_s6107_v1/metrics.json",
+          "sha256": "f060338744928d4e0b5caf66af17d5e1fbed599ed223d1bcdf51198d1945aadc",
+          "bytes": 12296
+        },
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_channel_partial_s6107_v1/attack_metrics.json",
+          "sha256": "68d3721ce513fa1db7c49a907937d4635d242f459a4c8383adf2f94a771ee516",
+          "bytes": 34651
+        },
+        {
+          "path": "outputs/jaes_v2/phase8/training/p8_medium_channel_partial_s6107_v1/history.json",
+          "sha256": "80db48378251df834f68bf8344972e132d4a75b2de9b12ca53b621966075b301",
+          "bytes": 25707
+        }
+      ]
+    }
+  },
+  "retrospective_guard_example": {
+    "margins": {
+      "A_clean_FA": "0.02",
+      "A_clean_miss": "0.02",
+      "B_clean_FA": "0.02",
+      "A05_stress_miss": "0.05",
+      "A06_stress_miss": "0.05"
+    },
+    "reference": {
+      "A_clean_FA": [
+        4,
+        112
+      ],
+      "A_clean_miss": [
+        8,
+        112
+      ],
+      "B_clean_FA": [
+        19,
+        144
+      ],
+      "A05_stress_miss": [
+        40,
+        54
+      ],
+      "A06_stress_miss": [
+        19,
+        54
+      ],
+      "A_stress_FA": [
+        137,
+        336
+      ],
+      "A_stress_miss": [
+        162,
+        336
+      ]
+    },
+    "candidate": {
+      "A_clean_FA": [
+        4,
+        112
+      ],
+      "A_clean_miss": [
+        8,
+        112
+      ],
+      "B_clean_FA": [
+        30,
+        144
+      ],
+      "A05_stress_miss": [
+        47,
+        54
+      ],
+      "A06_stress_miss": [
+        37,
+        54
+      ],
+      "A_stress_FA": [
+        72,
+        336
+      ],
+      "A_stress_miss": [
+        128,
+        336
+      ]
+    },
+    "result": {
+      "status": "NO_FEASIBLE_CHECKPOINT",
+      "failed": [
+        "B_clean_FA",
+        "A05_stress_miss",
+        "A06_stress_miss"
+      ],
+      "objective": null
+    }
+  },
+  "dataset_levels": {
+    "medium": {
+      "train": 640,
+      "development": 368
+    },
+    "medium_plus": {
+      "train": 2560,
+      "development": 368
+    },
+    "foundation": {
+      "train": 25380,
+      "development": 17503,
+      "reserved_calibration_count_historical": 7341
+    }
+  },
+  "models": {
+    "primary": "MobileNetV3Small-LSTM128",
+    "secondary_transfer": "ShuffleNet",
+    "conditional_pretrained": [
+      "AASIST",
+      "RawNet2"
+    ]
+  },
+  "tests": {
+    "jaes_v2": 155,
+    "legacy_selected": 40,
+    "phase9_guards": 3,
+    "failed": 0
+  },
+  "commands": {
+    "path": "docs/jaes_v2/PHASE9_AUTHOR_TRAINING_COMMANDS.md",
+    "sha256": "63f08e6671e61482174721269c63159119309fc99e8e206f7193dfcfec6536fc",
+    "bytes": 1868
+  },
+  "experiment_queue": {
+    "path": "docs/jaes_v2/PHASE9_TRAINING_PRIORITY_MATRIX.md",
+    "sha256": "276435e85f6125e208c5d122a8a9b8562b3451939465843d661bb50e13c3d42e",
+    "bytes": 3053
+  },
+  "resource_decision": {
+    "path": "docs/jaes_v2/PHASE9_FULL_TRAINING_GO_NO_GO.md",
+    "sha256": "e10fe1480d6011a1f633261469e507545c9f7972278aa6911e441ec421ad82cb",
+    "bytes": 2442
+  },
+  "master": {
+    "path": "docs/jaes_v2/LAVA_JOURNAL_V2_MASTER_RESEARCH_REPORT_PHASE9.md",
+    "sha256": "3c98c0933aaedf8188b590bf261369e5695ffff08520ec89d19b6f79bb0f01a0",
+    "bytes": 6382
+  },
+  "journal_draft": {
+    "path": "papers/jaes_v2/journal_draft/PHASE9_JOURNAL_DRAFT.md",
+    "sha256": "cd374b7451c4a39d3b277cd8a3e798f489ac2fc725711c2d3610758d94dde254",
+    "bytes": 10472
+  },
+  "evidence": [
+    {
+      "path": "outputs/jaes_v2/phase9/foundation_preflight_v1.json",
+      "sha256": "e6334060fbbfdf7d5d365cdfd0de029e786984e7e0e4b727e4ca7b75dafe4d69",
+      "bytes": 2470
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/medium_plus_v1/contract.json",
+      "sha256": "424a98b6aa0df021608189bc0c502edea2b9581841c7048fbeaab347a7850f2f",
+      "bytes": 1113
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/medium_plus_v1/development_manifest.csv",
+      "sha256": "f036b6facf0cdb278f215d85a70bf80b711ef212cef82fade6cd9d2907dedf47",
+      "bytes": 307276
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/medium_plus_v1/foundation_train_support.csv",
+      "sha256": "63964f8a2b9b91fb5935e79c7c269ecc1d089e098d4a90f4815217819bb22b3e",
+      "bytes": 1012
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/medium_plus_v1/train_manifest.csv",
+      "sha256": "d14f9da12581a001ab501509943218835ea80f5a57e64c7a57037ab6cc47f085",
+      "bytes": 2117662
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/medium_reaudit_v1.json",
+      "sha256": "b2d48b37e5d2bb8a97ba34de3b6d4a7cfcc92c8a70a96cb4c9931bd520d05650",
+      "bytes": 38381
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/parity_v1.json",
+      "sha256": "3e4c2ffea517400327043325d78d0bc23b97bfa03b0639c2ed4c84c8e14080ba",
+      "bytes": 60338
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/regression_v1/jaes_v2.txt",
+      "sha256": "4a51974795e522290a96924e34869cf741eef1460bc1d8e3891d5ad9ee8f4caf",
+      "bytes": 22029
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/regression_v1/legacy_selected.txt",
+      "sha256": "45560398188653fa7b248d1838a61b60ed2b006d6057fa5ca1adb07b3aa2262d",
+      "bytes": 5878
+    },
+    {
+      "path": "outputs/jaes_v2/phase9/regression_v1/validation.json",
+      "sha256": "6a7eabc467f8184cbca239674feacdb503e469030a6c41bc5d3dfaf5cc15a065",
+      "bytes": 48254
+    }
+  ],
+  "phase9_source": [
+    {
+      "path": "scripts/jaes_v2/phase9_parity.py",
+      "sha256": "6e0c639f2cbc24e7563528a8dbafdf600976ea3fb9f41f906af1c18e4a7202aa",
+      "bytes": 8435
+    },
+    {
+      "path": "scripts/jaes_v2/phase9_data.py",
+      "sha256": "40e86e1d22cb450eebe039248cde59721a56215ebffa17c94a727670a6397e5a",
+      "bytes": 3366
+    },
+    {
+      "path": "src/lava/jaes_v2/phase9_protocol.py",
+      "sha256": "bd77f1cef27864ec05cdf8f18b2074b376d651744d804dbb5b44c76a3e685e0d",
+      "bytes": 2969
+    },
+    {
+      "path": "tests/jaes_v2/test_phase9.py",
+      "sha256": "93de8d8d6b55c4af572232bc9bc2f968ed9cc921dcefcb112cae2e6a3ca3dca2",
+      "bytes": 1740
+    }
+  ]
+}
