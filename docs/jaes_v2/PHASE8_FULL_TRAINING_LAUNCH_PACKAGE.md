@@ -40,6 +40,27 @@ Monitor reads atomic state while the job owns the lock. Its rough ETA uses recen
 
 ## Resume and failure recovery
 
+If the released trainer stopped at `Compiled/eager inference parity` during
+the first validation, resume from the published `latest.json` with the command
+below. The patched trainer accepts that sealed first-validation boundary when
+the released trainer hash and all other contract fields match. The next
+checkpoint records the migration. If the validation probe detects a finite
+score difference above `1e-6` or a decision difference at `0.5`, the entire
+pass uses eager inference. The console reports the probe scores and the
+completed run records the number of fallback passes in its timings.
+
+If the previous trainer exhausted CPU memory during epoch or final
+validation, use the same resume command. The sealed pending validation or
+finished checkpoint can migrate from that specific trainer hash when all
+other contract fields match. Epoch validation reuses a single compiled
+function per process. If compiled inference exhausts memory, the trainer
+discards that pass's scores and retries the pass in eager mode. For a
+partial-CNN run migrated from the affected trainer, recovery uses a
+one-segment CNN batch throughout validation. The LSTM receives the full
+ordered sequence of features. A run resumed after the last optimizer
+update still completes validation, evaluates the selected export on every
+development condition, and seals the results.
+
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.phase8_experiment resume --run outputs/jaes_v2/phase8/training/p8_medium_erm_partial_s6107_v1
 ```

@@ -14,6 +14,9 @@ from .phase7_data import safe_path
 from .phase8_objectives import group_key, dro_update, bce, weighted_sum
 
 BASE = Path('outputs/jaes_v2/phase8')
+TRAINER_PATH = 'src/lava/jaes_v2/phase8_training.py'
+PRE_VALIDATION_FIX_SHA256 = '1be688a9e1cc6d4db7c65d413e0100e9b42212c38d4566ada63950bab597d3ef'
+PRE_GRAPH_REUSE_SHA256 = '76184d5b1436fd9f59b17577723351c6bc9981780d0d259d2aca0a140f017394'
 MEDIUM = 'outputs/jaes_v2/phase7/selections/medium_all_attack_v1/manifest.csv'
 FOUNDATION = 'outputs/jaes_v2/datasets/asv2019_foundation_v1/train_manifest.csv'
 DEV = ('clean', 'gain_half', 'gain_quarter', 'noise5', 'opus64', 'A_then_B', 'B_then_A')
@@ -304,38 +307,127 @@ def save_checkpoint(tf, full, optimizer, directory, state):
 def restore_checkpoint(tf, full, optimizer, directory, contract):
     verify_tree(directory)
     state = json.loads((directory/'controller.json').read_text())
-    if state['contract'] != contract: raise ValueError('Resume contract mismatch (config/data/code/environment)')
+    if state['contract'] != contract:
+        current_code = contract.get('code', {})
+        previous_hash = state['contract'].get('code', {}).get(TRAINER_PATH)
+        previous_contract = {**contract, 'code': {**current_code, TRAINER_PATH: previous_hash}}
+        first_validation = (state.get('pending_validation') is True and state.get('epoch') == 0
+                            and state.get('history') == [] and state.get('finished') is False)
+        validation_boundary = state.get('pending_validation') is True or state.get('finished') is True
+        recovery_reason = None
+        if previous_hash == PRE_VALIDATION_FIX_SHA256 and first_validation:
+            recovery_reason = 'first_validation_eager_fallback'
+        elif previous_hash == PRE_GRAPH_REUSE_SHA256 and validation_boundary:
+            recovery_reason = 'validation_graph_reuse_and_oom_fallback'
+        if (TRAINER_PATH not in current_code or state['contract'] != previous_contract
+                or recovery_reason is None):
+            raise ValueError('Resume contract mismatch (config/data/code/environment)')
+        state['checkpoint_migration'] = {'previous_trainer_sha256': previous_hash,
+                                        'step': state['step'], 'reason': recovery_reason}
+        state['contract'] = contract
     tf.train.Checkpoint(model=full, optimizer=optimizer).read(str(directory/'state')).assert_consumed()
     if int(optimizer.iterations.numpy()) != state['step']: raise ValueError('Optimizer cursor mismatch')
     return state
 
 
-def evaluate(tf, forward, inputs, records, b_ids, conditions, guard=None):
+class _CompiledInferenceOOM(Exception):
+    pass
+
+
+def evaluate(tf, forward, inputs, records, b_ids, conditions, guard=None, *, compiled=None,
+             progress_every=0, segmentwise=None):
+    if segmentwise is not None:
+        rows, metrics, timing = _evaluate_pass(forward=segmentwise, compiled=None, inputs=inputs,
+            records=records, b_ids=b_ids, conditions=conditions, guard=guard,
+            progress_every=progress_every, oom_error=tf.errors.ResourceExhaustedError)
+        timing['segmentwise_validation_passes'] = 1
+        timing['eager_validation_fallbacks'] = 0
+        return rows, metrics, timing
+    if compiled is None:
+        compiled = tf.function(lambda x: forward(x, training=False), reduce_retracing=True)
+    started = perf_counter()
+    oom_error = tf.errors.ResourceExhaustedError
+    try:
+        return _evaluate_pass(forward, compiled, inputs, records, b_ids, conditions, guard, progress_every, oom_error)
+    except _CompiledInferenceOOM:
+        pass
+    print('Compiled validation exhausted memory. Restarting this validation pass in eager mode.',
+          file=sys.stderr, flush=True)
+    rows, metrics, timing = _evaluate_pass(forward, None, inputs, records, b_ids, conditions, guard, progress_every, oom_error)
+    timing['validation_seconds'] = perf_counter() - started
+    timing['compiled_validation_oom_retries'] = 1
+    return rows, metrics, timing
+
+
+def _evaluate_pass(forward, compiled, inputs, records, b_ids, conditions, guard, progress_every, oom_error):
     from .phase7_training import score_metrics
-    infer = tf.function(lambda x: forward(x, training=False), reduce_retracing=True)
     rows = []; start = perf_counter(); first_parity = None
+    infer = compiled
     model_seconds=0.
     # Source-first traversal reuses one deterministic waveform bank. It avoids
     # regenerating every codec chain for each condition and bounds cache memory.
-    for r in records:
+    for index, r in enumerate(records, 1):
         if guard:guard()
         for condition in conditions:
             x = inputs.get(r, condition)[None]
             t=perf_counter()
-            p = float(infer(x).numpy().reshape(-1)[0])
-            if first_parity is None:
-                first_parity = abs(p-float(forward(x, training=False).numpy().reshape(-1)[0]))
-                if first_parity > 1e-6: raise ValueError('Compiled/eager inference parity')
+            if infer is None:
+                p = float(forward(x, training=False).numpy().reshape(-1)[0])
+            else:
+                try:
+                    p = float(infer(x).numpy().reshape(-1)[0])
+                except oom_error as exc:
+                    raise _CompiledInferenceOOM from exc
+            if infer is not None and first_parity is None:
+                eager = float(forward(x, training=False).numpy().reshape(-1)[0])
+                if not np.isfinite([p, eager]).all():
+                    raise ValueError('Nonfinite score in compiled/eager validation probe')
+                first_parity = abs(p - eager)
+                if first_parity > 1e-6 or (p >= .5) != (eager >= .5):
+                    print(f'Validation switched to eager inference at {r.sample_id}/{condition} '
+                          f'(compiled={p:.9g}, eager={eager:.9g}, residual={first_parity:.9g})',
+                          file=sys.stderr, flush=True)
+                    infer = None
+                    p = eager
             model_seconds+=perf_counter()-t
             rows.append(dict(sample_id=r.sample_id,speaker_id=r.speaker_id,attack_id=r.attack_id,label=r.label,
                 condition_id=condition,stratum='B_REAL_ONLY' if r.sample_id in b_ids else 'A_PAIRED',raw_score=p,predicted_label=int(p>=.5),threshold=.5))
+        if progress_every and (index % progress_every == 0 or index == len(records)):
+            print(f'Final development evaluation: {index}/{len(records)} sources', flush=True)
     metric_start=perf_counter();metrics = []
     for condition in conditions:
         for stratum in ('A_PAIRED','B_REAL_ONLY'):
             group = [r for r in rows if r['condition_id']==condition and r['stratum']==stratum]
             if group: metrics.append(dict(condition=condition,stratum=stratum,**score_metrics(group)))
     return rows, metrics, {'validation_seconds':perf_counter()-start,'model_forward_seconds':model_seconds,
-        'metric_seconds':perf_counter()-metric_start,'compiled_eager_residual':first_parity}
+        'metric_seconds':perf_counter()-metric_start,'compiled_eager_residual':first_parity or 0.,
+        'eager_validation_fallbacks':int(infer is None)}
+
+
+def record_failure(out, exc):
+    try:
+        latest = out/'latest.json'
+        write_json(out/f'failure_{os.getpid()}.json', dict(
+            type=type(exc).__name__, message=str(exc),
+            last_committed=json.loads(latest.read_text()) if latest.exists() else None))
+    except Exception as logging_error:
+        print(f'Could not record training failure: {logging_error}', file=sys.stderr, flush=True)
+
+
+def segmentwise_inference(tf, model):
+    """Bound CNN activations to one segment while preserving the LSTM sequence."""
+    backbone = model.get_layer('time_distributed_mobilenetv3small').layer
+    temporal = model.get_layer('temporal_lstm')
+    classifier = model.get_layer('classifier_dense')
+    probability = model.get_layer('probability_fake')
+    encode = tf.function(lambda frame: backbone(frame, training=False), reduce_retracing=True)
+
+    def forward(x, training=False):
+        embeddings = [encode(x[:, i]) for i in range(x.shape[1])]
+        sequence = tf.stack(embeddings, axis=1)
+        return probability(classifier(temporal(sequence, training=False)))
+
+    return forward
 
 
 def selection_value(metrics, c):
@@ -386,7 +478,14 @@ def train(root, c, *, resume=False, stop_after=None):
         write_json(out/'dataset_audit.json',dict(partitions=data_audit,unique_REAL_sources=sum(r.label==0 for r in train_rows),unique_FAKE_sources=sum(r.label==1 for r in train_rows),sampling=c.sampling,source_ids=[r.sample_id for r in train_rows],development_ids=[r.sample_id for r in dev],calibration_accessed=False,evaluation_accessed=False))
         write_json(out/'environment.json',dict(python=sys.version,tensorflow=tf.__version__,GPU=[str(x) for x in tf.config.list_physical_devices('GPU')],TEMP=os.getenv('TEMP'),mixed_precision='float32'))
         write_json(out/'trainable_layers.json',dict(variables=[dict(name=v.name,shape=v.shape.as_list()) for v in variables],BN_frozen=[l.name for l in bn],trainable_parameters=sum(int(np.prod(v.shape)) for v in variables),initialization_hash=state['initialization_hash']))
+    migration = state.get('checkpoint_migration', {})
+    low_memory_validation = (c.trainable_backbone_policy == 'WARMUP_PARTIAL'
+                             and migration.get('reason') == 'validation_graph_reuse_and_oom_fallback')
+    segmentwise_validation = segmentwise_inference(tf, full) if low_memory_validation else None
+    if low_memory_validation:
+        print(f"Resuming step {state['step']} with one-segment CNN validation.", flush=True)
     timing = Counter(startup_seconds=perf_counter()-start); invocation_updates=0; last_gradients={}
+    compiled_validation = tf.function(lambda x: forward(x, training=False), reduce_retracing=True)
 
     def guard():
         if shutil.disk_usage(root).free < c.resource_limits['disk_reserve_gib']*1024**3+64*1024**2: raise RuntimeError('Disk reserve reached')
@@ -477,7 +576,8 @@ def train(root, c, *, resume=False, stop_after=None):
             # A pending validation is replayed after interruption; no extra optimizer update.
             primary=[r for r in dev if r.sample_id not in b_ids]
             conditions=('clean',) if c.checkpoint_policy=='CLEAN_BCE' else ('clean','noise5','A_then_B','B_then_A')
-            _,metrics,measure=evaluate(tf,forward,inputs,primary,b_ids,conditions,guard)
+            _,metrics,measure=evaluate(tf,forward,inputs,primary,b_ids,conditions,guard,
+                                       compiled=compiled_validation,segmentwise=segmentwise_validation)
             timing.update(measure);value,eligibility=selection_value(metrics,c)
             improved=value is not None and (state['best'] is None or value<state['best'])
             state['history'].append(dict(epoch=epoch+1,step=state['step'],learning_rate=lr,value=value,eligibility=eligibility,metrics=metrics))
@@ -503,7 +603,9 @@ def train(root, c, *, resume=False, stop_after=None):
                 for name in ('temporal_lstm','classifier_dense','probability_fake'):z=loaded.get_layer(name)(z)
                 return z
         else: selected=lambda x,training=False:loaded(x,training=False)
-        rows,metrics,measure=evaluate(tf,selected,inputs,dev,b_ids,DEV,guard);timing.update(measure)
+        selected_segmentwise = segmentwise_inference(tf, loaded) if low_memory_validation else None
+        rows,metrics,measure=evaluate(tf,selected,inputs,dev,b_ids,DEV,guard,progress_every=32,
+                                     segmentwise=selected_segmentwise);timing.update(measure)
         write_csv(out/'scores.csv',rows);write_json(out/'metrics.json',metrics)
         # Per-attack FAKE-only metrics retain null AUC/FAR rather than borrowing REAL rows.
         from .phase7_training import score_metrics
@@ -521,5 +623,5 @@ def train(root, c, *, resume=False, stop_after=None):
         write_json(out/'status.json',dict(status='PILOT_EVALUATED' if c.tiny_per_attack else 'DEVELOPMENT_EVALUATED',steps=state['step'],best=best,calibration_accessed=False,evaluation_accessed=False))
         seal_tree(out);return state
     except BaseException as exc:
-        write_json(out/'failure_'+str(os.getpid())+'.json',dict(type=type(exc).__name__,message=str(exc),last_committed=json.loads((out/'latest.json').read_text()) if (out/'latest.json').exists() else None))
+        record_failure(out, exc)
         raise

@@ -1,5 +1,7 @@
 """Independent numeric oracles and fail-closed lifecycle contracts."""
 import unittest,json,tempfile
+from contextlib import redirect_stderr
+from io import StringIO
 from pathlib import Path
 from dataclasses import replace
 from types import SimpleNamespace
@@ -10,6 +12,100 @@ from src.lava.jaes_v2.phase8_training import ExperimentConfig,epoch_order,select
 ROOT=Path(__file__).resolve().parents[2]
 
 class Phase8Contracts(unittest.TestCase):
+    def test_validation_fallback_uses_eager_for_every_row(self):
+        from src.lava.jaes_v2.phase8_training import evaluate
+        for compiled_first in (.7, .5000001):
+            with self.subTest(compiled_first=compiled_first):
+                class Output:
+                    def __init__(self, value):
+                        self.value = value
+
+                    def numpy(self):
+                        return np.array([self.value])
+
+                compiled_calls = []
+
+                def compiled(value):
+                    compiled_calls.append(value)
+                    return Output(compiled_first)
+
+                tf = SimpleNamespace(function=lambda *args, **kwargs: compiled,
+                                     errors=SimpleNamespace(ResourceExhaustedError=MemoryError))
+                records = [SimpleNamespace(sample_id=str(i), speaker_id='s', attack_id='a', label=i)
+                           for i in (0, 1)]
+                inputs = SimpleNamespace(get=lambda record, condition: np.array(float(record.label)))
+                with redirect_stderr(StringIO()):
+                    rows, _, timing = evaluate(tf, lambda x, training: Output(.4999999 + .3*x[0]),
+                                               inputs, records, set(), ('clean',))
+                self.assertEqual(len(compiled_calls), 1)
+                np.testing.assert_allclose([r['raw_score'] for r in rows], [.4999999, .7999999])
+                self.assertEqual([r['predicted_label'] for r in rows], [0, 1])
+                self.assertEqual(timing['eager_validation_fallbacks'], 1)
+
+    def test_validation_restarts_eager_after_compiled_oom_mid_pass(self):
+        from src.lava.jaes_v2.phase8_training import evaluate
+
+        def compiled(x):
+            if x[0] == 1:
+                raise MemoryError('compiled allocation failed')
+            return SimpleNamespace(numpy=lambda: np.array([.2000001]))
+
+        def eager(x, training):
+            return SimpleNamespace(numpy=lambda: np.array([.2 + .6*x[0]]))
+
+        def unexpected_compile(*args, **kwargs):
+            self.fail('The supplied graph should be reused')
+
+        tf = SimpleNamespace(function=unexpected_compile,
+                             errors=SimpleNamespace(ResourceExhaustedError=MemoryError))
+        records = [SimpleNamespace(sample_id=str(i), speaker_id='s', attack_id='a', label=i)
+                   for i in (0, 1)]
+        inputs = SimpleNamespace(get=lambda record, condition: np.array(float(record.label)))
+        with redirect_stderr(StringIO()):
+            rows, _, timing = evaluate(tf, eager, inputs, records, set(), ('clean',), compiled=compiled)
+        self.assertEqual([r['raw_score'] for r in rows], [.2, .8])
+        self.assertEqual(timing['compiled_validation_oom_retries'], 1)
+        self.assertEqual(timing['eager_validation_fallbacks'], 1)
+
+    def test_segmentwise_validation_preserves_the_complete_sequence(self):
+        from src.lava.jaes_v2.phase8_training import segmentwise_inference
+
+        frame_shapes = []
+        sequences = []
+
+        def backbone(frame, training):
+            self.assertFalse(training)
+            frame_shapes.append(frame.shape)
+            return frame + 10
+
+        def temporal(sequence, training):
+            self.assertFalse(training)
+            sequences.append(sequence)
+            return sequence.sum(axis=1)
+
+        layers = {
+            'time_distributed_mobilenetv3small': SimpleNamespace(layer=backbone),
+            'temporal_lstm': temporal,
+            'classifier_dense': lambda x: x * 2,
+            'probability_fake': lambda x: x / 100,
+        }
+        tf = SimpleNamespace(function=lambda function, **kwargs: function, stack=np.stack)
+        predict = segmentwise_inference(tf, SimpleNamespace(get_layer=layers.__getitem__))
+        result = predict(np.array([[[1., 2.], [3., 4.], [5., 6.]]]))
+        self.assertEqual(frame_shapes, [(1, 2)] * 3)
+        np.testing.assert_array_equal(sequences[0], [[[11., 12.], [13., 14.], [15., 16.]]])
+        np.testing.assert_allclose(result, [[.78, .84]])
+
+    def test_failure_log_preserves_exception_details_and_checkpoint(self):
+        from src.lava.jaes_v2.phase8_training import record_failure
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            latest = {'checkpoint': 'boundary'}
+            (out/'latest.json').write_text(json.dumps(latest))
+            record_failure(out, ValueError('original failure'))
+            failure = json.loads(next(out.glob('failure_*.json')).read_text())
+            self.assertEqual(failure, dict(type='ValueError', message='original failure', last_committed=latest))
+
     def config(self):
         return ExperimentConfig(**json.loads((ROOT/'configs/jaes_v2/phase8/p8_tiny_erm_head_s6107_v1.json').read_text()))
 
@@ -124,6 +220,20 @@ class Phase8Numerics(unittest.TestCase):
             restored=restore_checkpoint(tf,model,opt,path,{'data':'sealed'})
             self.assertEqual(restored,state)
             self.assertEqual((variable_hash(model.weights),variable_hash(opt.variables())),expected)
+
+            from src.lava.jaes_v2.phase8_training import TRAINER_PATH, PRE_VALIDATION_FIX_SHA256
+            previous = dict(state, contract={'data': 'sealed', 'code': {TRAINER_PATH: PRE_VALIDATION_FIX_SHA256}},
+                            pending_validation=True, epoch=0, history=[], finished=False)
+            old_path = Path(directory)/'previous'
+            save_checkpoint(tf, model, opt, old_path, previous)
+            current_contract = {'data': 'sealed', 'code': {TRAINER_PATH: 'patched'}}
+            migrated = restore_checkpoint(tf, model, opt, old_path, current_contract)
+            self.assertEqual(migrated['checkpoint_migration']['step'], 1)
+            self.assertEqual(migrated['contract'], current_contract)
+            self.assertEqual((variable_hash(model.weights), variable_hash(opt.variables())), expected)
+            self.assertEqual(json.loads((old_path/'controller.json').read_text()), previous)
+            with self.assertRaises(ValueError):
+                restore_checkpoint(tf, model, opt, old_path, {**current_contract, 'data': 'changed'})
 
     def test_atomic_checkpoint_failure_does_not_publish(self):
         from unittest.mock import patch
