@@ -17,6 +17,9 @@ BASE = Path('outputs/jaes_v2/phase8')
 TRAINER_PATH = 'src/lava/jaes_v2/phase8_training.py'
 PRE_VALIDATION_FIX_SHA256 = '1be688a9e1cc6d4db7c65d413e0100e9b42212c38d4566ada63950bab597d3ef'
 PRE_GRAPH_REUSE_SHA256 = '76184d5b1436fd9f59b17577723351c6bc9981780d0d259d2aca0a140f017394'
+PRE_BOUNDED_RESUME_SHA256 = '867708833a8dfc477747226273ac132b8acc9eb60e8639a1b5f56833c41e0204'
+PRE_SEGMENT_GRADIENT_SHA256 = '7137deb81471d8da521d2fbc094d9c4de303c2b79cb70caff1d9d8e79ecc2f0d'
+PRE_POINTWISE_GRADIENT_SHA256 = 'e770861c480f7cfa3e4e239e9b45fcfa263f50af518267b6921e08c1d38e3702'
 MEDIUM = 'outputs/jaes_v2/phase7/selections/medium_all_attack_v1/manifest.csv'
 FOUNDATION = 'outputs/jaes_v2/datasets/asv2019_foundation_v1/train_manifest.csv'
 DEV = ('clean', 'gain_half', 'gain_quarter', 'noise5', 'opus64', 'A_then_B', 'B_then_A')
@@ -263,8 +266,8 @@ def model_factory(tf, c):
     extractor = tf.keras.Model(full.inputs, full.get_layer('time_distributed_mobilenetv3small').output)
     # The exported standard architecture retains its Dropout layer. Training
     # bypasses that stochastic layer using a stateless, explicitly keyed mask.
-    def forward(x, training=False, counter=0, stream=0):
-        z = x if c.trainable_backbone_policy == 'HEAD_ONLY' else extractor(x, training=training)
+    def forward(x, training=False, counter=0, stream=0, *, embeddings=False):
+        z = x if embeddings or c.trainable_backbone_policy == 'HEAD_ONLY' else extractor(x, training=training)
         z = full.get_layer('temporal_lstm')(z, training=training)
         z = full.get_layer('classifier_dense')(z)
         if training:
@@ -319,6 +322,12 @@ def restore_checkpoint(tf, full, optimizer, directory, contract):
             recovery_reason = 'first_validation_eager_fallback'
         elif previous_hash == PRE_GRAPH_REUSE_SHA256 and validation_boundary:
             recovery_reason = 'validation_graph_reuse_and_oom_fallback'
+        elif previous_hash == PRE_BOUNDED_RESUME_SHA256:
+            recovery_reason = 'bounded_process_resume'
+        elif previous_hash == PRE_SEGMENT_GRADIENT_SHA256:
+            recovery_reason = 'segmentwise_gradient_resume'
+        elif previous_hash == PRE_POINTWISE_GRADIENT_SHA256:
+            recovery_reason = 'pointwise_gradient_resume'
         if (TRAINER_PATH not in current_code or state['contract'] != previous_contract
                 or recovery_reason is None):
             raise ValueError('Resume contract mismatch (config/data/code/environment)')
@@ -430,6 +439,67 @@ def segmentwise_inference(tf, model):
     return forward
 
 
+def pointwise_matmul(tf, inputs, kernel):
+    channels_in, channels_out = kernel.shape[-2:]
+    flattened = tf.reshape(inputs, [-1, channels_in])
+    projected = tf.matmul(flattened, tf.reshape(kernel, [channels_in, channels_out]))
+    return tf.reshape(projected, tf.concat([tf.shape(inputs)[:-1], [channels_out]], axis=0))
+
+
+def segmentwise_gradient(tf, backbone, variables, objective, *, pointwise=False):
+    """Differentiate the sequence head once, then replay one CNN segment per VJP."""
+    cnn_variables = tuple(backbone.trainable_weights)
+    cnn_ids = {id(variable) for variable in cnn_variables}
+    head_variables = tuple(variable for variable in variables if id(variable) not in cnn_ids)
+    pointwise_layers = [layer for layer in backbone.layers
+                        if isinstance(layer, tf.keras.layers.Conv2D) and layer.trainable
+                        and layer.kernel_size == (1, 1) and layer.strides == (1, 1)
+                        and layer.groups == 1 and layer.data_format == 'channels_last'
+                        and layer.padding in ('same', 'valid')] if pointwise else []
+
+    @tf.function(reduce_retracing=True)
+    def encode(frame):
+        return backbone(frame, training=False)
+
+    @tf.function(reduce_retracing=True)
+    def frame_gradient(frame, upstream):
+        # This Python replacement is scoped to tracing the backward graph.
+        # The shared layer, kernel, bias, and exported Keras model are retained.
+        original = [(layer, layer.convolution_op) for layer in pointwise_layers]
+        try:
+            for layer, _ in original:
+                layer.convolution_op = lambda inputs, kernel: pointwise_matmul(tf, inputs, kernel)
+            with tf.GradientTape() as tape:
+                features = backbone(frame, training=False)
+        finally:
+            for layer, convolution in original:
+                layer.convolution_op = convolution
+        return tape.gradient(features, cnn_variables, output_gradients=upstream)
+
+    @tf.function(reduce_retracing=True)
+    def head_gradient(first, second, y, coeff, counter, paired):
+        watched = (first, second) if paired else (first,)
+        with tf.GradientTape() as tape:
+            tape.watch(watched)
+            value, losses = objective(first, y, coeff, counter, second, paired, embeddings=True)
+        derivatives = tape.gradient(value, head_variables + watched)
+        return value, losses, derivatives[:len(head_variables)], derivatives[len(head_variables):]
+
+    def gradient(x, y, coeff, counter, clean, paired):
+        inputs = (x, clean) if paired else (x,)
+        features = [tf.stack([encode(view[:, i]) for i in range(view.shape[1])], axis=1) for view in inputs]
+        value, losses, head, upstream = head_gradient(features[0], features[-1], y, coeff, counter, paired)
+        cnn = [tf.zeros_like(variable) for variable in cnn_variables]
+        for view, derivatives in zip(inputs, upstream):
+            for i in range(view.shape[1]):
+                gradients = frame_gradient(view[:, i], derivatives[:, i])
+                cnn = [total + grad for total, grad in zip(cnn, gradients)]
+        by_id = {id(variable): grad for variable, grad in zip(cnn_variables + head_variables, tuple(cnn) + head)}
+        return value, [by_id[id(variable)] for variable in variables], losses
+
+    return gradient
+
+
 def selection_value(metrics, c):
     clean = next(m for m in metrics if m['condition']=='clean' and m['stratum']=='A_PAIRED')
     if c.checkpoint_policy == 'CLEAN_BCE': return clean['nll'], 'ELIGIBLE'
@@ -440,7 +510,7 @@ def selection_value(metrics, c):
     return float(np.mean([.5*(m['REAL_false_alarm']+m['FAKE_miss']) for m in stress])), 'ELIGIBLE'
 
 
-def train(root, c, *, resume=False, stop_after=None):
+def train(root, c, *, resume=False, stop_after=None, low_memory_validation=False):
     from .c2_student import peak_process_mib
     tf = initialize(c.runtime); start = perf_counter()
     train_rows, dev, b_ids, data_audit = dataset(root, c)
@@ -480,7 +550,10 @@ def train(root, c, *, resume=False, stop_after=None):
         write_json(out/'trainable_layers.json',dict(variables=[dict(name=v.name,shape=v.shape.as_list()) for v in variables],BN_frozen=[l.name for l in bn],trainable_parameters=sum(int(np.prod(v.shape)) for v in variables),initialization_hash=state['initialization_hash']))
     migration = state.get('checkpoint_migration', {})
     low_memory_validation = (c.trainable_backbone_policy == 'WARMUP_PARTIAL'
-                             and migration.get('reason') == 'validation_graph_reuse_and_oom_fallback')
+                             and (low_memory_validation or state.get('low_memory_validation', False)
+                                  or migration.get('reason') == 'validation_graph_reuse_and_oom_fallback'))
+    if low_memory_validation:
+        state['low_memory_validation'] = True
     segmentwise_validation = segmentwise_inference(tf, full) if low_memory_validation else None
     if low_memory_validation:
         print(f"Resuming step {state['step']} with one-segment CNN validation.", flush=True)
@@ -504,21 +577,29 @@ def train(root, c, *, resume=False, stop_after=None):
         write_json(out/'latest.json',dict(checkpoint=tag,controller_sha256=file_hash(out/'checkpoints'/tag/'controller.json')))
         timing['checkpoint_seconds']+=perf_counter()-t
 
+    def objective(x, y, coeff, counter, clean, paired, *, embeddings=False):
+        p = forward(x, True, counter, 0, embeddings=embeddings)
+        value = weighted_sum(y, p, coeff)
+        if paired:
+            q = forward(clean, True, counter, 1, embeddings=embeddings)
+            value = .5 * (value + weighted_sum(y, q, coeff))
+            if c.training_objective == 'CONSISTENCY':
+                value += c.objective_parameters['consistency_weight'] * tf.reduce_sum(
+                    tf.square(tf.reshape(p, [-1]) - tf.reshape(q, [-1])) * coeff)
+        return value, bce(y, p)
+
     @tf.function(reduce_retracing=True)
     def gradient(x,y,coeff,counter,clean,paired):
         with tf.GradientTape() as tape:
-            p=forward(x,True,counter,0)
-            value=weighted_sum(y,p,coeff)
-            if paired:
-                q=forward(clean,True,counter,1)
-                value=.5*(value+weighted_sum(y,q,coeff))
-                if c.training_objective=='CONSISTENCY':
-                    value+=c.objective_parameters['consistency_weight']*tf.reduce_sum(tf.square(tf.reshape(p,[-1])-tf.reshape(q,[-1]))*coeff)
+            value, losses = objective(x, y, coeff, counter, clean, paired)
         gradients=tape.gradient(value,variables)
         for g in gradients:
             if g is None: raise ValueError('Detached variable')
             tf.debugging.assert_all_finite(g,'Nonfinite gradient')
-        return value,gradients,bce(y,p)
+        return value,gradients,losses
+
+    bounded_gradient = segmentwise_gradient(tf, backbone, variables, objective) if low_memory_validation else None
+    pointwise_gradient = segmentwise_gradient(tf, backbone, variables, objective, pointwise=True) if low_memory_validation else None
 
     try:
         while state['epoch']<stages and not state['finished']:
@@ -544,12 +625,44 @@ def train(root, c, *, resume=False, stop_after=None):
                     weights=c.objective_parameters['class_weights'];coeff=np.array([weights[r.label]/len(views) for r,_ in views],dtype='float32')
                 else: coeff=np.full(len(views),1/len(views),dtype='float32')
                 acc=[tf.zeros_like(v) for v in variables]; loss=0.;group_loss=np.zeros(len(keys));t=perf_counter()
+                update_start_counter = state['micro_counter']
+                next_step = state['step'] + 1
+                journal = out/'updates'/f'{next_step:08}.json'
+                if bounded_gradient and 'segmentwise_gradient_from_step' not in state and not journal.exists():
+                    state['segmentwise_gradient_from_step'] = next_step
+                use_bounded = bounded_gradient is not None and next_step >= state.get('segmentwise_gradient_from_step', float('inf'))
+                compute_gradient = bounded_gradient if use_bounded else gradient
+                recorded_pointwise = journal.exists() and json.loads(journal.read_text()).get('gradient_path') == 'pointwise_matmul'
+                if use_bounded and 'pointwise_gradient_from_step' not in state and (not journal.exists() or recorded_pointwise):
+                    state['pointwise_gradient_from_step'] = next_step
+                use_pointwise = use_bounded and next_step >= state.get('pointwise_gradient_from_step', float('inf'))
+                if use_pointwise:
+                    compute_gradient = pointwise_gradient
                 for begin in range(0,len(views),c.microbatch_size):
                     chunk=views[begin:begin+c.microbatch_size]
-                    x=np.stack([inputs.get(r,condition) for r,condition in chunk]);y=np.array([r.label for r,_ in chunk],dtype='float32')
-                    paired=c.training_objective=='CONSISTENCY'
-                    clean=np.stack([inputs.get(r,'clean') for r,_ in chunk]) if paired else x
-                    val,gs,ls=gradient(x,y,coeff[begin:begin+len(chunk)],tf.constant(state['micro_counter'],tf.int32),clean,paired)
+                    try:
+                        x=np.stack([inputs.get(r,condition) for r,condition in chunk]);y=np.array([r.label for r,_ in chunk],dtype='float32')
+                        paired=c.training_objective=='CONSISTENCY'
+                        clean=np.stack([inputs.get(r,'clean') for r,_ in chunk]) if paired else x
+                        val,gs,ls=compute_gradient(x,y,coeff[begin:begin+len(chunk)],tf.constant(state['micro_counter'],tf.int32),clean,paired)
+                        if use_bounded:
+                            for grad in gs:
+                                tf.debugging.assert_all_finite(grad, 'Nonfinite segmentwise gradient')
+                    except (tf.errors.ResourceExhaustedError, MemoryError, OSError) as exc:
+                        if isinstance(exc, OSError) and getattr(exc, 'winerror', None) != 1455:
+                            raise
+                        # The optimizer has not applied this update. Drop its
+                        # partial accumulators and checkpoint the prior update.
+                        state['micro_counter'] = update_start_counter
+                        del acc
+                        x = clean = None
+                        inputs.memo.clear()
+                        if invocation_updates:
+                            try:
+                                commit()
+                            except Exception as checkpoint_error:
+                                print(f'Could not commit before retry: {checkpoint_error}', file=sys.stderr, flush=True)
+                        raise
                     acc=[a+g for a,g in zip(acc,gs)];loss+=float(val)
                     for j,ell in enumerate(ls.numpy()):group_loss[group_ids[begin+j]]+=float(ell)
                     state['micro_counter']+=1
@@ -563,6 +676,8 @@ def train(root, c, *, resume=False, stop_after=None):
                 entry=dict(step=state['step'],epoch=epoch,learning_rate=lr,loss=loss,
                     sample_ids=[r.sample_id for r in chosen],views=[(r.sample_id,condition) for r,condition in views],
                     micro_counter=state['micro_counter'],supervised_views=len(views)*(2 if paired else 1),backward_calls=int(np.ceil(len(views)/c.microbatch_size)))
+                if use_pointwise:
+                    entry['gradient_path'] = 'pointwise_matmul'
                 journal=out/'updates'/f"{state['step']:08}.json";journal.parent.mkdir(exist_ok=True)
                 if journal.exists() and json.loads(journal.read_text())!=json.loads(json.dumps(entry)):raise ValueError('Replayed update differs from orphan journal')
                 write_json(journal,entry);state['update_chain']=object_hash([state['update_chain'],entry])

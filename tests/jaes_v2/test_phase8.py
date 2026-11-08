@@ -174,6 +174,49 @@ class Phase8Numerics(unittest.TestCase):
         np.testing.assert_allclose(bce(y,p).numpy(),expected,rtol=1e-6)
         self.assertAlmostEqual(float(weighted_sum(y,p,[.5,.75])),float(expected@[.5,.75]),places=6)
 
+    def test_segmentwise_gradient_matches_full_tape_for_both_views(self):
+        from src.lava.jaes_v2.phase8_training import segmentwise_gradient
+        tf = self.tf
+        cnn = tf.keras.Sequential([tf.keras.layers.Input((2,)), tf.keras.layers.Dense(
+            2, activation='tanh', kernel_initializer='ones')])
+        head = tf.Variable([[.2], [-.3]], dtype=tf.float32)
+        variables = [head, *cnn.trainable_weights]
+        first = tf.constant([[[.1, .3], [.2, -.4], [-.2, .1]]])
+        second = first + .4
+
+        def objective(x, y, coeff, counter, clean, paired, *, embeddings=False):
+            x = x if embeddings else cnn.layers[-1](x)
+            clean = clean if embeddings else cnn.layers[-1](clean)
+            scores = tf.reduce_sum(x @ head, axis=1)
+            comparison = tf.reduce_sum(clean @ head, axis=1)
+            return tf.reduce_sum((scores - y)**2 + (comparison - scores)**2), scores
+
+        arguments = (first, tf.constant([[.7]]), tf.constant([1.]), tf.constant(0), second, True)
+        with tf.GradientTape() as tape:
+            expected_loss, _ = objective(*arguments)
+        expected = tape.gradient(expected_loss, variables)
+        actual_loss, actual, _ = segmentwise_gradient(tf, cnn, variables, objective)(*arguments)
+        np.testing.assert_allclose(actual_loss.numpy(), expected_loss.numpy(), rtol=1e-6)
+        for actual_gradient, expected_gradient in zip(actual, expected):
+            np.testing.assert_allclose(actual_gradient.numpy(), expected_gradient.numpy(), rtol=1e-6, atol=1e-7)
+
+    def test_pointwise_matmul_matches_conv2d_and_its_gradients(self):
+        from src.lava.jaes_v2.phase8_training import pointwise_matmul
+        tf = self.tf
+        x = tf.Variable(tf.reshape(tf.linspace(-1., 1., 24), (1, 2, 3, 4)))
+        kernel = tf.Variable(tf.reshape(tf.linspace(-.5, .5, 20), (1, 1, 4, 5)))
+        with tf.GradientTape() as tape:
+            expected = tf.nn.conv2d(x, kernel, 1, 'SAME')
+            loss = tf.reduce_sum(tf.square(expected))
+        expected_gradients = tape.gradient(loss, (x, kernel))
+        with tf.GradientTape() as tape:
+            actual = pointwise_matmul(tf, x, kernel)
+            loss = tf.reduce_sum(tf.square(actual))
+        actual_gradients = tape.gradient(loss, (x, kernel))
+        np.testing.assert_allclose(actual.numpy(), expected.numpy(), rtol=1e-6, atol=1e-7)
+        for actual_gradient, expected_gradient in zip(actual_gradients, expected_gradients):
+            np.testing.assert_allclose(actual_gradient.numpy(), expected_gradient.numpy(), rtol=1e-6, atol=1e-7)
+
     def test_constraint_gradient_direction(self):
         tf=self.tf;p=tf.Variable([.8,.2],dtype=tf.float32)
         with tf.GradientTape() as tape:value=clean_constraint([0,1],p,[.1,.1],2.)

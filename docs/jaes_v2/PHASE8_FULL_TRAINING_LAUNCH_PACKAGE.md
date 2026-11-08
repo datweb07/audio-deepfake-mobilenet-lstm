@@ -61,6 +61,19 @@ ordered sequence of features. A run resumed after the last optimizer
 update still completes validation, evaluates the selected export on every
 development condition, and seals the results.
 
+For CPU memory exhaustion during gradient computation, resume with
+`--restart-every-updates 12`. Each worker commits a boundary and exits
+after at most 12 optimizer updates. Its successor restores the optimizer,
+sampler, and dropout counters in a fresh process. This mode also uses
+one-segment CNN validation for partial training. New updates in this
+mode compute the head gradient over the full sequence, then recompute
+and differentiate the CNN one segment at a time. The trainer records the
+first step using this gradient path in the checkpoint controller.
+Floating-point differences are possible after the transition. A gradient allocation failure
+discards the partial update and attempts to save the last complete one.
+If a worker fails, the command exits and leaves the latest committed
+checkpoint available for another resume.
+
 ```powershell
 .\.venv\Scripts\python.exe -X utf8 -m scripts.jaes_v2.phase8_experiment resume --run outputs/jaes_v2/phase8/training/p8_medium_erm_partial_s6107_v1
 ```

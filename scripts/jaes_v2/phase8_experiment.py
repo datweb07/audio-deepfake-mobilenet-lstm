@@ -1,5 +1,7 @@
 """Phase8 training, recovery and read-only verification CLI."""
 import argparse, json, os, tempfile, shutil, platform, math
+import subprocess
+import sys
 from pathlib import Path
 from src.lava.jaes_v2.evidence import write_json, object_hash
 from src.lava.jaes_v2.phase8_training import load_config, dataset, train, verify_tree, BASE
@@ -23,6 +25,35 @@ def preflight(root, c):
     result['status']='PASS' if result['disk_gate'] and result['maximum_updates_sufficient'] else 'NO_GO'
     return result
 
+def resume_in_chunks(run, chunk_size, total_updates=None):
+    def committed_step():
+        pointer = json.loads((run/'latest.json').read_text())
+        controller = run/'checkpoints'/pointer['checkpoint']/'controller.json'
+        return json.loads(controller.read_text())['step']
+
+    initial_step = committed_step()
+    previous_step = initial_step
+    while True:
+        limit = chunk_size
+        if total_updates is not None:
+            remaining = total_updates - (previous_step - initial_step)
+            if remaining <= 0:
+                return
+            limit = min(limit, remaining)
+        result = subprocess.run([sys.executable, '-X', 'utf8', '-m', 'scripts.jaes_v2.phase8_experiment',
+                                 'resume', '--run', str(run), '--stop-after-updates', str(limit),
+                                 '--low-memory-validation'])
+        if result.returncode:
+            raise SystemExit(result.returncode)
+        status = json.loads((run/'status.json').read_text())['status']
+        if status in ('DEVELOPMENT_EVALUATED', 'PILOT_EVALUATED', 'NO_FEASIBLE_CHECKPOINT'):
+            return
+        step = committed_step()
+        if status != 'INTERRUPTED_AT_COMMITTED_BOUNDARY' or step <= previous_step:
+            raise RuntimeError('Worker exited without a new committed update')
+        previous_step = step
+
+
 def main():
     root=Path(__file__).resolve().parents[2]; temp=root/'.research_tmp';temp.mkdir(exist_ok=True)
     os.environ['TEMP']=str(temp);os.environ['TMP']=str(temp);tempfile.tempdir=str(temp)
@@ -31,7 +62,18 @@ def main():
     parser.add_argument('mode',choices=('preflight','prepare-data','train','resume','verify','monitor','aggregate','validate'))
     parser.add_argument('--config',type=Path);parser.add_argument('--run',type=Path)
     parser.add_argument('--output',type=Path);parser.add_argument('--stop-after-updates',type=int)
+    parser.add_argument('--restart-every-updates', type=int)
+    parser.add_argument('--low-memory-validation', action='store_true')
     args=parser.parse_args()
+    if args.restart_every_updates is not None:
+        if (args.mode != 'resume' or not args.run or args.restart_every_updates < 1
+                or (args.stop_after_updates is not None and args.stop_after_updates < 1)):
+            parser.error('--restart-every-updates requires resume, --run, and positive update limits')
+        run = args.run.resolve()
+        if run.parent != (root/BASE/'training').resolve():
+            parser.error('Phase8 run only')
+        resume_in_chunks(run, args.restart_every_updates, args.stop_after_updates)
+        return
     # Atomic JSON pointers can be read during training; monitoring must never
     # wait for the exclusive training mutex held by the process being monitored.
     if args.mode=='monitor':
@@ -55,7 +97,6 @@ def main():
         if args.mode=='validate':
             if not args.output:parser.error('--output required')
             from scripts.jaes_v2 import validate
-            import sys
             sys.argv=['validate','--output',str(args.output)];validate.main();return
         if args.mode in ('verify','monitor'):
             if not args.run:parser.error('--run required')
@@ -80,7 +121,8 @@ def main():
                 write_json(args.output,result)
             else:
                 if args.mode=='train' and preflight(root,c)['status']!='PASS':raise RuntimeError('Resource preflight NO_GO')
-                result=train(root,c,resume=args.mode=='resume',stop_after=args.stop_after_updates)
+                result=train(root,c,resume=args.mode=='resume',stop_after=args.stop_after_updates,
+                             low_memory_validation=args.low_memory_validation)
                 result={k:result[k] for k in ('step','epoch','best','finished')}
         print(json.dumps(result,indent=2))
 
