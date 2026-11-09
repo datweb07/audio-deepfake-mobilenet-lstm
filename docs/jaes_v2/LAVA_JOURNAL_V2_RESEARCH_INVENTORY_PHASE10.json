@@ -1,0 +1,453 @@
+{
+  "phase": 10,
+  "as_of": "2026-11-08",
+  "deadline": "2026-12-20",
+  "timezone": "Asia/Novosibirsk",
+  "backend": "FULL_SHAPE_RECOMPUTE",
+  "qualification_profile": "p10_engine_100_channel_s9107_v2",
+  "gates": {
+    "TRAINING_ENGINE_FROZEN": "YES",
+    "GRADIENT_PARITY_PASS": "YES",
+    "EXACT_RESUME_PASS": "YES",
+    "VALIDATION_PARITY_PASS": "YES",
+    "RESOURCE_STATUS": "RESOURCE_PREFLIGHT_PASS",
+    "ENGINE_100_UPDATE": "ENGINE_100_UPDATE_PASS",
+    "MEDIUM_REPLICATION_READY": "YES",
+    "MEDIUM_PLUS_READY": "NO",
+    "FOUNDATION_READY": "NO",
+    "EXTERNAL_CONFIRMATION_READY": "NO"
+  },
+  "status": {
+    "fixed_backend": "INTEGRATION_TESTED",
+    "strict_checkpoint_contract": "UNIT_TESTED",
+    "validation_selection": "INTEGRATION_TESTED_ON_SEALED_SCORES",
+    "model_numeric": "INTEGRATION_TESTED",
+    "exact_resume": "INTEGRATION_TESTED",
+    "end_to_end_validation_parity": "INTEGRATION_TESTED",
+    "pilot100": "BENCHMARKED",
+    "primary_method": "NOT_ESTABLISHED",
+    "medium_launch": "PREFLIGHT_TESTED"
+  },
+  "tests": {
+    "jaes_v2": {
+      "run": 164,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "legacy_selected": {
+      "run": 40,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "historical_integrity": {
+    "phase9_entries": 28,
+    "seals": {
+      "p8_medium_channel_partial_s6107_v1": {
+        "entries": 1181,
+        "sha256": "cdcbfaee03fa80c79fc30d45275d2faa595c742eb69a3478be05396cd4e18575"
+      },
+      "p8_medium_erm_partial_s6107_v1": {
+        "entries": 993,
+        "sha256": "6141ea8b3ef10982eb6b6fe618e0af3145c166a86e051120b762f79ccd66373f"
+      }
+    },
+    "legacy": "PASS (2376 files); 3 explicit Phase 2 source/test amendments; original snapshot retained"
+  },
+  "retrospective_guard": {
+    "status": "NO_FEASIBLE_CHECKPOINT",
+    "failed": [
+      "B_clean_FA",
+      "A05_stress_miss",
+      "A06_stress_miss"
+    ],
+    "objective": null
+  },
+  "tier_rows": {
+    "A": 224,
+    "B": 1040,
+    "C": 2576
+  },
+  "datasets": {
+    "medium_train": 640,
+    "medium_plus_train": 2560,
+    "foundation_train": 25380,
+    "medium_development": 368,
+    "foundation_development": 17503
+  },
+  "primary_model": "MobileNetV3Small-LSTM128",
+  "seeds_proposed": [
+    9107,
+    9207,
+    9307
+  ],
+  "contributions": {
+    "C1": "SUPPORTING_DEVELOPMENT",
+    "C2": "C2_NOVELTY_NOT_ESTABLISHED / C2_CUE_IDENTIFICATION_BLOCKED_ON_DATA",
+    "C3": "DEFERRED",
+    "mechanism_cutoff": "2026-11-20"
+  },
+  "tensorflow_model_qualification_updates": 100,
+  "full_training_executed": false,
+  "calibration_used": false,
+  "official_evaluation_used": false,
+  "source": {
+    "src/lava/jaes_v2/phase8_training.py": "de7ad8eea1c354bbfc91aeea3753fa07235eea25284572eaf690c902504f8bb6",
+    "src/lava/jaes_v2/phase8_objectives.py": "7cbb1dd37f76488d4ce822b72413a397b091361e715f9cecdde44586a87e6685",
+    "src/lava/jaes_v2/phase7_data.py": "a54d02b9dbc43ff389f53eba0ae7177b1bd019c692c37b75398f69e4b15a1769",
+    "src/lava/jaes_v2/c2_data.py": "efb33afa834004cefcc8a1813dbad4b5aa0b12d42bea62b49d53914f720e03f1",
+    "src/lava/jaes_v2/preprocessing.py": "182ba23c6090e86dfb3ce9e4bd81d14dd450423641cc095ee16806192d1cd8ff",
+    "src/lava/jaes_v2/transforms.py": "b7661c247e68b578d2107319c68810ea105f1853452fe5bcbb08b459a3a0c7a3",
+    "src/lava/jaes_v2/controls.py": "a9fc09d358456d765453335cf5e87868a0ec9ad7eb7f50c7e0e22226fa1cc8b3",
+    "src/lava/jaes_v2/rawboost.py": "cf26a87cb94d494989929adc48bfdd210cf0306bdcdba4b3750e56b26e8a099f",
+    "src/lava/jaes_v2/vendor/rawboost/RawBoost.py": "6180282ec0289f26b505cdc5af1c174015bb6679f60615f3ec4e9ad867bdbdc7",
+    "src/preprocessing.py": "a33cd9539f9cf182981b135f1e87fb296d3a7a0d015a3c3b810d87d39e44218d",
+    "src/model.py": "aa80410efcb6b60ea0218ab121a18b1cd1df79be5fbd1e4329e95abaf25cf72b",
+    "config.py": "b9c04ae63e3daf7887f7830d80945e7a7caf9e78654794ca12d467da3e8d4b0d",
+    "ffmpeg_binary": "74db6c184a03dba2bdfe23e1a1f41cf5a8385bc1de6a7a1b26db1dc541abef93",
+    "src/lava/jaes_v2/phase10_training.py": "d30624463f1a784b3f6f326afcebe54b12cd6f776d9b2818275915a4ed43db56",
+    "src/lava/jaes_v2/phase10_validation.py": "f5a74309b74d788c85404aea1f6a24fb31669d6c10ad6b1c12ba8336a13c7e20",
+    "src/lava/jaes_v2/phase10_resources.py": "68a34a308e32e425a75351a27846662d6b9ad51c2731806c547697a89faac8c7",
+    "src/lava/jaes_v2/phase9_protocol.py": "bd77f1cef27864ec05cdf8f18b2074b376d651744d804dbb5b44c76a3e685e0d",
+    "src/lava/jaes_v2/phase7_training.py": "25df5b03a0c1d254e545c25cd68f21e12b76e0912f5eb1085ff26ed72fb00fd3",
+    "src/lava/jaes_v2/evidence.py": "3ef5a469bd80dc8b54c342e506c64d29e10d6275682f1f67e395e58bd453f120",
+    "scripts/jaes_v2/phase10_experiment.py": "64a2f03bdd96a9d206714440b82126365df6715242438c069d70d1cae754877f",
+    "scripts/jaes_v2/phase10_numeric.py": "4f8017a59d96ccc327e235b216f88a8d9f67d177c00bd44d5a206f843769d0e1",
+    "configs/jaes_v2/phase10/qualification_v2.json": "16f860ffdc30d7b203acea7caaccd001b93ee3d3034c76298c0f31a8d857736e"
+  },
+  "documents": [
+    {
+      "path": "docs/jaes_v2/LAVA_JOURNAL_V2_MASTER_RESEARCH_REPORT_PHASE10.md",
+      "sha256": "85de35e5ded7956832dcc049bcbb61b736fe4cdb91982b23098e3de36fd8df3b",
+      "bytes": 15125
+    },
+    {
+      "path": "docs/jaes_v2/PHASE10_AUTHOR_TRAINING_COMMANDS.md",
+      "sha256": "18f95dd563003ad98485414558113e734e774a20e713e2543a5a6186e2cb41ab",
+      "bytes": 3135
+    },
+    {
+      "path": "docs/jaes_v2/PHASE10_EXECUTIVE_HANDOFF.md",
+      "sha256": "51ad9c68e940b81c2323b1b0329adcf35aa243f161c3089e21891200a2405b79",
+      "bytes": 3980
+    },
+    {
+      "path": "docs/jaes_v2/PHASE10_WINDOWS_STORAGE_ACTION.md",
+      "sha256": "39d5a41c309e85ebf3a9c732c032a81c17e48284d302d30334e5c802a7195f51",
+      "bytes": 3470
+    }
+  ],
+  "active_draft": {
+    "path": "papers/jaes_v2/journal_draft/PHASE9_JOURNAL_DRAFT.md",
+    "sha256": "cd374b7451c4a39d3b277cd8a3e798f489ac2fc725711c2d3610758d94dde254",
+    "bytes": 10472
+  },
+  "phase9_inventory": {
+    "path": "docs/jaes_v2/LAVA_JOURNAL_V2_RESEARCH_INVENTORY_PHASE9.json",
+    "sha256": "b3cd644a5fea02424421a2298333310ac7ac3584ffe9515b97837c9cfe74e75d",
+    "bytes": 10485
+  },
+  "evidence": [
+    {
+      "path": "outputs/jaes_v2/phase10/benchmark_resume_v2.json",
+      "sha256": "af2ec639881fc0695b33dec46476acb69ff390de2d838f290f8b36af0cd8f5d8",
+      "bytes": 2984
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/historical_scores_final_v1.json",
+      "sha256": "b538a0a7280a5396fa3b28a7cfc8ef77018e689b7e39bd618a732b6a2d258330",
+      "bytes": 33332
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/historical_scores_recovery_v1.json",
+      "sha256": "02845041840f4f8a148122155f4d02e13ccba73cc40dcb7e485090b8aae454cd",
+      "bytes": 33332
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/historical_scores_v1.json",
+      "sha256": "a3efb9ba4082179a09b58bf2c6389dd49bcca5d7ea738176d62e8946f893f1de",
+      "bytes": 33332
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_final_v1.json",
+      "sha256": "25181a48a2722e40a4473b807800a9e2614cb1bb4bdc9866bd1e766a89c6f3b4",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_medium_release_v1.json",
+      "sha256": "bbc841bad332a9c47cc8068f899a2d8b75c6f52b38def4fdcdae4ef7a6bee2f4",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_ram_recheck_v1.json",
+      "sha256": "831d65122f68c8bc72d4483fc48a3019e29842d2857b6f404e3174ddd7632c91",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_ram_recheck_v2.json",
+      "sha256": "9cd9bc19cc019b31d642231d92e3bb9433679b8c3c8f1fe7b7fd3417737929da",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_recovery_final_v1.json",
+      "sha256": "831d65122f68c8bc72d4483fc48a3019e29842d2857b6f404e3174ddd7632c91",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_recovery_v1.json",
+      "sha256": "831d65122f68c8bc72d4483fc48a3019e29842d2857b6f404e3174ddd7632c91",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/integrity_v1.json",
+      "sha256": "baafb5555a23fa2f3195947dd070d06d6dba82770d75f777a509487deda643e5",
+      "bytes": 2949
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/lifecycle_resume_v2.json",
+      "sha256": "d5be1e4bdc26c4ba9d61a5a39d8f0e6fae27812e21760a13819914d1e974b53f",
+      "bytes": 2981
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/medium_channel_preflight_v2.json",
+      "sha256": "ba86243ed3f92c143d15453ff0c9f257d97d606ff9ae16d1333ced11b210c829",
+      "bytes": 1037
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/medium_erm_preflight_v2.json",
+      "sha256": "da2fd19da49395c689c20ff06b5ac5f50d6c36ef080a10cfc8060a28b0d95b62",
+      "bytes": 1031
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/numeric_boundary_diagnostic_v1.json",
+      "sha256": "8665c8b34a1f0bbdc2447b7923ed1cb06c9b45ecd708507364b61acfe4b402bd",
+      "bytes": 398
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/numeric_full_shape_candidate_v1.json",
+      "sha256": "2a1f92a745055c500ce7a7025839f8ced30fca607350eed5987bc35405a69988",
+      "bytes": 139392
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/numeric_parity.json",
+      "sha256": "2aa405b99307a01088d85563455a0a17940a5d672fcc2085ed6f4888d7d70865",
+      "bytes": 139725
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/numeric_parity_v2.json",
+      "sha256": "b7003a1fd7936eb5b824111fb7278fb10ee5641f498e70dcc1869c0ea9993de4",
+      "bytes": 139302
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_engine_100_channel_s9107_v2/resumable/seal.json",
+      "sha256": "ec977ad597e3d06be10cde909b9bbf78ac31886b87d78522073ddc9c3a8a407b",
+      "bytes": 5223
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_engine_100_channel_s9107_v2/resumable_1736_100_resources.json",
+      "sha256": "630f56eb929308128e475dc0a2d2434f03e5d4141bd2c2169351eb80a6d5121b",
+      "bytes": 17334
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_engine_100_channel_s9107_v2/resumable_24280_55_resources.json",
+      "sha256": "3658a234af26e417823fb396211b18ea95e307a638e62e95513d01a712bb6bc1",
+      "bytes": 20961
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_engine_100_channel_s9107_v2/uninterrupted/seal.json",
+      "sha256": "5fe6dbd522195a8696d0fea70a7a9c24a44e28a41f35ebd78514bb693ab0955e",
+      "bytes": 4748
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_engine_100_channel_s9107_v2/uninterrupted_14684_100_resources.json",
+      "sha256": "c7288ab7a8baf9f385e2f07b22a4971d882c5e08c31200a633822f65484d0385",
+      "bytes": 37520
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_lifecycle_channel_s9107_v2/resumable/seal.json",
+      "sha256": "605c3146204685305fa427ecf09c340b6fa4e3875b11828ce8351d6a82fc2dcb",
+      "bytes": 3735
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_lifecycle_channel_s9107_v2/resumable_11896_9_resources.json",
+      "sha256": "8b22b71bfceb2c17bb60ad6369f8b6cf8f25b9e432523b5179759c42e7eff22a",
+      "bytes": 2291
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_lifecycle_channel_s9107_v2/resumable_15188_5_resources.json",
+      "sha256": "efd41396d088ab3bd3cd2ce707d8c237aac9fe9e8474feb8099102d9aadd4f21",
+      "bytes": 2613
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_lifecycle_channel_s9107_v2/uninterrupted/seal.json",
+      "sha256": "62d0bc9c39ed9329876715ff0c73cd1f53e8656795eece560350dd6a25021bd1",
+      "bytes": 3260
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/p10_lifecycle_channel_s9107_v2/uninterrupted_20528_9_resources.json",
+      "sha256": "a3ba5cfee41fee098b336a4f537204ae428ee332a66e92fd94195a30c3211549",
+      "bytes": 4124
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/regression_medium_release_v1/jaes_v2.txt",
+      "sha256": "71d2717578c703ed78fe0885c742cb6a19a35eeb814da29e395280bd568bdb68",
+      "bytes": 23267
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/regression_medium_release_v1/legacy_selected.txt",
+      "sha256": "48cb818230beaa9577361eee87bfbb4ed1f26af133d0c527d4c294e02e9e32cd",
+      "bytes": 5878
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/regression_medium_release_v1/validation.json",
+      "sha256": "a9728aa14f07ce82245de0bbc1b5dc903ad0a828cb682b61b474e51a0d9ac45d",
+      "bytes": 50157
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_author_v1.json",
+      "sha256": "19d7cc94918bbd19a035023063d16c4821b8796d04e46d015617d003bb20e0b1",
+      "bytes": 883
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_author_v2.json",
+      "sha256": "db3e9ec120198328f14f53fe8c8785328e0c2a15756e1469784ff51ac562d783",
+      "bytes": 971
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_before_pilot_v2.json",
+      "sha256": "d36fb78f6fcb37ca76312fb37850ae72e11b1bcb9f8176d8c8af3568645126cc",
+      "bytes": 1146
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_during_validation_v1.json",
+      "sha256": "3d9a9e84eca94a58fa4cce8a41fd4d5b17dec60ffe4b75fb4e6c10c2512681b4",
+      "bytes": 1146
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_ram_recheck_v1.json",
+      "sha256": "7e40d4d13f6515c81e6ee29d947ecbb1ec9ea16efb3ee674efa0901888e52090",
+      "bytes": 1146
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_recovery_final_v1.json",
+      "sha256": "aa3bf5987d2ad05535263322a22c05bc3ea895371cddf8393c39437deaf2dff3",
+      "bytes": 1159
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_recovery_pinned_v1.json",
+      "sha256": "dbcac640a6d9095a626ee5d3852145161bd22d0aa581f6f54062510022d2bd22",
+      "bytes": 1159
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_recovery_pinned_v2.json",
+      "sha256": "ccf2990e9c99c7ad6012b83c9492923de06c7ee6fa1e19a505ca19971f4f761c",
+      "bytes": 1159
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_recovery_thread_probe_v1.json",
+      "sha256": "bddde492443041e7b68fd3d4ee29e03573634ba957daf09effc2cdad4a71f2d8",
+      "bytes": 1068
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_recovery_v1.json",
+      "sha256": "f917cd0d391ee562626124dfc9d8072b7812ab271d64602ff2625a66471899ce",
+      "bytes": 1069
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_v1.json",
+      "sha256": "1544bbcf3a29e12864322f6e77df719ca84205d6769892e95e02185acd37a1b4",
+      "bytes": 1068
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_v2.json",
+      "sha256": "f710ea4090ebe5ada4a6a8bb962918ac7e685463a8c63f33e288d4a82263a51a",
+      "bytes": 1069
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/resources_v3.json",
+      "sha256": "40d8e3a14ea91683c21ba053da673ff85ea9588f78b89fc3e9e9d65f7478dedf",
+      "bytes": 1069
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity.json",
+      "sha256": "a1cc36162d616c90dd4e4908ba921cf3c11d997cc4812d4c39f1509a8378b379",
+      "bytes": 6040
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity_optimized.csv",
+      "sha256": "e720069ca1d54494adb03cf3f687579997e5569c050de886fbe8f951fcdf3d3c",
+      "bytes": 444282
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity_standard.csv",
+      "sha256": "81ffc31b2a010f95ce1612c26bfbe57c3b85b3f6415edea72f2e0bda6d0ba976",
+      "bytes": 444271
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity_v2.json",
+      "sha256": "3de8225f34ced7920240a3494e7403a43514e1526dfd2f2f5567bffb4cc203e4",
+      "bytes": 6046
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity_v2_optimized.csv",
+      "sha256": "e720069ca1d54494adb03cf3f687579997e5569c050de886fbe8f951fcdf3d3c",
+      "bytes": 444282
+    },
+    {
+      "path": "outputs/jaes_v2/phase10/validation_parity_v2_standard.csv",
+      "sha256": "81ffc31b2a010f95ce1612c26bfbe57c3b85b3f6415edea72f2e0bda6d0ba976",
+      "bytes": 444271
+    }
+  ],
+  "resource_recovery": {
+    "status": "RESOURCE_PREFLIGHT_PASS",
+    "latest_preflight": {
+      "path": "outputs/jaes_v2/phase10/resources_before_pilot_v2.json",
+      "sha256": "d36fb78f6fcb37ca76312fb37850ae72e11b1bcb9f8176d8c8af3568645126cc",
+      "bytes": 1146
+    },
+    "prior_block": "PROCESS_RSS_PRESSURE (available system RAM below floor)",
+    "qualification_fixture_peak_rss": 868081664
+  },
+  "launch_registry": {
+    "path": "configs/jaes_v2/phase10/prospective_medium_v1.json",
+    "sha256": "c43a8de97462a77f393d58f17484de6321d7021cd765dd32debf998642631925",
+    "bytes": 2040
+  },
+  "launch_cli": {
+    "path": "scripts/jaes_v2/phase10_medium.py",
+    "sha256": "99aa9e6f53d7e7d298404c487f3464742e3ac395b23165b07f5ab9c73b5576de",
+    "bytes": 7172
+  },
+  "qualification_source": {
+    "src/lava/jaes_v2/phase8_training.py": "de7ad8eea1c354bbfc91aeea3753fa07235eea25284572eaf690c902504f8bb6",
+    "src/lava/jaes_v2/phase8_objectives.py": "7cbb1dd37f76488d4ce822b72413a397b091361e715f9cecdde44586a87e6685",
+    "src/lava/jaes_v2/phase7_data.py": "a54d02b9dbc43ff389f53eba0ae7177b1bd019c692c37b75398f69e4b15a1769",
+    "src/lava/jaes_v2/c2_data.py": "efb33afa834004cefcc8a1813dbad4b5aa0b12d42bea62b49d53914f720e03f1",
+    "src/lava/jaes_v2/preprocessing.py": "182ba23c6090e86dfb3ce9e4bd81d14dd450423641cc095ee16806192d1cd8ff",
+    "src/lava/jaes_v2/transforms.py": "b7661c247e68b578d2107319c68810ea105f1853452fe5bcbb08b459a3a0c7a3",
+    "src/lava/jaes_v2/controls.py": "a9fc09d358456d765453335cf5e87868a0ec9ad7eb7f50c7e0e22226fa1cc8b3",
+    "src/lava/jaes_v2/rawboost.py": "cf26a87cb94d494989929adc48bfdd210cf0306bdcdba4b3750e56b26e8a099f",
+    "src/lava/jaes_v2/vendor/rawboost/RawBoost.py": "6180282ec0289f26b505cdc5af1c174015bb6679f60615f3ec4e9ad867bdbdc7",
+    "src/preprocessing.py": "a33cd9539f9cf182981b135f1e87fb296d3a7a0d015a3c3b810d87d39e44218d",
+    "src/model.py": "aa80410efcb6b60ea0218ab121a18b1cd1df79be5fbd1e4329e95abaf25cf72b",
+    "config.py": "b9c04ae63e3daf7887f7830d80945e7a7caf9e78654794ca12d467da3e8d4b0d",
+    "ffmpeg_binary": "74db6c184a03dba2bdfe23e1a1f41cf5a8385bc1de6a7a1b26db1dc541abef93",
+    "src/lava/jaes_v2/phase10_training.py": "5f0a54fb2c39f842bbab85e4e7b4e095713e40500c401ccf8d3c88ca18c546e4",
+    "src/lava/jaes_v2/phase10_validation.py": "f5a74309b74d788c85404aea1f6a24fb31669d6c10ad6b1c12ba8336a13c7e20",
+    "src/lava/jaes_v2/phase10_resources.py": "68a34a308e32e425a75351a27846662d6b9ad51c2731806c547697a89faac8c7",
+    "src/lava/jaes_v2/phase9_protocol.py": "bd77f1cef27864ec05cdf8f18b2074b376d651744d804dbb5b44c76a3e685e0d",
+    "src/lava/jaes_v2/phase7_training.py": "25df5b03a0c1d254e545c25cd68f21e12b76e0912f5eb1085ff26ed72fb00fd3",
+    "src/lava/jaes_v2/evidence.py": "3ef5a469bd80dc8b54c342e506c64d29e10d6275682f1f67e395e58bd453f120",
+    "scripts/jaes_v2/phase10_experiment.py": "64a2f03bdd96a9d206714440b82126365df6715242438c069d70d1cae754877f",
+    "scripts/jaes_v2/phase10_numeric.py": "4f8017a59d96ccc327e235b216f88a8d9f67d177c00bd44d5a206f843769d0e1",
+    "configs/jaes_v2/phase10/qualification_v2.json": "16f860ffdc30d7b203acea7caaccd001b93ee3d3034c76298c0f31a8d857736e"
+  },
+  "qualification_comparison": {
+    "path": "outputs/jaes_v2/phase10/benchmark_resume_v2.json",
+    "sha256": "af2ec639881fc0695b33dec46476acb69ff390de2d838f290f8b36af0cd8f5d8",
+    "bytes": 2984
+  }
+}

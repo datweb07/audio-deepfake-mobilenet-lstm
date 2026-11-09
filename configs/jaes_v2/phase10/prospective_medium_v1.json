@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "scope": "PROSPECTIVE_MEDIUM_PROTOCOL",
+  "launch_authorized": true,
+  "backend": "FULL_SHAPE_RECOMPUTE",
+  "template": "configs/jaes_v2/phase8/p8_medium_channel_partial_s6107_v1.json",
+  "medium_manifest_sha256": "029ca108fe05f14971c5dba02468fe555699ab41871f94d443184a63c44df319",
+  "checkpoint_policy": "CLEAN_BCE",
+  "validation": {
+    "tier_a": "each epoch, A clean",
+    "tier_b": "every third epoch and final update, A clean + stress and B clean",
+    "tier_c": "selected checkpoint, seven conditions for A and B"
+  },
+  "maximum_updates": 840,
+  "fixed_budget": true,
+  "checkpoint_every_updates": 10,
+  "threshold": 0.5,
+  "calibration_enabled": false,
+  "official_evaluation_enabled": false,
+  "paired_runs": [
+    {
+      "experiment_id": "p10_medium_erm_s9107_v2",
+      "seed": 9107,
+      "augmentation_policy": "clean"
+    },
+    {
+      "experiment_id": "p10_medium_channel_s9107_v2",
+      "seed": 9107,
+      "augmentation_policy": "channel"
+    },
+    {
+      "experiment_id": "p10_medium_erm_s9207_v2",
+      "seed": 9207,
+      "augmentation_policy": "clean"
+    },
+    {
+      "experiment_id": "p10_medium_channel_s9207_v2",
+      "seed": 9207,
+      "augmentation_policy": "channel"
+    },
+    {
+      "experiment_id": "p10_medium_erm_s9307_v2",
+      "seed": 9307,
+      "augmentation_policy": "clean"
+    },
+    {
+      "experiment_id": "p10_medium_channel_s9307_v2",
+      "seed": 9307,
+      "augmentation_policy": "channel"
+    }
+  ],
+  "release": {
+    "benchmark_sha256": "af2ec639881fc0695b33dec46476acb69ff390de2d838f290f8b36af0cd8f5d8",
+    "engine_sha256": "d30624463f1a784b3f6f326afcebe54b12cd6f776d9b2818275915a4ed43db56",
+    "launcher_sha256": "99aa9e6f53d7e7d298404c487f3464742e3ac395b23165b07f5ab9c73b5576de",
+    "pilot_seals": {
+      "uninterrupted": "5fe6dbd522195a8696d0fea70a7a9c24a44e28a41f35ebd78514bb693ab0955e",
+      "resumable": "ec977ad597e3d06be10cde909b9bbf78ac31886b87d78522073ddc9c3a8a407b"
+    }
+  }
+}
