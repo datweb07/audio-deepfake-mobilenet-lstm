@@ -1,0 +1,21 @@
+\begin{table*}[t]
+\caption{Development results. Stress counts use repeated views. Timing is from CPU logs.}\label{tab:development}
+\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Development endpoint & 9107 ERM & 9107 Channel & 9207 ERM & 9207 Channel \\
+\colrule
+Selected update & 560 & 760 & 520 & 720 \\
+Clean A ROC-AUC & 0.9872 & 0.9814 & 0.9851 & 0.9809 \\
+Clean A EER (percent) & 4.46 & 4.91 & 5.36 & 5.36 \\
+A macro stressed ROC-AUC & 0.6715 & 0.8026 & 0.5946 & 0.7839 \\
+A clean REAL false alarms & 3/112 & 3/112 & 4/112 & 4/112 \\
+A clean FAKE misses & 6/112 & 9/112 & 9/112 & 9/112 \\
+A stressed REAL false alarms & 54/336 & 45/336 & 167/336 & 70/336 \\
+A stressed FAKE misses & 222/336 & 155/336 & 143/336 & 134/336 \\
+B clean REAL false alarms & 19/144 & 31/144 & 26/144 & 20/144 \\
+Optimizer minutes & 42.6 & 82.9 & 41.5 & 82.4 \\
+Validation minutes & 40.2 & 39.1 & 41.3 & 39.5 \\
+\botrule
+\end{tabular}
+\end{table*}

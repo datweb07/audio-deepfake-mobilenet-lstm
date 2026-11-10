@@ -1,0 +1,16 @@
+\section{Problem Formulation}\label{sec:background}
+Let \(x_i\) be source recording \(i\), \(g_i\) its speaker, and \(y_i\in\{0,1\}\) its label, with 0 denoting REAL and 1 denoting FAKE. Let \(p_\theta(Tx_i)\in[0,1]\) be the detector score after transformation \(T\). The decision \(\widehat{y}_{i,T}=\mathbf{1}\{p_\theta(Tx_i)\geq0.5\}\) fixes the operating point. The class-conditional risks in a fixed cohort and condition are
+\begin{equation}
+ R_0(T)=\frac{\sum_{i:y_i=0}\widehat{y}_{i,T}}{n_0},
+ \qquad
+ R_1(T)=\frac{\sum_{i:y_i=1}(1-\widehat{y}_{i,T})}{n_1}.
+\end{equation}
+They correspond to false alarms and spoof misses. For a set of stress conditions, an error count adds the numerator across conditions and uses \(n_y\) times the number of conditions as the denominator. It describes risks across repeated views.
+
+Receiver operating characteristic area under the curve (ROC-AUC) compares the ordering of FAKE and REAL scores, crediting half for ties. A monotonic score transformation can preserve ordering and change the number of scores crossing 0.5. Equal error rate (EER) is summarized at the empirical ROC point closest to equality between false-alarm and miss rates, using their mean at that point. Both metrics require support from both classes. The stress macro ROC-AUC is the equally weighted mean of ROC-AUC computed separately for the three registered stress conditions.
+
+Let \(N_i(x)=x+\nu_i\) denote insertion of the registered fixed-absolute noise for source \(i\), and let \(C\) denote encoding and decoding with Opus. Define \(T_{NC}=C\circ N_i\) and \(T_{CN}=N_i\circ C\). Because \(C\) uses content-dependent analysis and lossy coding, in general \(C(x+\nu_i)\ne C(x)+\nu_i\). In one case the codec processes the added noise, while in the other it does not. The contrast
+\begin{equation}
+ d_i=p_\theta(T_{NC}x_i)-p_\theta(T_{CN}x_i)
+\end{equation}
+measures a directional score response. A decision transition records which order alone causes an error, if either does. The contrast can reflect altered input features, score placement or cues used by the detector. An independent cue measure would be needed to interpret it as forensic-evidence retention.

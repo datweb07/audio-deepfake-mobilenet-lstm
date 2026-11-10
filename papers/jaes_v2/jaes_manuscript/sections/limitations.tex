@@ -1,0 +1,6 @@
+\section{Limitations and Threats to Validity}\label{sec:limits}
+The 640-source cohort is a compute-bounded training design. It does not represent full-foundation training. A and B have limited speaker support, and attack groups have 18 or 19 sources. The bootstrap describes uncertainty under speaker resampling on these fitted models and this cohort. Related conditions within a source are dependent. Secondary subgroup diagnostics are descriptive and no multiplicity adjustment is implied.
+
+The two initialization blocks share the same development data and checkpoint rule. The same partition supports checkpoint selection and the reported development analysis. The results are sensitive to the fixed decision threshold and selected checkpoint. In particular, guard failure applies to the selected checkpoint comparison. It does not imply that every epoch or threshold would fail.
+
+Only one architecture was retrained in the matched design. Signal preprocessing, noise scaling, and codec response can change the score contrast independently of forensic cue retention. The current experiments provide no verified independent forensic target. The pending official evaluation is within the same corpus release, and some evaluation attacks reuse algorithms or frameworks. Cross-corpus, cross-architecture, and deployment robustness remain open.

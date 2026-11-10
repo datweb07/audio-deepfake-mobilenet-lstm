@@ -1,0 +1,31 @@
+% Adapted to the official Audio Engineering Society JAES template v2026.08.
+\documentclass[fleqn]{jaes}
+\jyear{2026}
+\usepackage{amsmath}
+\setlength{\mathindent}{10pt}
+\graphicspath{{figures/}}
+\begin{document}
+\title{Class-Asymmetric Robustness and Transformation-Order Effects in Lightweight Audio Deepfake Detection}
+\markboth{AUTHOR METADATA PENDING}{ROBUSTNESS AND ORDER EFFECTS IN AUDIO DEEPFAKE DETECTION}
+\authorgroup{\author{AUTHOR LIST TO BE CONFIRMED}\affil{Affiliations and corresponding-author details to be confirmed}}
+\abstract{Speech deepfake detectors often encounter noise and lossy coding in succession. We examine whether channel augmentation improves stressed ranking while preserving decisions at a fixed threshold. Paired MobileNetV3Small--LSTM detectors trained on 640 ASVspoof 2019 LA recordings shared initialization and source order within each of two seed blocks. On a common 368-recording development cohort, mean stressed ROC-AUC on the mixed-class stratum increased from 0.6715 to 0.8026 and from 0.5946 to 0.7839. Stressed spoof misses fell from 222 to 155 and from 143 to 134 out of 336 transformed views per block. Clean bona fide false alarms on a separate stratum moved in opposite directions, while stressed misses increased for attacks A05 and A06 in both blocks. These two seed blocks on one development cohort show that aggregate ranking gains can coexist with attack-specific deterioration at a fixed operating point.}
+\maketitle
+\begin{keywords}
+Audio forensics, channel augmentation, codec robustness, spoofing countermeasures
+\end{keywords}
+\input{sections/introduction}
+\input{sections/related_work}
+\input{sections/background}
+\input{sections/methodology}
+\input{sections/experimental_setup}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/limitations}
+\input{sections/conclusion}
+\section*{Reproducibility and Disclosure}
+The frozen experiment registry, per-source score files, checkpoint seals, and paired speaker-bootstrap outputs record the provenance of the reported development results. The extension adds matched training, two initialization blocks, and source-linked order, class, attack, and speaker analysis to an accepted conference benchmark. The earlier work will be cited with its verified venue and publication information before submission.
+\par
+OpenAI Codex assisted in drafting and organizing the manuscript and preparing evidence-derived figures and tables on 10 November 2026. The authors must verify the exact tool/model version and review the complete scientific content and disclosure before submission.
+\bibliographystyle{jaes}
+\bibliography{references}
+\end{document}

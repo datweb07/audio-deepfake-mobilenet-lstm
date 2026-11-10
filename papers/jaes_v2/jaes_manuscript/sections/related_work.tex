@@ -1,0 +1,32 @@
+\section{Related Work}\label{sec:related}
+\subsection{Detector architectures and benchmark design}
+RawNet2 extracts representations directly from speech waveforms, while AASIST uses graph attention over spectro-temporal representations \cite{rawnet,aasist}. A compact convolutional backbone offers a different compute and representation trade-off. MobileNetV3 was designed for mobile visual recognition \cite{mobile}. Here, it encodes successive Mel-derived feature segments and a recurrent head aggregates them in time. The historical detectors provide context for this choice, and the controlled intervention uses the same backbone and head in every arm.
+
+ASVspoof 2019 distinguishes logical-access synthetic or converted speech from physical-access replay \cite{asv19}. The 2021 challenge extends benchmarking to separate logical-access, physical-access, and deepfake tasks under different conditions \cite{asv21}. ASVspoof 5 scales crowdsourced collection and expands spoofing and adversarial evaluation \cite{asv5}. In-the-Wild evidence shows why a benchmark split cannot by itself establish transport to collected real-world material \cite{wild}. The present development subset has speaker separation from training and includes attack IDs seen in training. Under the planned within-release evaluation, A16 and A19 share algorithms with A04 and A06, respectively, and A17 shares a framework with A05 \cite{asv19}. Those relationships constrain any interpretation of held-out attack IDs.
+
+The multilingual MLAAD resource targets variation in synthesis systems and languages \cite{mlaad}. Its design provides a complementary test of transport to language and generation domains beyond this within-release comparison.
+
+\subsection{Signal transformations and robust learning}
+Opus is a conventional lossy codec \cite{opus}. Compression can change spectral and temporal cues through content-dependent coding decisions. Resynthesis with a learned neural codec is a different transformation family, with different artifacts. The PCL-NET work considers paired consistency for neural-codec vulnerability \cite{pcl}. The FP-NAC work considers detector-guided neural coding and class asymmetry \cite{fpnac}. A review and case study by Maltby et al.\ place codec effects alongside dataset bias and other failure modes \cite{maltby}. These studies motivate treating the nominal operator, signal representation, and downstream detector as separate factors.
+
+RawBoost introduces waveform-level augmentation for spoofing countermeasures \cite{rawboost}. Frequency-selective adversarial training changes the training perturbation rule \cite{fsat}, whereas group distributionally robust optimization changes the risk aggregation across predefined groups \cite{dro}. Time-frequency consistency learning constrains predictions or representations across front-end views \cite{tfcl}. DK-CAST uses clean-to-degraded distillation \cite{dkcast}. SONAR studies spectral-contrastive residual representations \cite{sonar}. In this comparison, the loss is ordinary binary cross-entropy, with one sampled view per source and no explicit consistency, adversarial optimization, group reweighting, or teacher signal.
+
+\subsection{Order effects and operating-point uncertainty}
+RADAR provides a transformation-oriented evaluation setting \cite{radar}. Proteus searches ordered transform sequences \cite{proteus}. RealComm pairs digital utterances with real communication channels and explores staged adaptation \cite{realcomm}. Our conventional order reversal holds the source and noise plan fixed. It measures the effect of two specific processing orders and does not sample the distribution of real calls or search for worst-case perturbations.
+
+Calibration concerns the interpretation of scores, while selective prediction introduces a reject action \cite{guo,selective}. Work on calibrated audio deepfake detection illustrates the importance of these distinctions in the speech domain \cite{pascu}. Here the sigmoid output is denoted by \(p\) for convenience and used as an uncalibrated score. A rank improvement and an error increase at a fixed threshold are compatible. Table~\ref{tab:prior} summarizes how the nearest work differs in treatment and evaluation scope.
+\begin{table*}[t]
+\caption{Comparison of research designs. Different cohorts and operating rules prevent a direct performance ranking.}\label{tab:prior}
+\centering
+\begin{tabular}{@{}p{.15\textwidth}p{.22\textwidth}p{.25\textwidth}p{.27\textwidth}@{}}
+\toprule
+Study & Data or evaluation setting & Treatment or model & Relationship to the present comparison\\
+\colrule
+RawBoost and F-SAT \cite{rawboost,fsat} & ASVspoof and DeepFakeVox-HQ, respectively & Waveform augmentation and frequency-selective adversarial training & Establish robust training precedents. Neither is retrained as a matched arm here.\\
+PCL-NET and FP-NAC \cite{pcl,fpnac} & Neural-codec evaluations & Paired consistency and detector-guided coding & Distinct from fixed-rate conventional Opus and a standard BCE objective.\\
+TFCL, DK-CAST and SONAR \cite{tfcl,dkcast,sonar} & Speech spoofing and domain-shift evaluations & Time-frequency consistency, distillation and spectral residuals & Intervene on learning objectives or representations. The present study intervenes on training views.\\
+RADAR, Proteus and RealComm \cite{radar,proteus,realcomm} & Media transformations, ordered stress testing and real calls & Challenge evaluation, transform search and channel adaptation & Provide precedents for chains. The present estimand is a fixed two-order, same-source contrast.\\
+Present study & Two initialization blocks sharing ASVspoof 2019 LA development & Matched lightweight detector, ordinary augmentation & Reports class, attack, speaker and per-source transitions. Transport and broader mechanism evidence remain open.\\
+\botrule
+\end{tabular}
+\end{table*}

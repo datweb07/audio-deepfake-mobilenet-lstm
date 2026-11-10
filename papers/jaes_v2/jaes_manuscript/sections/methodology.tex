@@ -1,0 +1,15 @@
+\section{Matched Training Methodology}\label{sec:methods}
+\subsection{Detector and objective}
+Audio is decoded as mono at 22.05~kHz with a three-second limit and processed using the frozen P0 input contract. Six consecutive 0.5~s windows are mapped to log-Mel power with 128 filters, a 2,048-sample Hann window and a 512-sample hop. P0 floors the power at \(10^{-10}\), references each segment to its maximum, clips the dynamic range to 80~dB, and uses bilinear resizing and three-channel replication to produce 224-by-224 tensors. An ImageNet-initialized MobileNetV3Small backbone encodes each segment. An LSTM with 128 units aggregates the feature sequence before a binary sigmoid head. The sealed experiment identifies the architecture and input implementation.
+
+Both training arms minimize mean binary cross-entropy on one view per source at each visit. Parameter counts are unreported because exported tensors were not loaded for a count in this sprint. If \(V_i\) is the view and \(q_i=p_\theta(V_i x_i)\), then
+\begin{equation}
+ \mathcal{L}(\theta)=-\frac{1}{n}\sum_{i=1}^{n}
+ [y_i\log q_i+(1-y_i)\log(1-q_i)] .
+\end{equation}
+The empirical risk minimization (ERM) arm sets \(V_i\) to the clean view. The channel arm samples from clean, half gain, 10~dB noise, and 24~kb/s Opus. Neither ordered stress chain is a supervised training view. Training-view randomness is determined by the registered seeded procedure, while the source order and initialization are identical within each pair.
+
+\subsection{Optimization and model selection}
+Adam \cite{adam} is used for 840 updates over 21 epochs. Each update accumulates gradients over 16 single-source microbatches. One warm-up epoch trains the head, followed by 20 partial fine-tuning epochs with frozen batch-normalization state. The respective learning-rate stages start at 0.001 and 0.0001 and use the registered linear decay. The registered CPU engine uses full-shape recomputation and a fixed numerical contract. Checkpointing and deterministic resume support reproducibility.
+
+Validation tier A evaluates clean mixed-class development at each epoch. Tier B also measures the registered stress and REAL-only endpoints every third epoch and at completion. The minimum clean A BCE checkpoint is chosen, and tier C evaluates its complete development grid. Risk guards are evaluated as a comparison of the selected checkpoints. They do not select a different epoch or alter the fixed decision rule.

@@ -13,43 +13,20 @@ from time import perf_counter
 import numpy as np
 
 from scripts.jaes_v2.empirical_readiness import (
-    ARCHIVE, ATTACKS, CONDITIONS, METHODS, OUT, PROTOCOL, commit_source_scores,
-    models_and_data, sample_heldout, stable_key, verify_evaluation_lock, write_once,
+    ARCHIVE, ATTACKS, CONDITIONS, METHODS, OUT, commit_source_scores,
+    models_and_data, stable_key, verify_evaluation_lock, write_once,
 )
 from scripts.jaes_v2.final_score_diagnostic import (
     SEED, bootstrap_auc, cluster_delta, describe, draws, interval, metrics, transitions,
 )
 from scripts.jaes_v2.phase6_experiment import resource_lock
+from scripts.jaes_v2.heldout_protocol_audit import AUDITOR, FOUNDATION, PRELOCK, scoring_lock
 from src.lava.jaes_v2 import phase8_training as prior, phase10_training as engine
 from src.lava.jaes_v2.controls import NoisePlan, prepare_headroom
-from src.lava.jaes_v2.evidence import file_hash, object_hash, read_csv
+from src.lava.jaes_v2.evidence import file_hash, object_hash
 from src.lava.jaes_v2.phase10_resources import require_resources
 from src.lava.jaes_v2.preprocessing import Preprocessor
 from src.lava.jaes_v2.transforms import Transform, load_audio
-
-CM = 'LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt'
-EVAL = 'LA/ASVspoof2019_LA_eval/flac/'
-FOUNDATION = Path('outputs/jaes_v2/datasets/asv2019_foundation_v1')
-
-
-def parse_protocol(data):
-    rows=[]
-    for line in data.decode('utf-8').splitlines():
-        if not line.strip():
-            continue
-        speaker, identity, _, attack, label = line.split()
-        if not identity.startswith('LA_E_') or not identity[5:].isdigit():
-            raise ValueError('Unexpected evaluation identifier')
-        if label=='bonafide' and attack=='-':
-            group='REAL'
-        elif label=='spoof' and attack in ATTACKS[1:]:
-            group=attack
-        else:
-            raise ValueError('Unexpected label or attack')
-        rows.append(dict(sample_id=identity,speaker_id=speaker,attack=group,
-                         label=int(label=='spoof'),split='evaluation'))
-    return rows
-
 
 def waveform_bank(payload, identity, ffmpeg):
     audio=load_audio(BytesIO(payload),sample_rate=22050,max_seconds=3)
@@ -63,33 +40,6 @@ def waveform_bank(payload, identity, ffmpeg):
     coded,_=codec.apply(clean,seed=0,ffmpeg=ffmpeg)
     ba,_=plan.insert(coded,'fixed_absolute')
     return dict(clean=clean,noise5=noise5,A_then_B=ab,B_then_A=ba)
-
-
-def manifest(root, archive, subset, lock_hash):
-    protocol=archive.read(CM)
-    rows=parse_protocol(protocol)
-    counts=Counter(r['label'] for r in rows)
-    if counts!={0:7355,1:63882}:
-        raise ValueError(f'Official CM protocol count mismatch: {counts}')
-    # Read identity/checksum metadata only from the three declared partitions.
-    metadata=[row for role in ('train','development','calibration')
-              for row in read_csv(root/FOUNDATION/f'{role}_manifest.csv')]
-    blocked_speakers={r['speaker_id'] for r in metadata}
-    blocked_ids={r['sample_id'].split(':')[-1] for r in metadata}
-    blocked_hashes={r['checksum'] for r in metadata}
-    spec=engine.read(root/PROTOCOL)['heldout'][subset]
-    quotas={attack:spec['REAL'] if attack=='REAL' else spec['per_attack'] for attack in ATTACKS}
-    chosen,support=sample_heldout(rows,91109,quotas,blocked_ids,blocked_speakers)
-    seen=set()
-    for row in chosen:
-        member=EVAL+row['sample_id']+'.flac'
-        digest=hashlib.sha256(archive.read(member)).hexdigest()
-        if digest in blocked_hashes or digest in seen:
-            raise ValueError('Duplicate or overlapping audio bytes')
-        seen.add(digest)
-        row.update(member=member,sha256=digest)
-    return dict(lock_sha256=lock_hash,protocol_sha256=hashlib.sha256(protocol).hexdigest(),
-                support=support,rows=chosen, official_counts=dict(real=counts[0],fake=counts[1]))
 
 
 def summarize(rows, model_ids, manifest_rows):
@@ -136,16 +86,28 @@ def summarize(rows, model_ids, manifest_rows):
     return dict(models=model_metrics,paired=paired,bootstrap=dict(seed=SEED,draws=10000,unit='speaker'))
 
 
-def run(root, lock_path):
+def run(root, lock_path, approval_path=None):
     started=perf_counter()
-    lock=engine.read(lock_path)
+    if approval_path is None:
+        raise ValueError('Held-out evaluation is not authorized without separate scoring approval')
+    lock=scoring_lock(lock_path, approval_path)
+    prelock_path = root/PRELOCK
+    if lock['prelock_sha256'] != file_hash(prelock_path):
+        raise ValueError('Proposed lock does not match the immutable prelock')
+    prelock = engine.read(prelock_path)
+    if any(lock[k] != prelock[k] for k in ('seeds','conditions','ffmpeg_sha256','benchmark_sha256')):
+        raise ValueError('Proposed lock changes the prelock evaluation design')
+    runner = Path(__file__).relative_to(root).as_posix()
+    if any(lock['files'].get(name) != digest for name,digest in prelock['files'].items() if name != runner):
+        raise ValueError('Proposed lock changes a protected prelock input')
     verify_evaluation_lock(root,lock)
     # The caller must supply the separately approved lock, including this runner and protected identity manifests.
-    required=[Path(__file__).relative_to(root).as_posix(), 'scripts/jaes_v2/final_score_diagnostic.py',
+    required=[runner, AUDITOR, 'scripts/jaes_v2/final_score_diagnostic.py',
               *( (FOUNDATION/f'{role}_manifest.csv').as_posix() for role in ('train','development','calibration'))]
     if any(name not in lock['files'] for name in required):
         raise ValueError('Runner or overlap manifest absent from approved lock')
-    lock_hash=file_hash(lock_path)
+    lock_hash=object_hash(lock)
+    selected=dict(lock['evaluation_manifest'],lock_sha256=lock_hash)
     out=root/OUT/f'heldout_{lock_hash[:16]}'
     require_resources(root)
     with resource_lock(root), ZipFile(root/ARCHIVE) as archive:
@@ -155,11 +117,9 @@ def run(root, lock_path):
             raise FileExistsError('Evaluation already complete')
         manifest_path=out/'manifest.json'
         if manifest_path.exists():
-            selected=engine.read(manifest_path)
-            if selected['lock_sha256']!=lock_hash or selected!=manifest(root,archive,lock['subset'],lock_hash):
+            if engine.read(manifest_path)!=selected:
                 raise ValueError('Evaluation manifest changed')
         else:
-            selected=manifest(root,archive,lock['subset'],lock_hash)
             write_once(manifest_path,selected)
         tf=engine.phase10_tensorflow()
         functions={}
@@ -210,6 +170,7 @@ def run(root, lock_path):
 if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser()
-    parser.add_argument('--approved-lock',type=Path,required=True)
+    parser.add_argument('--proposed-lock',type=Path,required=True)
+    parser.add_argument('--scoring-approval',type=Path,required=True)
     args=parser.parse_args()
-    run(Path.cwd(),args.approved_lock.resolve())
+    run(Path.cwd(),args.proposed_lock,args.scoring_approval.resolve())

@@ -1,0 +1,28 @@
+# JAES manuscript build
+
+The source follows the Audio Engineering Society's JAES 2026.08 sample, using the `jaes` class, the JAES BibTeX style, and the sample's author, abstract, keyword, and rule macros. Template attribution is Audio Engineering Society, CC BY 4.0. [AES author guidelines](https://aes.org/publications/journal-author-guidelines/) · [Official Overleaf template](https://www.overleaf.com/latex/templates/journal-of-the-audio-engineering-society-jaes-template/rqsctzghzcwx)
+
+## Overleaf
+
+1. Open the official template and choose **Open as Template** while signed in.
+2. Retain the official support files, including `jaes.cls` and `jaes.bst`.
+3. Upload `main.tex`, `references.bib`, `sections/`, `tables/`, and `figures/` at their supplied paths. Set **Main document** to `main.tex` and the compiler to **pdfLaTeX**.
+4. Recompile and download the PDF and full build log. Check citations, first-appearance numbering, floats, equation alignment, font substitution, and overfull boxes. Count PDF pages including references, and report the body and reference pages separately if they start on separate pages.
+
+The public template page exposed the example source and class/style names. The source download attempt returned 404 and the official project-copy route redirected to Overleaf sign-in. This workspace has no `latexmk`, `pdflatex`, or `tectonic`. The draft therefore has no compiled manuscript PDF, verified page count, or LaTeX log yet. The four evidence figures are standalone vector PDFs. The 25–30 page target should be assessed after compilation and after the held-out evidence is available.
+
+## Local build after obtaining the official support files
+
+From this directory, run the template's pdfLaTeX/BibTeX workflow:
+
+```powershell
+latexmk -pdf -halt-on-error -interaction=nonstopmode main.tex
+```
+
+If latexmk is unavailable but pdfLaTeX and BibTeX are installed, run `pdflatex main.tex`, `bibtex main`, then `pdflatex main.tex` twice. Check the build log before distributing. The command has not been executed in this workspace.
+
+## Evidence and author checks
+
+From the repository root, run `python -X utf8 papers/jaes_v2/jaes_manuscript/generate_evidence.py` to regenerate the tables, figures, and claim map from the consolidated development JSON. The outputs shipped with the draft allow it to be built without the research repository.
+
+Before submission, confirm the journal author list, affiliations, correspondence address, author photos and biographies, funding, conflicts, venue citation, publication and copyright status, and the precise AI tool/model/version used in substantive drafting. Confirm that the completed draft and its exhibits can be shared under the relevant publication and data terms.
