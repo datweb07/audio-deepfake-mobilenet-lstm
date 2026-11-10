@@ -14,9 +14,20 @@ Clean evaluation provides a useful reference point because a detector can rank b
 
 The training comparison addresses a complementary question. Exposure to individual channel views may help on some transformed evaluation views even when the specific compositions were absent from the training-view bank. The experiment measures this transfer within ASVspoof 2019 LA under matched training and checkpoint selection. It records whether the rank benefit and fixed-threshold behavior agree, and whether the observed differences survive inspection at the attack and speaker level. This scope places claims about ordered signal processing and model response on separate evidential footing from claims about deployment or forensic cue preservation.
 
-\subsection{Research questions and contributions}
+\subsection{Research questions}
 The conference study answered which available artifacts compared favorably under a common offline test and timing contract. Its clean comparison used 2,737 checksum-disjoint recordings and its stress diagnostic used a fixed 100-recording subset. Because the six artifacts had heterogeneous training histories, that comparison could not isolate the effect of changing a training-view policy. Moreover, the diagnostic retained aggregate stress results and could not identify which recordings crossed the decision boundary when the channel changed.
 
 The journal study asks three narrower questions. First, does changing only the training-view policy improve ranking under each registered stress condition for two matched initializations? Second, which class, speaker, and attack groups account for the difference between aggregate ranking and errors at the same operating point? Third, what can a same-source reversal of noise and conventional codec order show about sensitivity to a composed channel? The last question concerns the detector's response to specified operators. Evidence for an independent forensic cue would require another measurement.
 
-The additional evidence comprises matched fitting blocks with auditable checkpoints, source-linked development estimates and error transitions, and paired resampling at the speaker level. The held-out source list has been audited and locked for a later authorized comparison. All reported performance results in this draft are from development.
+\begin{samepage}
+\subsection{Main Contributions}
+The main contributions of this study are as follows.
+\begin{itemize}
+\item \textbf{Controlled and reproducible robustness evaluation.}
+We compare ERM and channel augmentation for MobileNetV3Small--LSTM across two independent initialization seeds. Within each pair, the architecture, source recordings and ordering, optimization budget, frozen numerical backend, and registered checkpoint rule are shared. The matched design and sealed artifacts support attribution of the observed within-block contrasts to the training-view policy and its downstream effect on clean checkpoint selection (Sections~\ref{sec:methods} and~\ref{sec:setup}).
+\item \textbf{Class- and attack-specific robustness characterization.}
+Stressed ROC-AUC improves in both blocks, while the reduction in FAKE misses differs in magnitude, A05 and A06 misses increase, and clean B REAL false alarms move in opposite directions. Paired source decisions identify which recordings account for these changes. Speaker-cluster intervals quantify uncertainty within each fitted comparison (Section~\ref{sec:results}).
+\item \textbf{Source-linked transformation-order diagnostics.}
+Noise-to-Opus and Opus-to-noise views of the same recording support directional score contrasts and classwise threshold transitions. Attack-level analysis and a single-seed matched-component nuisance diagnostic delimit what can be attributed to the tested processing chains (Section~\ref{sec:results}). The contrasts describe detector responses and leave the underlying forensic mechanism unresolved.
+\end{itemize}
+\end{samepage}

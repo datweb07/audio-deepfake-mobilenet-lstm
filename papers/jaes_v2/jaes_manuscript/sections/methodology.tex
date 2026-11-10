@@ -16,6 +16,14 @@ Adam \cite{adam} is used for 840 updates over 21 epochs. Each update accumulates
 
 Validation tier A evaluates clean mixed-class development at each epoch. Tier B also measures the registered stress and REAL-only endpoints every third epoch and at completion. The minimum clean A BCE checkpoint is chosen, and tier C evaluates its complete development grid. Risk guards are evaluated as a comparison of the selected checkpoints. They do not select a different epoch or alter the fixed decision rule.
 
+Figure~\ref{fig:checkpoint-history} shows the observed clean validation trajectories. All runs completed epoch 21, although the selected checkpoints fall between epochs 13 and 19. The curves compare the same validation loss on the same cohort. Training losses reflect different view policies and are excluded from the plot.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.89\textwidth]{checkpoint_dynamics.pdf}
+\caption{Recorded clean development BCE over 21 epochs for both methods and seeds. Each observation uses the same 224 development A recordings. Markers show the selected epoch for each model.}\label{fig:checkpoint-history}
+\end{figure*}
+
 \subsection{Treatment, numerical contract and reproducibility}
 The two treatment arms use the same binary labels and classification objective. A change of view preserves the source identifier and training label. This keeps the number of optimizer updates and the number of source visits identical within a seed while exposing the channel arm to nuisance variation. The clean, gain, noise and codec views share the preprocessing policy. Each arm learns its own weights from its assigned views. The comparison estimates the total effect of the registered augmentation treatment and subsequent selection rule, so it includes changes in which epoch is selected.
 

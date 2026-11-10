@@ -112,8 +112,9 @@ def run():
     ]
     save_table('development','development','Development results. Stress counts use repeated views. Timing is from CPU logs.',columns,rows)
     save_table('attack','attack','Attack-specific stressed FAKE misses over Noise5 and both ordered chains.',
-               columns,[(label,*(error_count(s['paired'][k][m],k) for s in seeds.values() for m in METHODS))
-                        for k,label in ATTACKS.items()])
+               ('Attack', *columns[1:]),
+               [(key[:3], *(error_count(s['paired'][key][m],key) for s in seeds.values() for m in METHODS))
+                for key in ATTACKS])
     rows = []
     for key,label in {'macro_stress_auc':'A macro stress ROC-AUC',**ENDPOINTS,
                       **{k:ATTACKS[k] for k in ('A05_stress_miss','A06_stress_miss')}}.items():

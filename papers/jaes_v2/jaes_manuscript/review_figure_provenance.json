@@ -1,0 +1,171 @@
+{
+  "consolidated_evidence": {
+    "path": "outputs/jaes_v2/phase10/empirical_execution_v1/post9207_consolidated_v1.json",
+    "sha256": "1a2b881db161816a67d7b90390b3b11abdc8c57ed9a6dbed76830c9494402ec9"
+  },
+  "sealed_scientific_inputs": {
+    "p10_medium_erm_s9107_v2": {
+      "scores.csv": "db00f7340da57f3d87de8e7346acb0ad180800dc8e2f0e9e9add632b4e1442c8",
+      "result.json": "62a00d536d50cdb6da971e59d5a5b6ebcc68dbd9c7ebc33551ad2ad2b7a7ea2a"
+    },
+    "p10_medium_channel_s9107_v2": {
+      "scores.csv": "7880a28afdfe5c0cc408c18d478a43c6ec69033cb2036c08978e73f742904076",
+      "result.json": "98eeacb6eeea606255c189c0ec42ad59578b5f64cd9c68d8df5ca943f2ca2799"
+    },
+    "p10_medium_erm_s9207_v2": {
+      "scores.csv": "402466a4c5d1083e550688826b3b7e0dd9e1a3e9f94cbe7d38a985148ff5a693",
+      "result.json": "890bb5fa79fc375781bd910a61ed454ef82ae15e470ea39a1381a768d85b8200"
+    },
+    "p10_medium_channel_s9207_v2": {
+      "scores.csv": "70ded8c089af4320864619fbd49a560710a52f0f69a0d1144bd4205c3b950e20",
+      "result.json": "33041152c4c6f809bf22c40ed14195d6eb0c8b0166ed31c561c957be081c5dea"
+    }
+  },
+  "inputs_by_figure": {
+    "aggregate": "consolidated evidence, selected endpoint AUC and paired stress miss counts",
+    "attack_changes": "consolidated evidence, attack deltas and speaker-cluster percentiles",
+    "order_scores": "consolidated evidence, within-source directional score quantiles",
+    "speaker_counts": "consolidated evidence, speaker-specific clean B false alarms",
+    "classwise_errors": "scores.csv, checked against paired error counts in consolidated evidence",
+    "paired_uncertainty": "consolidated evidence, registered speaker-cluster percentiles",
+    "development_roc": "scores.csv, clean and macro AUC checked against consolidated evidence",
+    "checkpoint_dynamics": "result.json, 21 recorded clean development epochs",
+    "source_transitions": "scores.csv, aligned on source ID and condition after metadata checks"
+  },
+  "condition_auc": {
+    "9107/erm/clean": 0.9872448979591839,
+    "9107/channel/clean": 0.9814253826530613,
+    "9207/erm/clean": 0.985092474489796,
+    "9207/channel/clean": 0.9809470663265307,
+    "9107/erm/noise5": 0.6567283163265306,
+    "9107/channel/noise5": 0.7792570153061225,
+    "9207/erm/noise5": 0.5448820153061225,
+    "9207/channel/noise5": 0.7578922193877551,
+    "9107/erm/A_then_B": 0.6763392857142856,
+    "9107/channel/A_then_B": 0.8108258928571428,
+    "9207/erm/A_then_B": 0.6407844387755102,
+    "9207/channel/A_then_B": 0.7980707908163264,
+    "9107/erm/B_then_A": 0.6813616071428572,
+    "9107/channel/B_then_A": 0.8178411989795918,
+    "9207/erm/B_then_A": 0.5981345663265306,
+    "9207/channel/B_then_A": 0.7957589285714286
+  },
+  "source_transition_counts": {
+    "9107/0": [
+      [
+        108,
+        1,
+        1,
+        2
+      ],
+      [
+        103,
+        8,
+        1,
+        0
+      ],
+      [
+        54,
+        10,
+        30,
+        18
+      ],
+      [
+        100,
+        7,
+        3,
+        2
+      ]
+    ],
+    "9107/1": [
+      [
+        101,
+        5,
+        2,
+        4
+      ],
+      [
+        13,
+        0,
+        35,
+        64
+      ],
+      [
+        62,
+        12,
+        13,
+        25
+      ],
+      [
+        25,
+        2,
+        33,
+        52
+      ]
+    ],
+    "9207/0": [
+      [
+        106,
+        2,
+        2,
+        2
+      ],
+      [
+        87,
+        3,
+        12,
+        10
+      ],
+      [
+        7,
+        1,
+        61,
+        43
+      ],
+      [
+        68,
+        3,
+        31,
+        10
+      ]
+    ],
+    "9207/1": [
+      [
+        101,
+        2,
+        2,
+        7
+      ],
+      [
+        29,
+        6,
+        27,
+        50
+      ],
+      [
+        80,
+        19,
+        6,
+        7
+      ],
+      [
+        41,
+        18,
+        19,
+        34
+      ]
+    ]
+  },
+  "transition_columns": [
+    "both_correct",
+    "erm_only_correct",
+    "channel_only_correct",
+    "both_wrong"
+  ],
+  "transition_rows": [
+    "clean",
+    "noise5",
+    "A_then_B",
+    "B_then_A"
+  ]
+}

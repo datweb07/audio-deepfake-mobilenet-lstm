@@ -2,7 +2,7 @@
 \subsection{Ranking and operating-point errors}
 Table~\ref{tab:development} reports selected checkpoints, clean and stressed performance, and CPU work. Figure~\ref{fig:aggregate} connects the two methods within each seed block. Stress macro ROC-AUC increases in both blocks, by 0.1312 and 0.1893 AUC units. Stress FAKE misses decline by 67 and 9 of the 336 views, respectively. Both selected channel checkpoints have slightly lower clean A ROC-AUC, with equal or slightly worse clean A EER.
 
-Clean A REAL false-alarm counts match within each seed. Clean A FAKE misses rise from 6 to 9 in 9107 and remain 9 in 9207. Clean B REAL false alarms rise from 19 to 31 in 9107 but decline from 26 to 20 in 9207. Table~\ref{tab:uncertainty} gives paired intervals and descriptive seed ranges. The stress FAKE miss interval excludes zero for 9107 and includes zero for 9207. The average differences conceal the reversed effect on clean B.
+Clean A REAL false-alarm counts match within each seed. Clean A FAKE misses rise from 6 to 9 in 9107 and remain 9 in 9207. Clean B REAL false alarms rise from 19 to 31 in 9107 but decline from 26 to 20 in 9207. Figure~\ref{fig:classwise} contrasts those changes with the stressed A rates. Table~\ref{tab:uncertainty} gives paired intervals and descriptive seed ranges. The stress FAKE miss interval excludes zero for 9107 and includes zero for 9207.
 
 \input{tables/development}
 \input{tables/uncertainty}
@@ -11,6 +11,11 @@ Clean A REAL false-alarm counts match within each seed. Clean A FAKE misses rise
 \centering
 \includegraphics[width=.89\textwidth]{aggregate.pdf}
 \caption{Development results by matched initialization. The stress FAKE miss denominator is 336 views from 112 FAKE sources in each arm. Lines connect the two treatment arms within a seed.}\label{fig:aggregate}
+\end{figure*}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.91\textwidth]{classwise_errors.pdf}
+\caption{Fixed-threshold error rates by development stratum, class, and seed. REAL errors are false alarms and FAKE errors are misses. Clean A has 112 recordings per class, stress A has 336 views from 112 recordings per class, and clean B has 144 REAL recordings.}\label{fig:classwise}
 \end{figure*}
 
 \subsection{Attack and speaker heterogeneity}
@@ -30,7 +35,7 @@ Figure~\ref{fig:speakers} shows that two B speakers contribute 10 of the 12 net 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.89\textwidth]{speaker_counts.pdf}
-\caption{Clean REAL false alarms by speaker on development B. Both methods use the same 144 recordings within each block. The numerical supplement contains each speaker denominator.}\label{fig:speakers}
+\caption{Clean REAL false alarms by speaker on development B. Each of nine speakers contributes 16 recordings, for 144 recordings per arm and seed.}\label{fig:speakers}
 \end{figure*}
 
 \subsection{Processing order and matched components}
@@ -48,7 +53,13 @@ A retrospective 9107 diagnostic adds 1,472 predictions for standalone Noise10 an
 The optimizer and validation durations in Table~\ref{tab:development} show the recorded workload for this medium cohort. The channel arm used more optimizer wall time in both blocks, while validation durations were similar within each block. The recorded execution may include repeated work following interruption. These logs do not separate every audio transformation or data-cache effect and cannot be extrapolated to a foundation-scale budget.
 
 \subsection{Reading the paired estimates}
-Table~\ref{tab:conditions} separates the components of the macro stress endpoint. The channel arm improves AUC under each registered stress condition in both seeds. Fixed-threshold changes remain heterogeneous. Under Noise5, FAKE misses fall from 99 to 64 in 9107 and from 77 to 56 in 9207. The corresponding REAL false-alarm counts rise from 1 to 8 in 9107 and fall from 22 to 13 in 9207. Thus agreement in direction for ranking and for spoof sensitivity does not extend to the authentic-speech workload for this condition.
+Table~\ref{tab:conditions} separates the components of the macro stress endpoint. The channel arm improves AUC under each registered stress condition in both seeds. Figure~\ref{fig:roc} shows the full ROC curves underlying those AUCs. Fixed-threshold changes remain heterogeneous. Under Noise5, FAKE misses fall from 99 to 64 in 9107 and from 77 to 56 in 9207. The corresponding REAL false-alarm counts rise from 1 to 8 in 9107 and fall from 22 to 13 in 9207.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.88\textwidth]{development_roc.pdf}
+\caption{Empirical ROC curves from the four selected models on development A. Each panel ranks the same 112 REAL and 112 FAKE recordings under one condition. Legends give the seed, method, and recomputed AUC. The diagonal denotes chance ranking.}\label{fig:roc}
+\end{figure*}
 
 The larger 9207 REAL benefit under the two compositions is visible in the per-condition counts. Noise-to-Opus false alarms fall from 104 to 44, while its FAKE misses increase from 13 to 26. In the reverse order, REAL false alarms fall from 41 to 13, while FAKE misses change from 53 to 52. Each count has denominator 112. The baseline's high REAL false-alarm count under Noise-to-Opus provides room for a large reduction at this operating point. It would be misleading to describe that reduction alone as an across-class benefit for the condition.
 
@@ -56,9 +67,21 @@ The gain controls and Opus64 provide context for the stress results. Under quart
 
 The larger increase in stressed macro AUC occurs for 9207, but the larger decline in stressed FAKE misses occurs for 9107. The two statements are compatible because the estimands depend on different aspects of the score distribution. The A stress miss differences are about \(-19.94\) and \(-2.68\) percentage points, respectively. The mean across seed blocks is about \(-11.31\) points and describes these two fitted comparisons. It is neither a pooled estimate from independent cohorts nor an interval over new initializations.
 
-In 9207, aggregate FAKE miss counts improve slightly while A05 and A06 together incur 24 additional stressed misses. Reductions in other attacks offset that increase. In 9107 those two attacks also contribute additional errors, with a smaller increase of six views. These arithmetic decompositions use the registered view counts, so they should not be interpreted as 24 or six distinct utterances. The paired attack table gives separate source-level harm and recovery counts and shows when a source crosses the threshold in more than one view.
+In 9207, reductions in other attacks offset 24 additional A05 and A06 stressed misses. Those two attacks contribute six additional misses in 9107. These differences count transformed views. Table~\ref{tab:attackconditions} reports how many distinct A05 and A06 recordings gain or lose a correct decision in at least one stress condition. Figure~\ref{fig:transitions} extends the paired accounting to both classes across A.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.96\textwidth]{source_transitions.pdf}
+\caption{Within-source correctness under ERM and channel augmentation at threshold 0.5 on development A. Each row contains 112 recordings of the indicated class. The same recordings contribute to each condition row. The two middle columns identify sources correctly classified by only one method.}\label{fig:transitions}
+\end{figure*}
 
 The mean difference in stressed ranking is positive in each observed seed. This supports a repeatable direction under the two registered initializations. It provides less information about the stability of threshold behavior, which varies by endpoint. The B stratum in particular would lead to opposite conclusions if only one block were reported. Reporting that reversal alongside the conditional speaker intervals prevents the aggregate score gain from being interpreted as universal risk reduction.
 
 \subsection{Resampling support for the primary contrasts}
-For stressed ROC-AUC, stressed FAKE misses, and B clean REAL false alarms, each seed has 10,000 valid and zero invalid speaker-cluster draws. The 9207 stress AUC contrast of 0.1893 has a percentile interval of [0.0932, 0.2684], while its stress FAKE miss contrast of \(-2.68\) percentage points has interval [\(-10.42\), \(+3.57\)]. The different interval behavior is consistent with ranking and threshold risk answering different questions. The B false-alarm intervals in the two blocks lie on opposite sides of zero. They describe uncertainty from resampling speakers within each fitted comparison, with no guarantee that a new initialization would reproduce either direction.
+For stressed ROC-AUC, stressed FAKE misses, and B clean REAL false alarms, each seed has 10,000 valid and zero invalid speaker-cluster draws. The 9207 stress AUC contrast of 0.1893 has a percentile interval of [0.0932, 0.2684], while its stress FAKE miss contrast of \(-2.68\) percentage points has interval [\(-10.42\), \(+3.57\)]. Figure~\ref{fig:intervals} shows the differing directions and uncertainty across ranking and error endpoints. The B false-alarm intervals lie on opposite sides of zero. These intervals describe uncertainty from resampling speakers within each fitted comparison.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.88\textwidth]{paired_uncertainty.pdf}
+\caption{Channel-minus-ERM contrasts and within-seed 95\% paired speaker-cluster percentile intervals. AUC differences are multiplied by 100 to share a percentage-point axis with the error differences. Positive values indicate better ranking for AUC and more errors for error rates.}\label{fig:intervals}
+\end{figure*}
