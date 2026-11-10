@@ -1,8 +1,13 @@
 """Generate manuscript tables and vector figures from audited development evidence."""
 import csv
+import hashlib
+import io
 import json
+import math
 from pathlib import Path
+from zipfile import ZipFile
 
+import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -36,11 +41,63 @@ def error_count(data,key):
     return f"{value['errors']}/{value['n']}"
 
 
+def inspect_exports(seeds):
+    """Read sealed export headers and scores without loading a model."""
+    condition_names = dict(clean='Clean', gain_half='Half gain', gain_quarter='Quarter gain',
+                           noise5='Noise5', opus64='Opus64', A_then_B='Noise to Opus',
+                           B_then_A='Opus to Noise')
+    metrics = {}
+    inventory = {}
+    for seed, block in seeds.items():
+        for method in METHODS:
+            endpoint = block['endpoints'][method]
+            experiment = endpoint['experiment']
+            directory = ROOT/'outputs/jaes_v2/phase10'/experiment/'scientific'
+            for name in ('selected.keras','scores.csv'):
+                with (directory/name).open('rb') as stream:
+                    if hashlib.file_digest(stream,'sha256').hexdigest() != endpoint['input_sha256'][name]:
+                        raise ValueError(f'Unexpected hash for {experiment}/{name}')
+            with ZipFile(directory/'selected.keras') as archive:
+                with h5py.File(io.BytesIO(archive.read('model.weights.h5')),'r') as weights:
+                    sizes = []
+                    def collect(name, obj):
+                        if isinstance(obj,h5py.Dataset):
+                            if name.startswith('optimizer/'):
+                                raise ValueError('Expected exported model tensors only')
+                            sizes.append(math.prod(obj.shape))
+                    weights.visititems(collect)
+            inventory[experiment] = dict(sha256=endpoint['input_sha256']['selected.keras'],
+                                         tensors=len(sizes), scalar_values=sum(sizes))
+            with (directory/'scores.csv').open(encoding='utf-8',newline='') as stream:
+                records = list(csv.DictReader(stream))
+            for condition in condition_names:
+                subset = [r for r in records if r['stratum']=='A_PAIRED' and r['condition_id']==condition]
+                if (len({r['sample_id'] for r in subset})!=224 or len(subset)!=224
+                        or any(r['status']!='OK' or float(r['threshold'])!=.5
+                               or int(r['predicted_label'])!=int(float(r['raw_score'])>=.5) for r in subset)):
+                    raise ValueError(f'Invalid score grid for {experiment}/{condition}')
+                neg = np.array([float(r['raw_score']) for r in subset if r['label']=='0'])
+                pos = np.array([float(r['raw_score']) for r in subset if r['label']=='1'])
+                if (len(neg),len(pos))!=(112,112):
+                    raise ValueError('Unexpected class support')
+                diffs = pos[:,None]-neg[None,:]
+                metrics[seed,method,condition] = (
+                    np.mean(diffs>0)+.5*np.mean(diffs==0), int(np.sum(neg>=.5)), int(np.sum(pos<.5)))
+    (HERE/'export_inventory.json').write_text(json.dumps(inventory,indent=2)+'\n',encoding='utf-8')
+    rows = [(label,*(f'{auc:.4f} / {fa} / {miss}' for seed in seeds for method in METHODS
+                      for auc,fa,miss in (metrics[seed,method,condition],)))
+            for condition,label in condition_names.items()]
+    save_table('conditions','conditions','Development A by condition. Each cell gives ROC-AUC / REAL false alarms / FAKE misses. Each error count has 112 sources of its class.',
+               ('Condition','9107 ERM','9107 Channel','9207 ERM','9207 Channel'),rows)
+    return metrics
+
+
 def run():
     evidence = json.loads(EVIDENCE.read_text(encoding='utf-8'))
     seeds = evidence['seeds']
     for directory in ('tables','figures'):
         (HERE/directory).mkdir(exist_ok=True)
+    inspect_exports(seeds)
     endpoints = [s['endpoints'][m] for s in seeds.values() for m in METHODS]
     columns = ('Development endpoint','9107 ERM','9107 Channel','9207 ERM','9207 Channel')
     rows = [
@@ -145,6 +202,8 @@ def run():
 
     claims = [
         ('Methods','Four matched runs, 840 updates, 21 epochs and 2,576 predictions each','four run seals','development','9107/9207','both','budget and score grid',REL,'VERIFIED_DEVELOPMENT','shared cohort'),
+        ('Methods','Four exports each contain 213 tensors and 1,308,401 stored scalar values','hash-verified Keras export headers','none','9107/9207','both','stored model state','papers/jaes_v2/jaes_manuscript/export_inventory.json','VERIFIED_DEVELOPMENT','includes nontrainable buffers'),
+        ('Results','Per-condition A ranking and fixed-threshold errors on the sealed score grid','four original scores.csv','development A','9107/9207','both','AUC, false alarms, misses','papers/jaes_v2/jaes_manuscript/tables/conditions.tex','VERIFIED_DEVELOPMENT','shared sources across conditions'),
         ('Results','Stress macro AUC improves in both paired blocks','four selected checkpoints','development A','9107/9207','both','macro stress AUC',REL,'VERIFIED_DEVELOPMENT','two initializations'),
         ('Results','FAKE stress misses decline by 67 and 9 views','four selected checkpoints','development A','9107/9207','both','stress FAKE misses',REL,'VERIFIED_DEVELOPMENT','9207 interval includes zero'),
         ('Results','Clean B false alarms move in opposite directions','four selected checkpoints','development B','9107/9207','both','REAL false alarms',REL,'VERIFIED_DEVELOPMENT','nine speakers'),
@@ -158,8 +217,17 @@ def run():
     ]
     with (HERE/'claim_evidence_map.csv').open('w',encoding='utf-8',newline='') as stream:
         writer = csv.writer(stream)
-        writer.writerow(('section','claim','experiment','partition','seed','model','metric','artifact','status','limitation'))
-        writer.writerows(claims)
+        writer.writerow(('claim_id','section','scientific_claim','supporting_artifact','dataset_partition',
+                         'model','seed','metric','evidence_status','literature_reference','limitation','required_action'))
+        for i,(section,claim,experiment,partition,seed,model,metric,artifact,status,limit) in enumerate(claims,1):
+            action = 'Complete two author approval gates' if status=='HELDOUT_PENDING' else (
+                'Verify proceedings metadata and rights' if status=='VERIFIED_HISTORICAL' else '')
+            writer.writerow((f'C{i:02}',section,claim,artifact or experiment,partition,model,seed,metric,status,'',limit,action))
+        writer.writerow(('L01','Background','ROC-AUC measures pairwise ranking','', 'none','none','none',
+                         'ROC-AUC','LITERATURE_SUPPORTED','hanley','Ties receive half credit',''))
+        writer.writerow(('P01','Methods','Primary held-out design freezes subset rules and threshold',
+                         'configs/jaes_v2/empirical_protocol_v1.json','evaluation','both','9107/9207',
+                         'fixed threshold','PROTOCOL_LOCKED','','Support and license pending','Audit after author approval'))
 
 
 if __name__ == '__main__':

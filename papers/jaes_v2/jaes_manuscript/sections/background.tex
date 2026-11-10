@@ -14,3 +14,30 @@ Let \(N_i(x)=x+\nu_i\) denote insertion of the registered fixed-absolute noise f
  d_i=p_\theta(T_{NC}x_i)-p_\theta(T_{CN}x_i)
 \end{equation}
 measures a directional score response. A decision transition records which order alone causes an error, if either does. The contrast can reflect altered input features, score placement or cues used by the detector. An independent cue measure would be needed to interpret it as forensic-evidence retention.
+
+\subsection{Ranking and conditional risk estimate different quantities}
+For scores \(S_1\) and \(S_0\) drawn from the FAKE and REAL groups of a condition, the population form of the ranking estimand is
+\begin{equation}
+ \operatorname{AUC}(T)=\Pr(S_1>S_0)+\tfrac{1}{2}\Pr(S_1=S_0).
+ \label{eq:auc}
+\end{equation}
+The finite-sample estimate averages this comparison across class pairs \cite{hanley}. Each pair contributes to ranking even when both scores lie on the same side of 0.5. Conversely, a source near 0.5 may change its decision under a small perturbation that changes almost none of the pairwise comparisons. Thus AUC and threshold errors can move in different directions. The macro stress AUC gives each of the three stress conditions equal weight. Pooling scores before ranking would also compare scores across different conditions and would estimate a different quantity.
+
+Let \(D_i^{(m)}(T)\) be the error indicator under method \(m\). The paired contribution to a conditional error difference is \(D_i^{(\mathrm{channel})}(T)-D_i^{(\mathrm{ERM})}(T)\). Its values are \(+1\) for a newly introduced error, \(-1\) for a recovered decision, and zero for agreement in error status. Summing these contributions gives the net count while retaining the ability to distinguish which sources changed in each direction. This matters when equal error counts conceal disjoint sets of failures. For an attack group, the estimand is the miss rate conditional on that FAKE group. Ranking within a single FAKE group against itself has no binary detection interpretation.
+
+\subsection{Order effects and component diagnostics}
+For a frozen model, let \(p_0,p_N,p_C,p_{NC},p_{CN}\) denote scores from the clean, noise-only, codec-only and two composed inputs. The signed order contrast is \(p_{NC}-p_{CN}\). A complementary descriptive contrast is
+\begin{equation}
+ h_i=\tfrac{1}{2}(p_{NC}+p_{CN})-p_N-p_C+p_0 .
+ \label{eq:composition}
+\end{equation}
+This contrast is zero if the two component changes add on the score scale and the two orders have the same score. Departures may also arise from nonlinear features or the sigmoid score mapping. Consequently the contrast is a diagnostic of output nonadditivity, and no inference about which speech cue was preserved follows from its magnitude. The standalone matched components are available for 9107, whereas the registered score and decision order contrasts are available for both blocks.
+
+\subsection{Decision costs and attack mixtures}
+Suppose a deployment has spoof prevalence \(\pi\) and costs \(c_0\) and \(c_1\) for a REAL false alarm and FAKE miss, respectively. For a fixed channel and threshold, a simple expected error cost is
+\begin{equation}
+ (1-\pi)c_0 R_0(T)+\pi c_1 R_1(T).
+\end{equation}
+The prevalence and costs are not estimated here. The expression clarifies why neither class-balanced training nor an equal-weight stress macro average specifies an operational decision rule. The 0.5 rule provides a fixed point for a matched comparison and leaves calibration and cost-optimal threshold selection for a separate study.
+
+The attack mixture also affects the observed miss rate. For represented attack IDs \(a\) with class-conditional weights \(w_a\), \(R_1(T)=\sum_a w_a R_{1,a}(T)\). Changing these weights changes the aggregate even if all attack-specific rates stay fixed. In development the mixture comes from the selected sources, and repeated views preserve their attack identity. The reported aggregate therefore pertains to this mixture. Separate attack rows enable comparison without transferring these mixture weights to another population.

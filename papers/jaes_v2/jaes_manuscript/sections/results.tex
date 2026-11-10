@@ -6,6 +6,7 @@ Clean A REAL false-alarm counts match within each seed. Clean A FAKE misses rise
 
 \input{tables/development}
 \input{tables/uncertainty}
+\input{tables/conditions}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.89\textwidth]{aggregate.pdf}
@@ -45,3 +46,16 @@ A retrospective 9107 diagnostic adds 1,472 predictions for standalone Noise10 an
 
 \subsection{Compute}
 The optimizer and validation durations in Table~\ref{tab:development} show the recorded workload for this medium cohort. The channel arm used more optimizer wall time in both blocks, while validation durations were similar within each block. The recorded execution may include repeated work following interruption. These logs do not separate every audio transformation or data-cache effect and cannot be extrapolated to a foundation-scale budget.
+
+\subsection{Reading the paired estimates}
+Table~\ref{tab:conditions} separates the components of the macro stress endpoint. The channel arm improves AUC under each registered stress condition in both seeds. Fixed-threshold changes remain heterogeneous. Under Noise5, FAKE misses fall from 99 to 64 in 9107 and from 77 to 56 in 9207. The corresponding REAL false-alarm counts rise from 1 to 8 in 9107 and fall from 22 to 13 in 9207. Thus agreement in direction for ranking and for spoof sensitivity does not extend to the authentic-speech workload for this condition.
+
+The larger 9207 REAL benefit under the two compositions is visible in the per-condition counts. Noise-to-Opus false alarms fall from 104 to 44, while its FAKE misses increase from 13 to 26. In the reverse order, REAL false alarms fall from 41 to 13, while FAKE misses change from 53 to 52. Each count has denominator 112. The baseline's high REAL false-alarm count under Noise-to-Opus provides room for a large reduction at this operating point. It would be misleading to describe that reduction alone as an across-class benefit for the condition.
+
+The gain controls and Opus64 provide context for the stress results. Under quarter gain, the channel arm has fewer false alarms and higher AUC in both blocks. Under standalone Opus64, the channel arm has fewer false alarms but more FAKE misses in both blocks. The 64~kb/s control uses a different rate from the 24~kb/s compositions. It is reported as a distinct condition, and any comparison with the chains also changes the codec setting and presence of noise. The matched 24~kb/s diagnostic is the appropriate standalone component comparison for 9107.
+
+The larger increase in stressed macro AUC occurs for 9207, but the larger decline in stressed FAKE misses occurs for 9107. The two statements are compatible because the estimands depend on different aspects of the score distribution. The A stress miss differences are about \(-19.94\) and \(-2.68\) percentage points, respectively. The mean across seed blocks is about \(-11.31\) points and describes these two fitted comparisons. It is neither a pooled estimate from independent cohorts nor an interval over new initializations.
+
+In 9207, aggregate FAKE miss counts improve slightly while A05 and A06 together incur 24 additional stressed misses. Reductions in other attacks offset that increase. In 9107 those two attacks also contribute additional errors, with a smaller increase of six views. These arithmetic decompositions use the registered view counts, so they should not be interpreted as 24 or six distinct utterances. The paired attack table gives separate source-level harm and recovery counts and shows when a source crosses the threshold in more than one view.
+
+The mean difference in stressed ranking is positive in each observed seed. This supports a repeatable direction under the two registered initializations. It provides less information about the stability of threshold behavior, which varies by endpoint. The B stratum in particular would lead to opposite conclusions if only one block were reported. Reporting that reversal alongside the conditional speaker intervals prevents the aggregate score gain from being interpreted as universal risk reduction.

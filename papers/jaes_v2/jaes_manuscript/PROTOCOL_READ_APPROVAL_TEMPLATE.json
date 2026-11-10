@@ -1,0 +1,10 @@
+{
+  "scope": "AUTHOR_APPROVAL_PROTOCOL_READ",
+  "prelock_sha256": "3ae003d298fd812196a3ae0b8e433f8061518805737264fb35cbd57a3465a58f",
+  "author": null,
+  "approved_at": null,
+  "approval_reference": null,
+  "allow_selected_audio_byte_hashes": false,
+  "subset": "primary",
+  "resource_subset_reason": null
+}

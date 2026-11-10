@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\caption{Development A by condition. Each cell gives ROC-AUC / REAL false alarms / FAKE misses. Each error count has 112 sources of its class.}\label{tab:conditions}
+\centering
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Condition & 9107 ERM & 9107 Channel & 9207 ERM & 9207 Channel \\
+\colrule
+Clean & 0.9872 / 3 / 6 & 0.9814 / 3 / 9 & 0.9851 / 4 / 9 & 0.9809 / 4 / 9 \\
+Half gain & 0.9812 / 0 / 15 & 0.9818 / 0 / 14 & 0.9758 / 0 / 16 & 0.9820 / 0 / 15 \\
+Quarter gain & 0.9237 / 7 / 20 & 0.9576 / 0 / 17 & 0.9278 / 9 / 20 & 0.9590 / 0 / 19 \\
+Noise5 & 0.6567 / 1 / 99 & 0.7793 / 8 / 64 & 0.5449 / 22 / 77 & 0.7579 / 13 / 56 \\
+Opus64 & 0.9884 / 6 / 4 & 0.9819 / 4 / 6 & 0.9861 / 9 / 5 & 0.9839 / 5 / 8 \\
+Noise to Opus & 0.6763 / 48 / 38 & 0.8108 / 28 / 37 & 0.6408 / 104 / 13 & 0.7981 / 44 / 26 \\
+Opus to Noise & 0.6814 / 5 / 85 & 0.8178 / 9 / 54 & 0.5981 / 41 / 53 & 0.7958 / 13 / 52 \\
+\botrule
+\end{tabular}
+\end{table*}

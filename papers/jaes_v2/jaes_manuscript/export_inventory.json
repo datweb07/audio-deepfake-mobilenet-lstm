@@ -1,0 +1,22 @@
+{
+  "p10_medium_erm_s9107_v2": {
+    "sha256": "0c787ec62ca715409439912e9bf387bd7dfed9b105c6716ee732445a1cbf2f78",
+    "tensors": 213,
+    "scalar_values": 1308401
+  },
+  "p10_medium_channel_s9107_v2": {
+    "sha256": "dd3e436aad035ab0a841dfc675d3230b77cdd5fe745d766561e3511286999b7d",
+    "tensors": 213,
+    "scalar_values": 1308401
+  },
+  "p10_medium_erm_s9207_v2": {
+    "sha256": "bf9c2c8b04a61521089f608968baec0c10cd91f7de4d938bd351ee70de46df24",
+    "tensors": 213,
+    "scalar_values": 1308401
+  },
+  "p10_medium_channel_s9207_v2": {
+    "sha256": "f6485f4de336f1c0a31c4f29f43f53fb99ff724b8126c324f23431b3d422f579",
+    "tensors": 213,
+    "scalar_values": 1308401
+  }
+}
