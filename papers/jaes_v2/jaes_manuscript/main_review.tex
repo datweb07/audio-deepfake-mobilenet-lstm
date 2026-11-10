@@ -1,0 +1,30 @@
+% Lecturer review layout. The official JAES version is main.tex.
+\documentclass[11pt,a4paper,onecolumn]{article}
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+\usepackage{doi}
+\graphicspath{{figures/}}
+\newcommand{\colrule}{\midrule}
+\newcommand{\botrule}{\bottomrule}
+\input{shared_metadata}
+\title{\LavaTitle}
+\author{Journal author list and affiliations to be confirmed}
+\date{Lecturer review draft \enspace\textbullet\enspace 10 November 2026}
+\begin{document}
+\maketitle
+\begin{abstract}
+\LavaAbstract
+\end{abstract}
+\noindent\textbf{Keywords.} \LavaKeywords
+\onehalfspacing
+\input{shared_body}
+\bibliographystyle{jaes_compat}
+\bibliography{references}
+\end{document}

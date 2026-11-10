@@ -1,0 +1,9 @@
+{
+  "scope": "AUTHOR_APPROVAL_HELDOUT_SCORING",
+  "proposed_lock_sha256": "f422a0a20580bdca4c4a99c6aea58add2958edf3e7efabb50f57c274496f23a8",
+  "selected_rows_sha256": "af2a8c73311cc051498532e35d7159c586f8b0387740b497d01464914cbec38f",
+  "license_sha256": "99a4d3e0db6f9a5cd8871f9737b207af01de333f57c6269a11ce755227c1555d",
+  "author": null,
+  "approved_at": null,
+  "approval_reference": null
+}
