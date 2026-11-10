@@ -1,4 +1,4 @@
-# Order-Dependent Errors in Lightweight Speech Deepfake Detection
+# Class-Asymmetric Robustness and Transformation-Order Effects in Lightweight Audio Deepfake Detection
 
 Working journal manuscript, 9 November 2026, Asia/Ho_Chi_Minh
 
@@ -8,6 +8,8 @@ We evaluate how ordinary channel augmentation changes ranking and operating-poin
 
 ## 1 Introduction and research gap
 
+The conference benchmark compared six heterogeneous detectors and documented stress failures on a fixed diagnostic subset. The journal extension tests a specific training intervention under matched initialization and source order. We ask whether channel augmentation changes aggregate ranking and classwise decisions (RQ1), whether the changes are concentrated by attack or speaker (RQ2), and whether reversing noise and codec order alters those decisions when the component settings are matched (RQ3). The present evidence answers these questions for the selected seed 9107 models on development. Replication and locked within-release evaluation are separate steps.
+
 A detector may receive speech after both noise insertion and lossy coding. Aggregating those conditions can obscure operating-point errors and the difference between applying the same operators in opposite orders. This study asks which source-linked errors remain visible under a fixed decision rule when augmentation and baseline training share the numerical and data contract.
 
 ## 2 Related work
@@ -15,6 +17,8 @@ A detector may receive speech after both noise insertion and lossy coding. Aggre
 RawBoost adds waveform corruptions. F-SAT learns against frequency-selective adversarial perturbations. PCL-NET and TFCL align paired codec or acoustic front-end views, while DK-CAST uses clean-to-degraded distillation and codec-aware weighting. SONAR couples low- and high-frequency representations with class-asymmetric alignment. RADAR provides transformation-robustness development and blind-evaluation conditions. Proteus searches ordered transform chains and reports strong bona fide vulnerability. FP-NAC isolates class-asymmetric coding failures and adapts a neural codec with detector guidance. RealComm uses paired calls and staged acquisition-to-transmission augmentation. Our comparison measures a specific conventional Opus/noise order contrast under a matched CPU training intervention. [Proteus](https://arxiv.org/html/2606.29544) · [FP-NAC](https://arxiv.org/html/2609.39651) · [RealComm](https://arxiv.org/pdf/2610.27459) [RawBoost](https://arxiv.org/html/2111.04433) · [F-SAT](https://www.cs.columbia.edu/~junfeng/papers/fsat-iclr25.pdf) · [PCL-NET](https://arxiv.org/html/2610.07216v1) · [TFCL](https://arxiv.org/html/2607.17761v2) · [DK-CAST](https://link.springer.com/article/10.1007/s10791-025-09746-4) · [SONAR](https://proceedings.mlr.press/v306/hidekel26a.html) · [RADAR](https://arxiv.org/html/2605.09568v3)
 
 ## 3 Formulation and controlled setup
+
+Prior robustness work also reports class asymmetry under a fixed clean-calibrated threshold, and cross-dataset experiments have documented codec- and vocoder-dependent failures. The contribution evaluated here is the combination of a matched augmentation intervention, conventional order reversal and same-record component controls, with error counts at a registered threshold and speaker-cluster uncertainty. [Noise-masked attack study](https://ieeexplore.ieee.org/abstract/document/11476736) · [Maltby et al.](https://repository.uwl.ac.uk/id/eprint/15273/)
 
 For source x with class y and transform T, score p(Tx) is classified as FAKE at p ≥ 0.5. The same source supplies two ordered channel views. Record which of the two alone causes a decision error and retain both errors when computing per-condition risks.
 
@@ -66,6 +70,15 @@ Channel augmentation improved mean stressed ranking and reduced A stressed misse
 ## 9 Conclusion
 
 The selected detector pair exposes a robustness trade-off that average stressed AUC alone would miss. A matched multi-seed comparison and a locked held-out evaluation are needed before extending this conclusion beyond development.
+
+## Claim-to-evidence ledger
+
+| Claim | Artifact and scope |
+| --- | --- |
+| 640 training sources, 368 development sources, 840 updates, selected checkpoint and CPU resources | The paired seed evidence binds the two run seals, score hashes, checkpoints and logged resources. [Seed 9107 evidence](../../../outputs/jaes_v2/phase10/empirical_execution_v1/paired_seed_evidence_9107.json) |
+| Stress AUC, classwise trade-off, attack and speaker heterogeneity | Same-record development scores, one seed, with speaker-cluster uncertainty. [Scientific evidence](../../../outputs/jaes_v2/phase10/final_diagnostic_v1/scientific_evidence.json) |
+| Matched Noise10/Opus24 component and order diagnostics | 1,472 new development predictions with registered waveform and score checks. [Component evidence](../../../outputs/jaes_v2/phase10/final_diagnostic_v1/matched_components.json) |
+| Replication and official held-out | Protocol locked. The 9207 pair is pending and evaluation access remains closed. No result is reported. [Protocol](../../../docs/jaes_v2/EMPIRICAL_EXECUTION_PROTOCOL.md) |
 
 ## Reproducibility and conference extension
 

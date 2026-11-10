@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "locked_on": "2026-11-09",
+  "scope": "CONTROLLED_EMPIRICAL_ROBUSTNESS",
+  "c2": "C2_DIAGNOSTIC_REJECT",
+  "registry_sha256": "c43a8de97462a77f393d58f17484de6321d7021cd765dd32debf998642631925",
+  "methods": [
+    "erm",
+    "channel"
+  ],
+  "required_seeds": [
+    9107,
+    9207
+  ],
+  "optional_seed": 9307,
+  "checkpoint_policy": "CLEAN_BCE",
+  "score_orientation": "P(FAKE), REAL=0, FAKE=1",
+  "threshold": 0.5,
+  "tie": "FAKE",
+  "delta": "channel minus ERM",
+  "primary": [
+    "A macro stress ROC-AUC",
+    "A stress FAKE miss",
+    "A clean REAL false alarm",
+    "A clean FAKE miss"
+  ],
+  "secondary": [
+    "B clean REAL false alarm",
+    "stress REAL false alarm",
+    "attack-specific misses",
+    "paired order transitions and score contrasts",
+    "speaker errors"
+  ],
+  "stress": [
+    "noise5",
+    "A_then_B",
+    "B_then_A"
+  ],
+  "development_supplementary": [
+    "gain_half",
+    "gain_quarter",
+    "opus64",
+    "noise10",
+    "opus24"
+  ],
+  "bootstrap": {
+    "unit": "speaker",
+    "draws": 10000,
+    "seed": 91109,
+    "level": 0.95,
+    "development_strata_separate": true,
+    "report_invalid_draws": true
+  },
+  "heldout_authorized": false,
+  "heldout": {
+    "release": "ASVspoof 2019 LA official CM evaluation",
+    "sampling_seed": 91109,
+    "rule": "SHA256 rank speakers per attack/class, rank official IDs within speaker, take speaker round-robin until frozen quota; shortages reported",
+    "primary": {
+      "REAL": 256,
+      "per_attack": 64,
+      "target": 1088
+    },
+    "fallback": {
+      "REAL": 128,
+      "per_attack": 32,
+      "target": 544
+    },
+    "fallback_rule": "resource feasibility only before labels or predictions are accessed",
+    "attacks": [
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12",
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18",
+      "A19"
+    ],
+    "conditions": [
+      "clean",
+      "noise5",
+      "A_then_B",
+      "B_then_A"
+    ],
+    "supplementary_enabled": false,
+    "exclude": [
+      "training",
+      "development",
+      "calibration"
+    ],
+    "overlap_checks": [
+      "official source ID",
+      "speaker ID",
+      "raw audio SHA-256",
+      "lineage where available"
+    ],
+    "stop_on_overlap": true,
+    "threshold_tuning": false,
+    "selected_checkpoint_hashes_status": "PENDING_COMPLETE_SEED_9207_AND_FINAL_AUTHORIZATION"
+  },
+  "foundation": "FULL_FOUNDATION_NO_GO_FOR_DECEMBER_MANUSCRIPT"
+}
