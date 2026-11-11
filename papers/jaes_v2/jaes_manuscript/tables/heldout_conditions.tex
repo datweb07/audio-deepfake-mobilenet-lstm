@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\caption{Condition-specific held-out performance. Each cell gives ROC-AUC / REAL false alarms / FAKE misses. There are 256 REAL and 832 FAKE recordings per condition.}\label{tab:heldout-conditions}
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Condition & 9107 ERM & 9107 Channel & 9207 ERM & 9207 Channel \\
+\colrule
+Clean & 0.9534 / 25 / 125 & 0.9436 / 19 / 129 & 0.9507 / 22 / 127 & 0.9410 / 16 / 147 \\
+Noise5 & 0.8053 / 0 / 701 & 0.8655 / 12 / 259 & 0.6815 / 28 / 492 & 0.8765 / 25 / 193 \\
+Noise to Opus & 0.8447 / 76 / 143 & 0.8991 / 53 / 143 & 0.8196 / 226 / 38 & 0.9044 / 89 / 93 \\
+Opus to noise & 0.8424 / 4 / 526 & 0.8979 / 16 / 185 & 0.7483 / 68 / 285 & 0.9034 / 22 / 167 \\
+\botrule
+\end{tabular}
+\end{table*}

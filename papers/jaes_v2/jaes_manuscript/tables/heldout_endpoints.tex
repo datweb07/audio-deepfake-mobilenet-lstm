@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\caption{Selected-model results on the locked held-out subset. Stress error counts pool three views per source. Macro stress ROC-AUC averages the three condition-specific AUCs.}\label{tab:heldout-endpoints}
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Endpoint & 9107 ERM & 9107 Channel & 9207 ERM & 9207 Channel \\
+\colrule
+Macro stress ROC-AUC & 0.8308 & 0.8875 & 0.7498 & 0.8948 \\
+Stress FAKE miss & 1370/2496 & 587/2496 & 815/2496 & 453/2496 \\
+Stress REAL false alarm & 80/768 & 81/768 & 322/768 & 136/768 \\
+Clean REAL false alarm & 25/256 & 19/256 & 22/256 & 16/256 \\
+Clean FAKE miss & 125/832 & 129/832 & 127/832 & 147/832 \\
+\botrule
+\end{tabular}
+\end{table*}

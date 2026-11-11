@@ -12,6 +12,7 @@ Clean A REAL false-alarm counts match within each seed. Clean A FAKE misses rise
 \includegraphics[width=.89\textwidth]{aggregate.pdf}
 \caption{Development results by matched initialization. The stress FAKE miss denominator is 336 views from 112 FAKE sources in each arm. Lines connect the two treatment arms within a seed.}\label{fig:aggregate}
 \end{figure*}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.91\textwidth]{classwise_errors.pdf}
@@ -85,3 +86,42 @@ For stressed ROC-AUC, stressed FAKE misses, and B clean REAL false alarms, each 
 \includegraphics[width=.88\textwidth]{paired_uncertainty.pdf}
 \caption{Channel-minus-ERM contrasts and within-seed 95\% paired speaker-cluster percentile intervals. AUC differences are multiplied by 100 to share a percentage-point axis with the error differences. Positive values indicate better ranking for AUC and more errors for error rates.}\label{fig:intervals}
 \end{figure*}
+
+\subsection{Development-to-Held-Out Comparison}\label{sec:heldout-results}
+The locked evaluation completed 17,408 predictions for the same four selected models. Table~\ref{tab:heldout-endpoints} reports aggregate results and Table~\ref{tab:heldout-conditions} separates the conditions. Macro stressed ROC-AUC increased in both seed blocks, from 0.8308 to 0.8875 in 9107 and from 0.7498 to 0.8948 in 9207. The corresponding paired speaker-cluster intervals for channel minus ERM were [0.0296, 0.0842] and [0.1158, 0.1752]. These positive differences were smaller than the development A contrasts. Figure~\ref{fig:heldout-contrasts} compares the predefined endpoints across partitions. Figure~\ref{fig:heldout-roc} shows the score-level ranking under each held-out condition.
+
+\input{tables/heldout_endpoints}
+\input{tables/heldout_conditions}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.94\textwidth]{heldout_contrasts.pdf}
+\caption{Channel-minus-ERM contrasts on development A and the locked held-out subset, separately by seed. Held-out segments show 95\% paired speaker-cluster percentile intervals. AUC differences are multiplied by 100. Positive differences indicate better AUC or higher error rates. Cohorts and attack populations differ across partitions.}\label{fig:heldout-contrasts}
+\end{figure*}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.86\textwidth]{heldout_roc.pdf}
+\caption{Empirical held-out ROC curves for four selected models. Each panel contains 256 REAL and 832 FAKE recordings, evaluated under the named condition. Legends give seed, method, and AUC. The same sources recur across conditions.}\label{fig:heldout-roc}
+\end{figure*}
+
+Stressed FAKE misses decreased from 1,370 to 587 in 9107 and from 815 to 453 in 9207, each out of 2,496 correlated views from 832 FAKE sources. The rate differences were \(-31.37\) percentage points [\(-33.41\), \(-29.36\)] and \(-14.50\) points [\(-17.38\), \(-11.67\)]. Stress REAL false alarms changed from 80 to 81 and from 322 to 136, out of 768 views from 256 sources. The respective intervals were [\(-3.23\), \(+3.76\)] and [\(-29.07\), \(-19.03\)] percentage points. All registered endpoint and attack intervals used 10,000 valid draws with zero invalid draws. These intervals describe speaker resampling within a fitted seed pair.
+
+Clean performance showed a different balance. REAL false alarms decreased by six recordings in each block, from 25 to 19 and from 22 to 16 out of 256. Clean FAKE misses increased from 125 to 129 and from 127 to 147 out of 832, while clean ROC-AUC declined from 0.9534 to 0.9436 and from 0.9507 to 0.9410. In 9207 the clean FAKE miss increase was 2.40 percentage points [1.15, 3.86]. Thus the held-out ranking improvement under stress coexisted with a clean FAKE sensitivity loss. The development B false-alarm reversal did not recur as a clean held-out reversal: both held-out pairs had fewer clean REAL false alarms. B and held-out have different speaker and source support.
+
+\subsection{Held-Out Attack and Order Effects}
+Figure~\ref{fig:heldout-attacks} shows the condition-specific changes for A07--A19. Stress misses declined on A07--A16 in both blocks. They increased on A17, A18 and A19 in both blocks, by 10, 11 and four views in 9107 and by 43, 43 and 56 views in 9207. Each attack contributes 64 sources and 192 stressed views. The 9107 intervals for these three increases include zero, while the 9207 intervals are [15.90, 29.03], [14.12, 30.81] and [20.63, 37.70] percentage points. These descriptive attack contrasts expose adverse subgroups alongside the pooled improvement. The development A05/A06 observations and held-out A17--A19 observations refer to different attack sets.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.92\textwidth]{heldout_attacks.pdf}
+\caption{Held-out channel-minus-ERM FAKE miss counts by attack, condition and seed. Each cell compares the same 64 sources. Positive counts indicate deterioration and negative counts indicate fewer misses. The full numerical supplement retains both arm counts and stressed attack intervals.}\label{fig:heldout-attacks}
+\end{figure*}
+
+Source-linked order asymmetry persisted. In 9107, REAL sources wrong only under noise-to-Opus numbered 72 for ERM and 37 for channel, with zero exclusive errors in the reverse direction. In 9207 the corresponding counts were 158 and 68, while exclusive reverse-order errors numbered zero and one. Among FAKE sources, reverse-order-only misses numbered 384 and 43 in 9107 and 247 and 74 in 9207. The opposite exclusive FAKE miss counts were one and one in 9107, and zero and zero in 9207. Each model uses the same 256 REAL and 832 FAKE sources in the order comparison.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=.90\textwidth]{heldout_order.pdf}
+\caption{Held-out same-source FAKE score contrasts between noise-to-Opus and Opus-to-noise. Points are medians, thick segments span quartiles, and thin segments span the 10th to 90th percentiles. REAL and FAKE groups contain 256 and 832 sources. These are distribution summaries of paired scores.}\label{fig:heldout-order}
+\end{figure*}
+
+The score contrasts in Fig.~\ref{fig:heldout-order} also remained directional, with lower FAKE-class medians after channel training. Median FAKE contrasts changed from 0.3454 to 0.0063 in 9107 and from 0.2419 to 0.0076 in 9207. Smaller score contrasts alone do not imply a uniformly better decision rule, as shown by the attack-specific misses. Speaker-linked outputs retain the distribution of order errors. For example, ERM 9107's reverse-minus-forward FAKE error differences were 16 among 21 sources for LA\_0045 and 13 among 21 for LA\_0046. These speaker counts describe concentration within the selected corpus and support no demographic inference.
