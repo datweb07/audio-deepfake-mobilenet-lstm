@@ -40,3 +40,21 @@ def test_missing_malformed_and_interrupted(tmp_path, capsys):
           patch.object(monitor.sys, 'argv', ['progress','--experiment',IDENTITY])):
         monitor.main()
     assert 'Monitor stopped.' in capsys.readouterr().out
+
+
+def test_recorded_metrics_and_resume_event(tmp_path):
+    events = tmp_path/'resume_events'
+    events.mkdir()
+    (events/'u000040.json').write_text('{"step":40}', encoding='utf-8')
+    (events/'u000080.json').write_text('{"step":80}', encoding='utf-8')
+    (events/'u000120.json').write_text('{', encoding='utf-8')
+    status = dict(status='RUNNING', step=280, epoch=7, remaining_train_seconds=5465,
+                  last_update=dict(loss=.125, lr=.0001, norm=.2),
+                  validation=dict(step=280, clean=dict(nll=.35)))
+    screen = monitor.render(IDENTITY, REGISTRY, status, CONTRACT, elapsed=2718,
+                            resume=monitor.latest_resume(tmp_path))
+    for expected in ('280/840 — 33.3%', '00:45:18', 'Optimizer ETA 01:31:05',
+                     'Clean BCE 0.35', 'Recorded at update 80', 'Training accuracy and AUC N/A'):
+        assert expected in screen
+    assert 'differs from the registered budget' in monitor.render(
+        IDENTITY, REGISTRY, status, dict(config=dict(maximum_updates=841)))
