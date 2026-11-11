@@ -1,0 +1,87 @@
+# Phản biện khoa học JAES và đối chiếu bản V3
+
+**11/11/2026.** Đây là ba góc phản biện mô phỏng, mỗi góc dùng một bộ tiêu chí riêng. Đề xuất biên tập đối với V2 là **MAJOR_REVISION_BEFORE_SUBMISSION**. V3 giải quyết các điểm diễn giải, phương pháp và truy xuất bằng chứng có thể sửa từ dữ liệu hiện có. Khuyến nghị hiện tại là **READY_FOR_SUPERVISOR_SECOND_REVIEW**. Research Paper là hướng có cơ sở nếu giảng viên đánh giá đóng góp thực nghiệm đủ phân biệt với prior art. Engineering Report có thể phù hợp nếu trọng tâm chuyển sang kinh nghiệm triển khai và khả năng tái lập một quy trình đánh giá, nhưng đổi loại bài tự nó không giải quyết khoảng trống originality. [Loại bài AES](https://aes.org/publications/aes-journal-manuscript-types/)
+
+## Reviewer 1 — Originality và audio engineering
+
+**Bằng chứng mới so với conference.** Conference đã đo sáu artifact dị biệt, clean trên 2.737 file tách theo checksum, stress chín điều kiện trên 100 file, và timing trên một desktop. Đã có stratified bootstrap 1.000 lượt và McNemar có Holm trên paired clean predictions. Journal thêm can thiệp chính sách training view với bốn run, hai cặp seed, development ASVspoof có speaker IDs, locked held-out cùng release, và liên kết score với từng recording qua hai thứ tự noise/Opus. Tách theo speaker của benchmark mới giải quyết một phần lo ngại về leakage trong thiết kế mới. Nó không phục hồi lineage của tập cũ.
+
+**Kết quả đáng bảo vệ nhất.** Khi 9207 xử lý noise trước Opus, AUC tăng từ 0,8196 lên 0,9044 và REAL false alarms giảm từ 226 xuống 89, nhưng FAKE misses tăng từ 38 lên 93 tại cùng ngưỡng. Đảo thứ tự trên cùng nguồn giữ được so sánh trong recording, tránh nhầm hai quần thể khác nhau với hiệu ứng thứ tự. Kết quả này giúp kỹ sư xác định nên đo rủi ro lớp nào ở hai vị trí chèn noise. Nó không xác định codec làm mất cue nào, và bản thân tính không giao hoán không phải phát hiện lý thuyết mới.
+
+**Rủi ro originality lớn nhất.** Các công trình đã công bố đã có augmentation, codec stress và đánh giá lệch theo lớp. Nếu bài chỉ được đọc như một bảng robustness khác với một mô hình, khác biệt có thể chưa đủ. V3 nhấn vào phối hợp ba yếu tố có bằng chứng: cặp training cùng quy trình, hai thứ tự Opus/noise cùng recording và phân rã lỗi tại ngưỡng cố định trên held-out khóa. Chưa có căn cứ cho tuyên bố ưu tiên quốc tế hoặc một phương pháp học mới.
+
+## Reviewer 2 — Phương pháp thực nghiệm
+
+**Công bằng trong phạm vi estimand.** Đối chiếu hash initialization và trình tự source visit xác nhận chúng giống nhau trong từng seed. Hai arm dùng BCE, cùng budget 840 optimizer update, 21 epoch, cùng rule chọn clean development BCE và chung threshold. Chính sách channel thay clean bằng một view lấy mẫu, nên cũng làm giảm clean exposure. Từng mô hình được đánh giá tại checkpoint riêng, ở update 560/760 và 520/720 theo thứ tự ERM/Channel. Vì vậy contrast là hiệu ứng của chính sách view **kèm selection rule**, không phải hiệu ứng thuần của Opus, noise, một ngân sách tại checkpoint bằng nhau hoặc kiến trúc. V3 ghi số view đã thực hiện theo arm và phân biệt budget hoàn tất với prefix đi vào selected model.
+
+**Population và khóa.** 640 nguồn cân bằng cho phép hoàn tất bốn run CPU đối chứng. Full train có 2.580 REAL và 22.800 FAKE, nên thay scale đồng thời đổi class mix. A là development hai lớp và dùng cho selection, B là development REAL-only, còn held-out có 256 REAL và 832 FAKE theo quota. Các cohort trả lời câu hỏi khác nhau, và A clean mang phụ thuộc do selection. Held-out xác minh proposed lock, thứ tự source, định danh model, manifest, 1.088 shard, threshold và score replay. A07–A19 là attack IDs theo protocol, với lineage chưa đủ để khẳng định generator độc lập. Hai seed đủ để báo hai contrast quan sát được. Các yếu tố còn chưa cô lập gồm thành phần view, interactions giữa view và checkpoint, source/attack mix, preprocessing, và một codec cùng mức noise định trước. Không thấy lỗ hổng logic bắt buộc train thêm để bảo vệ kết luận hẹp.
+
+## Reviewer 3 — Thống kê và tái lập
+
+**Đơn vị.** Held-out có 1.088 nguồn từ 67 speaker, bốn điều kiện và bốn model. Mỗi điều kiện có 256 REAL và 832 FAKE. Ba view stress tạo 768 REAL views và 2.496 FAKE views mỗi arm. Mỗi attack FAKE có 64 nguồn và 192 stress views. Bootstrap lấy speaker với 10.000 lượt, seed 91109, giữ nguyên source, view và pairing trong mỗi seed. Tái tính từ shard khớp chính xác metrics và bootstrap đã khóa. Khoảng 95% mô tả biến thiên qua speaker với fitted models cố định. Hai seed dùng chung cohort và không tạo một phân phối uncertainty qua initialization.
+
+**Multiplicity và hậu kiểm.** Protocol đã nêu per-attack errors và order diagnostics như endpoint phụ. Việc chọn nhấn A17–A19, gộp nhóm attack, đếm lỗi mới/lỗi được sửa và lặp lỗi qua các điều kiện là hậu kiểm. Các khoảng attack là pointwise, chưa hiệu chỉnh multiplicity. Cả ba khoảng 9107 bao gồm 0, còn các khoảng 9207 nằm trên 0. Dấu lặp ở hai seed đáng mô tả, nhưng không bảo đảm subgroup effect ngoài hai fitted pairs. Bằng chứng chính là macro AUC và lỗi lớp, với subgroup hỗ trợ giải thích. Không bổ sung p-value hoặc điều chỉnh threshold.
+
+## Ma trận vấn đề và xử lý
+
+| Reviewer | Phần | Vấn đề cụ thể | Mức độ | Bằng chứng | Sửa cần thiết | Thí nghiệm mới? | Dữ liệu hiện có? | Trạng thái |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 | Introduction, Related Work | Tính mới dễ bị đọc như augmentation hoặc một bảng classwise khác | MAJOR | RawBoost, ADD-C, bona fide cross-testing và noise-asymmetry đã có tiền lệ | Nêu estimand và kết quả cụ thể của hai thứ tự trên cùng source | Không cho claim hẹp | Có | Đã sửa cách định vị. Mức đủ mới vẫn cần giảng viên đánh giá |
+| R1 | Discussion | Noncommutativity của pipeline không xác lập cue forensic | MAJOR | Hai thứ tự cùng noise plan, nhưng codec content-dependent và P0 có normalization | Giới hạn inference vào detector response, phân biệt cơ chế khả dĩ | Chỉ cần nếu mở rộng claim cơ chế | Có cho claim hẹp | Đã sửa, cơ chế để mở |
+| R1 | Introduction, conference extension | Conference đã có stress, paired clean stats và bootstrap | MAJOR | Conference §§3–4 và reviewer response | Nêu cái đã làm và phần journal thêm, giữ benchmark cũ riêng | Không | Có | Đã sửa. Venue, DOI và rights chờ tác giả |
+| R2 | Methods | Cùng budget hoàn tất có thể bị hiểu nhầm thành cùng clean exposure hoặc cùng selected update | MAJOR | Sealed journals và checkpoint tags | Ghi 13.440 visit/arm, realized view counts và prefix khác nhau | Không | Có | Đã sửa |
+| R2 | Setup, limitations | 640 cân bằng và full 89,83% FAKE tạo hai estimand nếu đổi scale | MODERATE | Medium registry, foundation manifest | Giải thích lựa chọn CPU và thay đổi population/class mix | Không cho claim hiện tại | Có | Đã sửa |
+| R2 | Results, discussion | Macro AUC có thể bị đọc thành giảm mọi lỗi | MAJOR | 9207 Noise10→Opus AUC tăng và +55 FAKE misses dù −137 REAL alarms | Đặt ranking, hai lỗi lớp và source transitions cạnh nhau | Không | Có | Đã sửa |
+| R2 | Setup, limitations | ID held-out không xác nhận unseen generator hoặc cross-corpus | MAJOR | Lock và ASVspoof metadata, một release | Giới hạn câu chữ và giữ protocol khác nhau giữa A/B và held-out | Chỉ cần cho claim rộng hơn | Có cho claim hẹp | Đã làm rõ, giới hạn giữ lại |
+| R3 | Results, limitations | Attack highlights dễ bị hiểu là confirmatory hoặc multiplicity-controlled | MAJOR | Nhóm 64 nguồn, interval pointwise, 9107 gồm zero | Gắn hậu kiểm và không suy rộng theo attack hoặc seed | Không | Có | Đã sửa |
+| R3 | Results | Tied totals không cho biết có phải cùng nguồn bị lỗi | MODERATE | 9107 Noise10→Opus FAKE 143→143 | Báo 93 shared, 50 corrected, 50 introduced | Không | Có | Đã sửa |
+| R3 | Reproducibility | V2 chưa có đường truy xuất riêng cho phân rã mới và training-view counts | MODERATE | Shards, sealed journals, script analysis hiện hành | Recompute chính xác và map claim tới hash, condition, seed và denominator | Không | Có | Hoàn tất |
+
+Không phát hiện sai số nghiêm trọng làm mất hiệu lực lưới held-out hoặc contrast đã khóa. Các phản biện MAJOR tập trung vào độ mạnh của kết luận và phân biệt với prior art.
+
+## Ba đóng góp và prior art gần nhất
+
+| Đóng góp | Mức hỗ trợ | Giá trị khoa học và rủi ro |
+| --- | --- | --- |
+| Controlled and reproducible robustness evaluation | **EMPIRICALLY_SUPPORTED** | Khớp initialization, source order, budget và selection là phương pháp chuẩn. Audit và seals tăng khả năng tái lập. Hiệu ứng quan sát được của chính sách view ở hai cặp và held-out là evidence mới đối với conference. Thiết kế tự nó có khác biệt thấp với các augmentation studies. |
+| Class- and attack-specific characterization | **SUPPORTED_WITH_LIMITATIONS** | Kết quả mới là hướng và độ lớn trade-off cụ thể, đặc biệt khi AUC tăng trong cùng condition có FAKE miss tăng. Hiện tượng class asymmetry đã có tiền lệ. Attack highlights và concentration là mô tả có điều kiện. |
+| Source-linked order diagnostics | **EMPIRICALLY_SUPPORTED** | Khác biệt tương đối mạnh nhất là đo threshold transitions trong hai chuỗi Opus/noise cùng source, kết hợp matched training và locked held-out. Hai operator có thể không giao hoán là kiến thức chuẩn. Bằng chứng chưa xác lập cue hoặc tính phổ quát. |
+
+| Công trình | Phương pháp và bằng chứng công bố | Quan hệ với V3 |
+| --- | --- | --- |
+| RawBoost | Nhiễu convolutive tuyến tính/phi tuyến, impulsive signal-dependent và stationary additive cho raw-waveform anti-spoofing. Có kết quả trên ASVspoof 2021 LA. | Augmentation đã có tiền lệ. V3 so một sampled view với clean trên cùng model và phân rã lỗi theo thứ tự Opus/noise. Khác biệt nằm ở estimand và diagnostic, không ở nguyên lý augmentation. [ICASSP proceedings copy](https://www.eurecom.fr/publication/6736/download/sec-publi-6736.pdf) |
+| ADD-C | Lưới codec và packet loss mô phỏng, kiểm nhiều baseline và thêm communication augmentation. | Bao phủ channel rộng hơn. V3 cố định source và noise plan để đảo hai operator và kiểm transitions ở ngưỡng cố định. Đây là khác biệt thiết kế vừa phải. [EUSIPCO paper](https://eusipco2025.org/wp-content/uploads/pdfs/0000566.pdf) |
+| Bona fide cross-testing | Thay bona fide domain trong các so sánh với spoof subsets, cho thấy phụ thuộc của kết quả vào authentic-speech support. | Bằng chứng trước về tầm quan trọng của lỗi REAL. V3 giữ source fixed qua hai order. Hai thiết kế trả lời hai câu hỏi và không hỗ trợ xếp hạng chung. [Interspeech paper](https://www.isca-archive.org/interspeech_2025/kwok25_interspeech.pdf) |
+| F-SAT, Group-DRO, DK-CAST và SONAR | F-SAT dùng tìm perturbation theo dải STFT. Group-DRO nhấn rủi ro nhóm. DK-CAST dùng teacher clean-to-degraded. SONAR dùng spectral contrastive residual và objective có cấu trúc theo lớp. | V3 giữ BCE và representation family, nên không kiểm superiority trước các phương pháp này. Các thuật toán đó thu hẹp mọi tuyên bố về objective hoặc class awareness. [F-SAT](https://proceedings.iclr.cc/paper_files/paper/2025/hash/1ab925f5f4ac0670256c3d335868c996-Abstract-Conference.html) · [DK-CAST](https://link.springer.com/article/10.1007/s10791-025-09746-4) · [SONAR](https://proceedings.mlr.press/v306/hidekel26a.html) |
+| Maltby và nghiên cứu noise-masked attacks | Bài survey/case study đánh giá shift codec/vocoder giữa corpus. Abstract IEEE DSPA 2026 đã nói rõ fixed threshold và class asymmetry. Toàn văn DSPA không truy cập được trong lần rà này. | Class asymmetry và codec vulnerability có prior art. Chưa thể kết luận về chồng lấn công thức hoặc order trong DSPA từ abstract. Không thêm bài DSPA làm căn cứ kỹ thuật chi tiết. [Maltby bản công bố](https://repository.uwl.ac.uk/id/eprint/15273/) · [IEEE DSPA abstract](https://ieeexplore.ieee.org/abstract/document/11476736) |
+
+Sàng lọc prior art nội bộ còn nhận diện paired consistency, neural-codec masking và tìm chuỗi biến đổi trong preprint. Các nguồn preprint này chỉ giúp nhận diện rủi ro originality và không được dùng trong V3 làm bằng chứng kỹ thuật. [Rà soát trước đó](DEADLINE_NOVELTY_AND_EXPERIMENT_PROTOCOL.md) · [Quy định tài liệu tham khảo AES](https://aes.org/publications/journal-author-guidelines/)
+
+## Bàn giao, quyền xuất bản và mức sẵn sàng
+
+- Audit đọc cả file conference được chỉ định có dấu cách và bản underscore đã đăng ký. Hai file có SHA khác nhau từ trước. Bản underscore có hash thẩm quyền `91fa8753025895bbf88470f4ebe7e6c283e897c8370fa8e91b1719abaac61073`. Hai bản cùng hỗ trợ các đối chiếu khoa học chính. Phản hồi reviewer chỉ dùng nội bộ. Các Word gốc giữ nguyên hash.
+- Sáu detector conference giữ vai trò tham chiếu lịch sử. EfficientNet-B0 dùng checkpoint warm-up. RawNet2 và AASIST là các artifact pretrained bên ngoài với lineage nguồn và quá trình chọn checkpoint còn thiếu. ShuffleNetV2 và MnasNet dùng lịch huấn luyện riêng. MobileNetV3Small của conference dùng checkpoint và ngưỡng riêng. Bằng chứng journal dùng bốn checkpoint khác dưới một protocol ghép cặp. [Audit sáu detector](LEGACY_SIX_MODEL_REUSE_MATRIX.md)
+- AES yêu cầu bài Research Paper có đóng góp nguyên gốc và mô tả thực nghiệm đủ tái lập. V3 dùng title khác conference, abstract một đoạn nằm trong 100–200 từ, trích dẫn số, hình có caption và bảng LaTeX chỉnh sửa được. Danh mục 26 mục giữ các ấn bản công bố, proceedings và RFC Opus. DOI được giữ khi có record trong audit. Tài liệu proceedings có URL chính thức dùng được khi chưa ghi DOI. [AES Author Guidelines](https://aes.org/publications/journal-author-guidelines/) · [Mẫu JAES](https://www.overleaf.com/latex/templates/journal-of-the-audio-engineering-society-jaes-template/rqsctzghzcwx)
+- Phần mở rộng là thực nghiệm mới, không tính phần trăm từ chênh lệch số trang. Mẫu JAES nêu mức tham khảo khoảng 30% đối với bài conference đã công bố. Tác giả cần xác nhận tên venue, trạng thái/phát hành proceedings, nhà xuất bản, DOI nếu có, thỏa thuận bản quyền và quyền tái sử dụng. Sau đó chốt citation và cover letter, cùng danh sách tác giả, affiliation, corresponding author, ORCID, tiểu sử, phạm vi UEH hỗ trợ, và khai báo AI theo mẫu lúc nộp. Review PDF giữ cách trình bày authorless đã dùng cho V2. [Checklist mở rộng conference](../../papers/jaes_v2/jaes_manuscript/CONFERENCE_EXTENSION_DISCLOSURE.md)
+- Gửi giảng viên PDF V3 và tài liệu này để xin ý kiến về mức đủ mới của kết quả thực nghiệm. Ưu tiên xử lý phản hồi về phạm vi claim và originality trước khi chuyển sang hoàn thiện thông tin xuất bản và format. Các khoảng trống cross-corpus, mechanism, nhiều seed và scale vẫn là giới hạn, không làm phát sinh một training phase cho deadline hiện tại.
+
+## Tái lập và bộ file tối thiểu
+
+| Kết quả | Artifact đầu vào |
+| --- | --- |
+| Development tables, per-condition ROC, checkpoint dynamics và source transitions | `post9207_consolidated_v1.json`, các `scientific/scores.csv`, `result.json`, `seal.json` và `review_figure_provenance.json`. Dùng script `generate_evidence.py` và `generate_review_figures.py` theo hướng dẫn build. |
+| Held-out tables, bốn figure held-out và bootstrap | `metrics.json`, `manifest.json`, `scores/` với 1.088 shard, proposed lock và scoring approval. `analysis/scores.csv`, `condition_metrics.csv`, `attack_metrics.csv` và `verified_analysis.json` là các export dùng để rà thuận tiện. `analyze_locked_heldout.py` là nguồn tái lập bảng/hình. |
+| Phân rã lỗi và exposure V3 | `v3_score_diagnostics_20261111.json` với input hashes, counts theo seed/condition/class, attack-level source overlap và sealed training journals. `analyze_v3_scores.py` chỉ đọc evidence đã tạo để xuất JSON này. |
+| Tuyên bố trong bài và phiên bản PDF | `claim_evidence_map.csv`, `reference_audit.csv`, `v3_manuscript_verification_20261111.json`. JSON xác minh chứa Git HEAD đầu lượt, hash V2, hash source trước chỉnh sửa và kiểm tra build V3. |
+
+Gửi giảng viên PDF một cột V3 và review này. Để rà khoa học độc lập, kèm claim map, JSON diagnostics, JSON verification và các export phân tích held-out. Nếu cần rebuild LaTeX, gửi bộ nguồn `jaes_manuscript/` gồm hai entry point, shared TeX, sections, tables, figures, bibliography, class và styles. Giữ cấu trúc thư mục khi tải Overleaf. Nếu cần replay khớp từng shard, dùng thêm `manifest.json`, `metrics.json`, `scores/` và lock cùng hồ sơ phê duyệt trong môi trường nội bộ. Kiểm tra toàn bộ exposure còn dùng bốn `selected.keras` để xác minh hash cùng contract, journal, score và seal. Bộ tài liệu gửi giảng viên để đọc bài không cần audio hoặc checkpoint. [Hướng dẫn build](../../papers/jaes_v2/jaes_manuscript/README_BUILD.md)
+
+Kiểm tra build V3 bằng pdfLaTeX và BibTeX cho kết quả 31 trang A4 một cột, 13 hình, 9 bảng, 26 tài liệu được trích dẫn và abstract 171 từ theo cách tách khoảng trắng. Đã rà ảnh render đủ 31 trang. Không thấy tham chiếu chưa phân giải hay overflow trong log. BibTeX báo 25 cảnh báo thiếu trường tháng. Các mục vẫn có năm và thông tin truy xuất. Bản build thử bằng entry point JAES hai cột có 21 trang. Bản một cột là file gửi giảng viên.
+
+Tái tính 28 ô trong bảng development theo điều kiện từ bốn lưới score đã seal. Tạo lại hai bảng held-out trong thư mục kiểm tra và đối chiếu nội dung từng dòng. Bộ test hiện hữu `test_empirical_execution.py` và `test_heldout_protocol_audit.py` cho kết quả 14/14 pass khi đặt thư mục tạm pytest trong repo để tránh đường dẫn Windows quá dài. Không thực hiện model inference, scoring chính thức hoặc huấn luyện.
+
+Lệnh tùy chọn để tái tính các phân tích V3 từ root repository:
+
+```powershell
+.\.venv\Scripts\python.exe -B -X utf8 papers/jaes_v2/jaes_manuscript/analyze_v3_scores.py
+```

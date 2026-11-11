@@ -22,6 +22,8 @@ Outputs & 2,576 selected-model scores per arm\\
 \end{tabular}
 \end{table}
 
+The medium cohort was chosen to permit matched CPU runs with balanced class support. It has 320 REAL and 320 FAKE sources. The full training partition contains 2,580 REAL and 22,800 FAKE recordings, so a comparison with that partition would change both training size and class mixture.
+
 \subsection{Paired uncertainty and efficiency}
 For each seed, differences are channel minus ERM. Percentile intervals use 10,000 paired speaker-cluster bootstrap draws with seed 91109. A and B are sampled separately. Within a sampled speaker, all sources and their views retain their paired model scores. This preserves source and speaker dependence and avoids treating transformed views as independent trials. Mean and range across the two blocks are descriptive. They do not estimate a population confidence interval over random initializations.
 

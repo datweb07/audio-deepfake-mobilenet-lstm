@@ -6,20 +6,20 @@ The review PDF shows the UEH acknowledgment. The JAES entry point also prints th
 
 | Entry point | Format | Build filename |
 | --- | --- | --- |
-| `main_review.tex` | A4, single-column article, 11 pt, 25 mm margins, 1.5 body spacing for annotation | `build/LAVA_JAES_Review_Draft_v2.pdf` |
-| `main.tex` | Authentic JAES 2026.08 class, two-column publication layout | `build/LAVA_JAES_Official_Layout_v2.pdf` |
+| `main_review.tex` | A4, single-column article, 11 pt, 25 mm margins, 1.5 body spacing for annotation | `build/LAVA_JAES_Review_Draft_v3.pdf` |
+| `main.tex` | Authentic JAES 2026.08 class, two-column publication layout | `build/LAVA_JAES_Official_Layout_v3.pdf` |
 
 ## Overleaf
 
-Upload the project sources with their folder paths intact. Include both entry points, both shared files, the class, bibliography styles, support files, references, `sections/`, `tables/`, and `figures/`. Choose **pdfLaTeX**, select **main_review.tex** as the main document, and use **Recompile from scratch**. Download the PDF as `LAVA_JAES_Review_Draft_v2.pdf`. Select **main.tex** to build the JAES layout independently. The two layouts use the same title and results.
+Upload the project sources with their folder paths intact. Include both entry points, both shared files, the class, bibliography styles, support files, references, `sections/`, `tables/`, and `figures/`. Choose **pdfLaTeX**, select **main_review.tex** as the main document, and use **Recompile from scratch**. Download the PDF as `LAVA_JAES_Review_Draft_v3.pdf`. Select **main.tex** to build the JAES layout independently. The two layouts use the same title and results.
 
 ## Local build
 
 Run from the manuscript directory with TeX Live and latexmk on PATH.
 
 ```powershell
-latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Review_Draft_v2 main_review.tex
-latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Official_Layout_v2 main.tex
+latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Review_Draft_v3 main_review.tex
+latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Official_Layout_v3 main.tex
 ```
 
 The supplied `jaes.cls` and `jaes.bst` retain their original bytes. The official class forces two columns when it builds the title and has no documented one-column option suitable for the review. Both entries use `jaes_compat.bst`, a compatibility copy of the original style that removes a duplicate `and` definition and replaces an undefined `bbl.presented` call. These two defects stopped BibTeX 0.99e. The original style remains in the folder for editorial comparison. If the journal supplies a corrected official style, use that style and rebuild. [Official JAES 2026.08 template](https://www.overleaf.com/latex/templates/journal-of-the-audio-engineering-society-jaes-template/rqsctzghzcwx)
@@ -29,3 +29,5 @@ Before submission, confirm the author list, affiliations, corresponding author, 
 The supplemental vector figures can be regenerated with `python -B generate_review_figures.py` from this directory using Matplotlib, NumPy and h5py and the original repository evidence. The prebuilt figures are sufficient for Overleaf compilation.
 
 From the repository root, regenerate the completed held-out analysis with `python -B -X utf8 papers/jaes_v2/jaes_manuscript/analyze_locked_heldout.py`. It checks the complete score grid and replays registered metrics before producing the analysis exports and manuscript figures/tables. It requires the already completed locked run and performs analysis only.
+
+For the V3 post-hoc diagnostics and exposure audit, run the manuscript file analyze_v3_scores.py with the existing scientific Python environment. This replays sealed scores and journals without inference.

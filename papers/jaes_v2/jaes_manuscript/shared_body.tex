@@ -8,7 +8,7 @@
 \input{sections/limitations}
 \input{sections/conclusion}
 \section*{Reproducibility}
-The experiment registry, per-source scores, checkpoint seals, and paired speaker-bootstrap outputs document the development comparisons. The figure-generation code checks source identities and recorded hashes before aggregating predictions. Section~\ref{sec:setup} describes the cohort and the scope of the evaluation.
+The experiment registry, per-source scores, checkpoint seals, and speaker-bootstrap outputs document the development and held-out comparisons. The accompanying analysis code checks the locked manifest and score identities, reproduces the registered metrics, and derives the post-hoc error transitions from the recorded predictions. Section~\ref{sec:setup} defines the evaluation populations.
 
 \section*{Acknowledgment}
 This research was supported by the University of Economics Ho Chi Minh City (UEH), Vietnam.
