@@ -1,5 +1,41 @@
 # Training readiness for the supervisor revision
 
+## 12 November 2026 — compact monitor and current launch decision
+
+**SEED_9307_BLOCKED_BY_PREFLIGHT.** Both official preflights stopped at `SYSTEM_COMMIT_PRESSURE` after release admission. The subsequent snapshot at 17:37 UTC+7 showed 1.95 GiB available commit (3 GiB minimum), 0.98 GiB available RAM (2 GiB minimum), 3.38 GiB free on C (3 GiB minimum) and 19.39 GiB free on D (15 GiB plus 128 MiB minimum). RAM would also block once commit clears if availability remains at that level. C passed this snapshot with limited headroom. Close unused applications after saving your work, then recheck resources and rerun the individual preflight. The prior PASS below describes an earlier snapshot.
+
+The independent read-only audit rechecked the registered configuration, launcher and release fingerprints, benchmark and pilot seals, actual audio hashes for the 640 train and 368 development sources, and deterministic first-epoch source ordering. Both 9307 output paths are absent. The previous numeric smoke was matched against the current config, source and order hashes, with distinct initial weights from 9107 and 9207. It recorded two finite stage losses per arm and zero optimizer updates. No smoke training was repeated here. All 55 before/after hashes matched and the four historical run seals verified. The protected manifest, registry and launcher hashes are recorded in [the evidence folder](../../outputs/jaes_v2/seed9307_monitor_readiness).
+
+### Two terminals, one training arm at a time
+
+Run from the repo root. Terminal A runs the frozen launcher. Only run a train command after that arm reports `MEDIUM_PREFLIGHT_PASS`. Complete and verify ERM before starting Channel. The resource query is available before either preflight.
+
+```powershell
+.\.venv\Scripts\python.exe -B -X utf8 -m scripts.jaes_v2.phase10_experiment resources
+```
+
+In Terminal B, open the read-only monitor for the same arm. Run the second line only after switching from ERM to Channel.
+
+```powershell
+.\.venv\Scripts\python.exe -B -X utf8 -m scripts.jaes_v2.medium_progress --experiment p10_medium_erm_s9307_v2
+.\.venv\Scripts\python.exe -B -X utf8 -m scripts.jaes_v2.medium_progress --experiment p10_medium_channel_s9307_v2
+```
+
+The terminal counter is completed optimizer updates. The epoch closes on the boundary status carrying validation and advances when an update from the next epoch is published. `monitor_elapsed` (shortened to `mon_elapsed` on narrow terminals) is monitor uptime. A `--once` snapshot shows N/A for that timer. `train_ETA` comes from the trainer and estimates remaining optimizer work. Validation, checkpointing and export are outside that estimate. Unavailable metrics are omitted. Active TTY output refreshes one line. Redirected stdout emits changed snapshots as ordinary lines. Use `--ascii` to force ASCII or `--once` for a single snapshot. A quiet status can mean validation, checkpoint writing or process exit. Check Terminal A to distinguish them. Ctrl+C in Terminal B stops that monitor.
+
+After an interrupted arm, check Terminal A has exited and the committed pointer is available, re-run that arm's preflight, then use the matching resume command below. These are the original launcher modes.
+
+```powershell
+.\.venv\Scripts\python.exe -B -X utf8 -m scripts.jaes_v2.phase10_medium resume --experiment p10_medium_erm_s9307_v2
+.\.venv\Scripts\python.exe -B -X utf8 -m scripts.jaes_v2.phase10_medium resume --experiment p10_medium_channel_s9307_v2
+```
+
+### After training
+
+Run the per-arm verify and pair comparison in the original command block below. For each verified arm, confirm `status.json` says `SCIENTIFIC_COMPLETE` at 840 updates and 21 completed epochs. In `result.json`, record `state.best.tag` and `selected_weights`. Check `scores.csv` has 2,576 unique source-condition rows, 368 original development sources and seven conditions. Inspect both A and B and preserve adverse attack or class results. Hand off `contract.json`, `status.json`, `latest.json`, `result.json`, `scores.csv`, `seal.json` and any `resume_events/` from each scientific folder, plus `medium_pair_s9307_v2.json`. Use the sealed 9107 and 9207 runs for the earlier seed blocks. Report each arm and Channel-minus-ERM within seed, then descriptive mean and sample standard deviation across the three seed blocks (`ddof=1`) for the registered development endpoints. Held-out remains the original four-model comparison.
+
+The test evidence records 26 tests and 13 subtests passing. The simulated demonstration is labeled separately from the completed 9207 example. The real example matches the recorded metrics and selected checkpoint. The Windows PowerShell commands were exercised directly. UTF-8, ASCII, redirected output, carriage-return rendering, resize and Ctrl+C behavior were also tested with fixtures. No IDE-specific UI session was opened.
+
 ## Seed 9307, registered medium pair
 
 Hypothesis. Under the same 640-recording cohort and registered view-policy intervention, a third independent initialization provides an additional observation of the sign and magnitude of the stress AUC gain, clean and stressed class risks, and A05/A06 deterioration. Report all three fitted seed contrasts and descriptive mean and sample SD with ddof=1. Limit comparison to development A/B under the frozen contract. Previously opened held-out results stay the original four-model comparison.
