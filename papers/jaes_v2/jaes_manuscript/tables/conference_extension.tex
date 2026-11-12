@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Scientific extension of the accepted conference study. Each column describes its own experimental population.}\label{tab:conference-extension}
+\begin{tabular}{@{}p{.20\linewidth}p{.35\linewidth}p{.36\linewidth}@{}}
+\toprule
+Dimension & Conference study & Journal extension \\
+\colrule
+Question and models & Offline benchmark of six available detector artifacts with different training histories & Controlled ERM and channel-view comparison on MobileNetV3Small--LSTM, two paired seeds \\
+Cohort and stress & 2,737 checksum-disjoint clean test recordings and 100 stress recordings under nine conditions & ASVspoof 2019 LA train and development, plus 1,088 locked held-out sources and paired noise/Opus order \\
+Inference and uncertainty & Paired clean correctness, Holm-adjusted McNemar tests and stratified bootstrap & Class-conditional risk, attack recovery and harm, speaker-cluster intervals within each seed \\
+Compute and scope & Historical desktop inference timing & Training logs and bounded CPU inference audit, with one architecture and within-release validation \\
+\botrule
+\end{tabular}
+\end{table*}

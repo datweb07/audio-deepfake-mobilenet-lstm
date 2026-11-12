@@ -14,20 +14,19 @@ Clean evaluation provides a useful reference point because a detector can rank b
 
 The training comparison addresses a complementary question. Exposure to individual channel views may help on some transformed evaluation views even when the specific compositions were absent from the training-view bank. The experiment measures this transfer within ASVspoof 2019 LA under matched training and checkpoint selection. It records whether the rank benefit and fixed-threshold behavior agree, and whether the observed differences survive inspection at the attack and speaker level. This scope places claims about ordered signal processing and model response on separate evidential footing from claims about deployment or forensic cue preservation.
 
-\subsection{Research questions}
-The conference study compared available artifacts under a common offline test and timing contract. Its clean comparison used 2,737 checksum-disjoint recordings with paired correctness tests and stratified bootstrap intervals. Its 100-recording stress diagnostic summarized individual noise, codec, and simulated replay conditions. The six artifacts had heterogeneous training histories, including a warm-up EfficientNet-B0 checkpoint and externally pretrained RawNet2 and AASIST references. The journal uses a separate ASVspoof design to examine the effect of training-view policy and to link errors across two ordered transformations of each source. The historical ranking remains specific to the conference cohort.
+\subsection{Research gap and questions}
+RawBoost and ADD-C establish practical approaches to channel robustness, and bona fide cross-testing shows that authentic speech support matters for reported errors \cite{rawboost,addc,kwok}. Three questions remain open for the matched intervention and channels examined here.
 
-The journal study asks three narrower questions. First, does changing only the training-view policy improve ranking under each registered stress condition for two matched initializations? Second, which class, speaker, and attack groups account for the difference between aggregate ranking and errors at the same operating point? Third, what can a same-source reversal of noise and conventional codec order show about sensitivity to a composed channel? The last question concerns the detector's response to specified operators. Evidence for an independent forensic cue would require another measurement.
+\begin{enumerate}
+\item \textbf{Ranking and operating risk (RQ1).} How does replacing clean training views with sampled channel views affect discrimination, false alarms and misses under clean and distorted evaluation? ROC-AUC compares ranks over possible operating points. Classwise errors describe decisions at a given threshold. The distinction is standard, and the open empirical question is when the two assessments agree under matched training. We address it with paired ROC-AUC and fixed-threshold contrasts, followed by a descriptive threshold sweep.
+\item \textbf{Unequal robustness (RQ2).} Which classes and attack IDs improve or deteriorate under the same intervention, and how consistent are the observed changes across seeds and conditions? Prior domain studies motivate separate class and subgroup analysis \cite{kwok,maltby}. The present source linkage distinguishes shared errors, recoveries and new errors. Speaker intervals characterize each fitted comparison. Two seed blocks and limited subgroup support constrain generalization.
+\item \textbf{Processing order (RQ3).} How does reversing additive noise and Opus coding on the same recording affect REAL and FAKE score distributions and decisions? Noncommutativity is an established property of signal-processing compositions. Same-source pairing holds speech content, class and nominal transform settings fixed and shares the noise realization, so changes can be attributed to the tested pipeline order within each recording. Achieved distortion can differ, and this design does not identify an independent forensic cue.
+\end{enumerate}
 
-\begin{samepage}
-\subsection{Main Contributions}
-The main contributions of this study are as follows.
-\begin{itemize}
-\item \textbf{Controlled evidence on training-view exposure.}
-Two paired MobileNetV3Small--LSTM seed blocks quantify the effect of substituting sampled channel views for clean inputs under a common training and selection rule. A locked 1,088-recording evaluation tests the fitted detectors on a speaker-disjoint subset of the same benchmark release (Sections~\ref{sec:methods} and~\ref{sec:setup}).
-\item \textbf{Class- and attack-specific robustness characterization.}
-Stressed ROC-AUC improves in both blocks on development and held-out data. Misses increase on A05 and A06 in development and on A17--A19 in the held-out subset. Under noise followed by Opus, the 9207 channel model flags fewer REAL recordings and misses more FAKE recordings than ERM. Paired decisions identify the sources behind these trade-offs, and speaker-cluster intervals describe uncertainty within each fitted comparison (Section~\ref{sec:results}).
-\item \textbf{Source-linked transformation-order diagnostics.}
-Noise-to-Opus and Opus-to-noise views of the same recording support directional score contrasts and classwise threshold transitions. Attack-level analysis and a single-seed matched-component nuisance diagnostic delimit what can be attributed to the tested processing chains (Section~\ref{sec:results}). The contrasts describe detector responses and leave the underlying forensic mechanism unresolved.
-\end{itemize}
-\end{samepage}
+\subsection{Main contributions}
+\begin{enumerate}
+\item \textbf{Controlled evaluation of channel augmentation.} Two paired MobileNetV3Small--LSTM blocks share architecture, within-seed initialization, source order, optimization and the registered clean-development checkpoint rule. We report ranking and classwise decisions on development and a locked within-release held-out subset.
+\item \textbf{Class-asymmetric and attack-specific robustness.} We characterize false alarms and misses, including A05/A06 on development and A17--A19 on held-out, with source-level recovery and deterioration and speaker-aware uncertainty. The threshold sweep and additional subgroup decompositions are retrospective.
+\item \textbf{Transformation-order sensitivity.} Paired Noise10--Opus24 and Opus24--Noise10 views identify score changes and classwise decision transitions on the same sources. Matched standalone components help delimit the observed response to these operators.
+\end{enumerate}
+\input{tables/conference_extension}
