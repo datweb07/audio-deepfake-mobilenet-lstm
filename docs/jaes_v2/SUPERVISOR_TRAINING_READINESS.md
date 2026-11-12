@@ -1,6 +1,10 @@
 # Training readiness for the supervisor revision
 
-## 12 November 2026 — compact monitor and current launch decision
+## 12 November 2026 — outcome update
+
+Both 9307 runs subsequently completed and passed the full seal, checkpoint and score audit. Do not rerun them. See the [three-seed replication review](THREE_SEED_REPLICATION_REVIEW.md). The section below is retained as the historical pre-training record.
+
+## 12 November 2026 — historical compact monitor and preflight snapshot
 
 **SEED_9307_BLOCKED_BY_PREFLIGHT.** Both official preflights stopped at `SYSTEM_COMMIT_PRESSURE` after release admission. The subsequent snapshot at 17:37 UTC+7 showed 1.95 GiB available commit (3 GiB minimum), 0.98 GiB available RAM (2 GiB minimum), 3.38 GiB free on C (3 GiB minimum) and 19.39 GiB free on D (15 GiB plus 128 MiB minimum). RAM would also block once commit clears if availability remains at that level. C passed this snapshot with limited headroom. Close unused applications after saving your work, then recheck resources and rerun the individual preflight. The prior PASS below describes an earlier snapshot.
 

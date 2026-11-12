@@ -31,7 +31,7 @@ For a frozen model, let \(p_0,p_N,p_C,p_{NC},p_{CN}\) denote scores from the cle
  h_i=\tfrac{1}{2}(p_{NC}+p_{CN})-p_N-p_C+p_0 .
  \label{eq:composition}
 \end{equation}
-This contrast is zero if the two component changes add on the score scale and the two orders have the same score. Departures may also arise from nonlinear features or the sigmoid score mapping. Consequently the contrast is a diagnostic of output nonadditivity, and no inference about which speech cue was preserved follows from its magnitude. The standalone matched components are available for 9107, whereas the registered score and decision order contrasts are available for both blocks.
+This contrast is zero if the two component changes add on the score scale and the two orders have the same score. Departures may also arise from nonlinear features or the sigmoid score mapping. Consequently the contrast is a diagnostic of output nonadditivity, and no inference about which speech cue was preserved follows from its magnitude. The standalone matched components are available for 9107 and 9207. The registered score and decision order contrasts are available for all three development blocks.
 
 \subsection{Decision costs and attack mixtures}
 Suppose a deployment has spoof prevalence \(\pi\) and costs \(c_0\) and \(c_1\) for a REAL false alarm and FAKE miss, respectively. For a fixed channel and threshold, a simple expected error cost is
