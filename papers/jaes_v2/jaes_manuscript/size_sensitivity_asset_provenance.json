@@ -1,0 +1,50 @@
+{
+  "scope": "TRAINING_SIZE_SENSITIVITY_9207",
+  "source": "outputs/jaes_v2/phase10/size1280_v1/size_sensitivity.json",
+  "source_sha256": "99a8d30175102f02cbd77630ec8f81c8d375a083ad31dbb47b16136d5bc5e11a",
+  "analysis": "scripts/jaes_v2/size1280_analysis.py",
+  "checkpoints": {
+    "erm640": {
+      "rank": [
+        0.1538900773261611,
+        0.1538900773261611,
+        13
+      ],
+      "tag": "u000520_e013_c000"
+    },
+    "erm1280": {
+      "rank": [
+        0.10380783128749627,
+        0.10380783128749627,
+        20
+      ],
+      "tag": "u001600_e020_c000"
+    },
+    "channel640": {
+      "rank": [
+        0.15701433917091911,
+        0.15701433917091911,
+        18
+      ],
+      "tag": "u000720_e018_c000"
+    },
+    "channel1280": {
+      "rank": [
+        0.12433075323059907,
+        0.12433075323059907,
+        16
+      ],
+      "tag": "u001280_e016_c000"
+    }
+  },
+  "run_seals": {
+    "erm640": "81d2fac533119d238b8da9b90ea942dc7c7af07c234e1eb225ae553ddd9312ea",
+    "erm1280": "98026e88483f9375ae5b48cd532259a9cbcfdd7029244fe1da6a6e853f9b7b67",
+    "channel640": "6ccba2db5e257485431bb0d5c36a8ccc8e35185559de5860d8ed5501897c1c8e",
+    "channel1280": "da450a8f35e74cde4cd64adbe5fcda9a84d6507836df6a87a53892a3aec5f27f"
+  },
+  "outputs": {
+    "tables/size_sensitivity_v7.tex": "4be589bb28a13488ac98284bbde711a7f174e1d389bb595ed9e5962b42c1dc93",
+    "figures/size_sensitivity_v7.pdf": "1a8f55baf2eacdd83f7f01a024525bc972077e15cf52a63cd79905713a58a91b"
+  }
+}

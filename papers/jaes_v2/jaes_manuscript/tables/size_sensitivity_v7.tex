@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Fixed-epoch training-size sensitivity for seed 9207 on the same development sources. Column headings give the training size. A has 112 sources per class and B has 144 REAL sources. Pooled stress counts use three views per source at threshold 0.5. Each attack row uses 18 sources.}\label{tab:size-sensitivity}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Development endpoint & ERM 640 & Channel 640 & ERM 1,280 & Channel 1,280 \\
+\colrule
+A clean ROC-AUC & 0.9851 & 0.9809 & 0.9900 & 0.9860 \\
+A macro stress ROC-AUC & 0.5946 & 0.7839 & 0.7062 & 0.8143 \\
+A clean REAL false alarms & 4/112 & 4/112 & 1/112 & 3/112 \\
+A clean FAKE misses & 9/112 & 9/112 & 3/112 & 8/112 \\
+A stress REAL false alarms & 167/336 & 70/336 & 5/336 & 161/336 \\
+A stress FAKE misses & 143/336 & 134/336 & 248/336 & 64/336 \\
+B clean REAL false alarms & 26/144 & 20/144 & 18/144 & 22/144 \\
+A05 stressed FAKE misses & 38/54 & 47/54 & 50/54 & 36/54 \\
+A06 stressed FAKE misses & 16/54 & 31/54 & 50/54 & 11/54 \\
+\botrule
+\end{tabular}
+\end{table*}

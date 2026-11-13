@@ -25,7 +25,7 @@ RawBoost and ADD-C establish practical approaches to channel robustness, and bon
 
 \subsection{Main contributions}
 \begin{enumerate}
-\item \textbf{Controlled evaluation of channel augmentation.} Three paired MobileNetV3Small--LSTM blocks share architecture, within-seed initialization, source order, optimization and the registered clean-development checkpoint rule. We report ranking and classwise decisions on development. The original two pairs also have a locked within-release held-out evaluation.
+\item \textbf{Controlled evaluation of channel augmentation.} Three paired MobileNetV3Small--LSTM blocks at 640 recordings share architecture, within-seed initialization, source order, optimization and the registered clean-development checkpoint rule. A nested 1,280-recording comparison measures sensitivity to the training protocol within seed 9207. The original two 640-recording pairs also have a locked within-release held-out evaluation.
 \item \textbf{Class-asymmetric and attack-specific robustness.} We characterize false alarms and misses, including A05/A06 on development and A17--A19 on held-out, with source-level recovery and deterioration and speaker-aware uncertainty. The threshold sweep and additional subgroup decompositions are retrospective.
 \item \textbf{Transformation-order sensitivity.} Paired Noise10--Opus24 and Opus24--Noise10 views identify score changes and classwise decision transitions on the same sources. Matched standalone components help delimit the observed response to these operators.
 \end{enumerate}

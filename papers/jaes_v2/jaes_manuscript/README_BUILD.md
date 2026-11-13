@@ -1,25 +1,25 @@
 # Build the lecturer and JAES drafts
 
-Both entry points read `shared_metadata.tex` and `shared_body.tex`, including the same sections, figures, tables, disclosures and bibliography.
+Both entry points read `shared_metadata.tex` and `shared_body.tex`, including the same sections, figures, tables, acknowledgement and bibliography.
 
-The review PDF shows the UEH acknowledgment. The JAES entry point also prints the AI-assistance statement. Before submission, confirm the scope of UEH support for the journal work and complete the tool model and version in the statement where available.
+The single-column review PDF omits author metadata and includes the restored UEH acknowledgement. The JAES entry point prints the AI-assistance statement. Before submission, confirm the scope of UEH support for the journal work and complete the tool model and version in the statement where available.
 
 | Entry point | Format | Build filename |
 | --- | --- | --- |
-| `main_review.tex` | A4, single-column article, 11 pt, 25 mm margins, 1.5 body spacing for annotation | `build/LAVA_JAES_Review_Draft_v6.pdf` |
-| `main.tex` | Authentic JAES 2026.08 class, two-column publication layout | `build/LAVA_JAES_Official_Layout_v6.pdf` |
+| `main_review.tex` | A4, single-column article, 11 pt, 25 mm margins, 1.5 body spacing for annotation | `build/LAVA_JAES_Review_Draft_v7.pdf` |
+| `main.tex` | Authentic JAES 2026.08 class, two-column publication layout | `build/LAVA_JAES_Official_Layout_v7.pdf` |
 
 ## Overleaf
 
-Upload the project sources with their folder paths intact. Include both entry points, both shared files, the class, bibliography styles, support files, references, `sections/`, `tables/`, and `figures/`. Choose **pdfLaTeX**, select **main_review.tex** as the main document, and use **Recompile from scratch**. Download the PDF as `LAVA_JAES_Review_Draft_v6.pdf`. Select **main.tex** to build the JAES layout independently. The two layouts use the same title and results.
+Upload `build/JAES_V7_Overleaf_Source.zip` as a new review project to avoid stale files. Select `main_review.tex`, choose pdfLaTeX and recompile from scratch. The review ZIP contains the review entry point. Use the complete local manuscript folder and select `main.tex` for the JAES layout.
 
 ## Local build
 
 Run from the manuscript directory with TeX Live and latexmk on PATH.
 
 ```powershell
-latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Review_Draft_v6 main_review.tex
-latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Official_Layout_v6 main.tex
+latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Review_Draft_v7 main_review.tex
+latexmk -pdf -halt-on-error -interaction=nonstopmode -outdir=build -jobname=LAVA_JAES_Official_Layout_v7 main.tex
 ```
 
 The supplied `jaes.cls` and `jaes.bst` retain their original bytes. The official class forces two columns when it builds the title and has no documented one-column option suitable for the review. Both entries use `jaes_compat.bst`, a compatibility copy of the original style that removes a duplicate `and` definition and replaces an undefined `bbl.presented` call. These two defects stopped BibTeX 0.99e. The original style remains in the folder for editorial comparison. If the journal supplies a corrected official style, use that style and rebuild. [Official JAES 2026.08 template](https://www.overleaf.com/latex/templates/journal-of-the-audio-engineering-society-jaes-template/rqsctzghzcwx)
@@ -52,3 +52,7 @@ The V5 analysis reads the sealed six-model development results and original four
 ```
 
 See the [replication review](../../../docs/jaes_v2/THREE_SEED_REPLICATION_REVIEW.md) and [V5 verification](../../../outputs/jaes_v2/three_seed_revision/verification_and_statistics.json). V4 threshold and standalone analyses remain separate.
+
+## V7 training-size supplement
+
+Use the existing sealed scores to replay the four-model size comparison with `python -B -X utf8 -m scripts.jaes_v2.phase10_size1280 compare` from the repository root. Generate the V7 figure and table with `python -B -X utf8 papers/jaes_v2/jaes_manuscript/generate_v7_size_assets.py`. The prebuilt assets are included for Overleaf. See [the supplementary analysis](../../../docs/jaes_v2/TRAINING_SIZE_SENSITIVITY_V7_SUPPLEMENT.md).
