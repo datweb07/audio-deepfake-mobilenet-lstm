@@ -17,7 +17,7 @@ This tracker covers the 12 requirements received on 11 November 2026. Scientific
 | R11 | V3 bibliography and peer-reviewed nearest comparisons | Gap, added comparison context, updated audit and separate category/year-specific ranking review | COMPLETED_WITH_LIMITATIONS | Current institutional JCR/Scopus criterion needs confirmation |
 | R12 | V3 figures and tables and V4 derived supplement | Preserved V4 and updated three plots and three tables from the sealed V5 aggregate | COMPLETED | Author metadata and final journal-format QA remain submission tasks |
 
-The PDF is for supervisor review. The size experiment and external evaluation have no result rows in the manuscript. [Training readiness](SUPERVISOR_TRAINING_READINESS.md) · [Extension matrix](SUPERVISOR_CONFERENCE_EXTENSION_MATRIX.md) · [External and venue audit](SUPERVISOR_EXTERNAL_AND_VENUE_AUDIT.md)
+V6 corrects the rendered guard paragraph. The V5 PDF remains archived. The current PDF is for supervisor review. The size experiment and external evaluation have no result rows in the manuscript. [Training readiness](SUPERVISOR_TRAINING_READINESS.md) · [Extension matrix](SUPERVISOR_CONFERENCE_EXTENSION_MATRIX.md) · [External and venue audit](SUPERVISOR_EXTERNAL_AND_VENUE_AUDIT.md)
 
 ## V5 supplement
 
@@ -35,7 +35,6 @@ See [verification and statistics](../../outputs/jaes_v2/three_seed_revision/veri
 | operating_points_v4.pdf, score_provenance.json, verification.json | Supplemental figure, registered score replay provenance, and revision integrity and build checks. |
 | size_candidate.json, candidate_train1280.csv | Candidate cohort hash, exact quotas, byte audit and overlap. Keep the manifest internal if distributing derived evidence publicly because it contains absolute local paths. |
 | df_metadata_audit.json | Official DF key/map join and 2019 overlap, with metadata license and package hashes. |
-| seed9307_smoke.json, preflight_erm.txt, preflight_channel.txt, resources.json | Isolated numeric and resource admission evidence. No trained 9307 checkpoint exists. |
+| seed9307_smoke.json, preflight_erm.txt, preflight_channel.txt, resources.json | Isolated numeric and resource admission evidence. These files predate the two subsequently verified 9307 training runs. |
 
 For the supplement, use the score-analysis and training-audit scripts shipped with the manuscript source. Raw audio, selected checkpoints and author-approval records stay in the internal workspace. The audit confirms the shared noise policy, seed, RMS and absolute power on all 368 development sources. Held-out uses the same source-keyed implementation under its original lock and was not rerun. The new CPU benchmark times decode/resampling/P0 and forward on clean inputs. Common headroom and channel processing are outside that timing path.
-

@@ -10,9 +10,11 @@ import time
 from pathlib import Path
 
 RUN_ID = re.compile(r'p10_medium_(erm|channel)_s(9107|9207|9307)_v2')
+SIZE_ID = re.compile(r'p10_size1280_(erm|channel)_s(9207)_v1')
 CHECKPOINT = re.compile(r'u(\d+)_e\d+_c\d+')
 BASE = Path('outputs/jaes_v2/phase10')
 REGISTRY = Path('configs/jaes_v2/phase10/prospective_medium_v1.json')
+SIZE_REGISTRY = Path('configs/jaes_v2/phase10/size1280_v1.json')
 ACTIVE = {'RUNNING', 'WARNING'}
 TERMINAL = {'PAUSE_AT_CHECKPOINT', 'STOP_FOR_RESOURCE_SAFETY',
             'STOP_FOR_NUMERICAL_FAILURE', 'SCIENTIFIC_NO_GO', 'SCIENTIFIC_COMPLETE'}
@@ -258,12 +260,20 @@ def main():
     parser.add_argument('--once', action='store_true')
     parser.add_argument('--ascii', action='store_true', help='Use ASCII progress blocks')
     args = parser.parse_args()
-    match = RUN_ID.fullmatch(args.experiment)
-    registry = read_json(REGISTRY)
-    if not match or not registry or args.experiment not in {r['experiment_id'] for r in registry['paired_runs']}:
-        parser.error('Run from the repository root with a registered medium experiment ID')
-    path = BASE / args.experiment / 'scientific'
-    template = read_json(Path(registry['template']))
+    match = SIZE_ID.fullmatch(args.experiment)
+    if match:
+        registry = read_json(SIZE_REGISTRY)
+        if not registry or mapping(registry.get('experiments')).get(match[1]) != args.experiment:
+            parser.error('Unregistered size1280 experiment')
+        path = BASE / 'size1280_v1' / args.experiment / 'scientific'
+        template = registry
+    else:
+        match = RUN_ID.fullmatch(args.experiment)
+        registry = read_json(REGISTRY)
+        if not match or not registry or args.experiment not in {r['experiment_id'] for r in registry['paired_runs']}:
+            parser.error('Run from the repository root with a registered experiment ID')
+        path = BASE / args.experiment / 'scientific'
+        template = read_json(Path(registry['template']))
     contract = read_json(path/'contract.json')
     config = mapping(contract.get('config')) if contract else template
     total = registry['maximum_updates']

@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "profile": "phase10_size1280_v1",
+  "hypothesis": "Assess whether the direction and magnitude of the within-size channel-minus-ERM contrast persist at 1280; null and adverse findings are valid.",
+  "estimand": "(Channel1280 - ERM1280) - (Channel640 - ERM640) on matched development sources, fixed epochs, seed 9207; additional updates and compute are part of the contrast.",
+  "seed": 9207,
+  "experiments": {
+    "erm": "p10_size1280_erm_s9207_v1",
+    "channel": "p10_size1280_channel_s9207_v1"
+  },
+  "backend": "FULL_SHAPE_RECOMPUTE",
+  "architecture": "MobileNetV3Small-LSTM128",
+  "initialization": "imagenet_fresh_head",
+  "initial_weights": "7fd49f6d1f579bfd13e98185793a045cb50fabc3984fbc2ea796461c7b996282",
+  "imagenet_cache_sha256": "002803a73df2ab65425267ee2082d1ec213b6aa9716f19ac1a1ed5361239c5f6",
+  "optimizer": "Adam",
+  "sampling": "natural",
+  "batch_size": 16,
+  "microbatch_size": 1,
+  "gradient_accumulation": 16,
+  "warmup_epochs": 1,
+  "finetune_epochs": 20,
+  "updates_per_epoch": 80,
+  "maximum_updates": 1680,
+  "checkpoint_every_updates": 10,
+  "learning_rate": 0.001,
+  "finetune_learning_rate": 0.0001,
+  "scheduler": "linear_half_per_stage",
+  "train_manifest": "outputs/jaes_v2/supervisor_major_revision/candidate_train1280.csv",
+  "development_manifest": "outputs/jaes_v2/phase7/selections/medium_all_attack_v1/manifest.csv",
+  "train_manifest_sha256": "1fe860164a513eaa17cd42c59af6f08f8d8e3af09317c9baded327789b7109c9",
+  "evaluation_protocol_sha256": "84fce576efff092269a0a6ad247d2e9f2f7b4d4e25a4545efb2518da92708036",
+  "augmentations": {
+    "erm": [
+      "clean"
+    ],
+    "channel": [
+      "clean",
+      "gain_half",
+      "noise10",
+      "opus24"
+    ]
+  },
+  "augmentation_seed": 5804,
+  "checkpoint_policy": "CLEAN_BCE",
+  "score_orientation": "P(FAKE), REAL=0, FAKE=1",
+  "threshold": 0.5,
+  "validation": {
+    "tier_a": "each epoch, A clean",
+    "tier_b": "every third epoch and final update, A clean + stress and B clean",
+    "tier_c": "selected checkpoint, seven conditions for A and B"
+  },
+  "calibration_enabled": false,
+  "official_evaluation_enabled": false,
+  "primary_metrics": [
+    "A clean ROC-AUC",
+    "A macro stress ROC-AUC",
+    "A stress FAKE miss",
+    "A stress REAL false alarm",
+    "B clean REAL false alarm"
+  ],
+  "secondary_metrics": [
+    "A05 stress FAKE miss",
+    "A06 stress FAKE miss",
+    "A and B order contrasts by class",
+    "per-condition metrics",
+    "selected checkpoint and resource costs"
+  ],
+  "bootstrap": {
+    "seed": 91109,
+    "draws": 10000,
+    "unit": "speaker, sampled within development stratum, shared across all four models",
+    "interval": "pointwise percentile 95%"
+  },
+  "qualification": {
+    "split_step": 80,
+    "maximum_updates": 82,
+    "arm": "channel",
+    "validation_parity": {
+      "max_score": 3e-05,
+      "max_rank_metric": 0.005,
+      "near_margin": 0.001
+    }
+  },
+  "resource_plan": {
+    "checkpoint_mib": 14,
+    "pair_extra_mib": 256,
+    "qualification_extra_mib": 64
+  },
+  "files": {
+    "configs/jaes_v2/phase10/prospective_medium_v1.json": "c43a8de97462a77f393d58f17484de6321d7021cd765dd32debf998642631925",
+    "configs/jaes_v2/phase8/p8_medium_channel_partial_s6107_v1.json": "1fd71bb3673b5bcd114260dac7ef3d62141be77d6a1d7d85bbf2bf8cb1503b60",
+    "outputs/jaes_v2/phase8/protocol/baselines_v1.json": "538af36cdb644ba8e7dc5f770ecb3fc02763b789c04b27556863da5df7f4ffcc",
+    "outputs/jaes_v2/phase7/selections/medium_all_attack_v1/manifest.csv": "029ca108fe05f14971c5dba02468fe555699ab41871f94d443184a63c44df319",
+    "outputs/jaes_v2/phase7/selections/medium_all_attack_v1/selection_rows.csv": "52b65bc3cac4cd5b415a353dd400969058cb2774223c80c0f26476d05794d9bb",
+    "outputs/jaes_v2/supervisor_major_revision/candidate_train1280.csv": "1fe860164a513eaa17cd42c59af6f08f8d8e3af09317c9baded327789b7109c9",
+    "outputs/jaes_v2/datasets/asv2019_foundation_v1/train_manifest.csv": "7d24153c35c3867b02a5f99ee60b8ba6c0a67bfbb910e69f6e68611f28796e72",
+    "outputs/jaes_v2/datasets/asv2019_foundation_v1/development_manifest.csv": "dcbcf4dd3583c24590246323f2e8fd943fcc4607030698069c9a0aa11b25a55a",
+    "outputs/jaes_v2/datasets/asv2019_foundation_v1/calibration_manifest.csv": "4fb256823a83d313e2ddab938c4271aa2e72bc28f8cb6f1cb0e6e3b35f25ca74",
+    "outputs/jaes_v2/phase10/empirical_execution_v1/heldout_proposed_9107_9207_v1.json": "f422a0a20580bdca4c4a99c6aea58add2958edf3e7efabb50f57c274496f23a8",
+    "scripts/jaes_v2/phase10_medium.py": "99aa9e6f53d7e7d298404c487f3464742e3ac395b23165b07f5ab9c73b5576de",
+    "scripts/jaes_v2/phase6_experiment.py": "323e227a779bfd482bb99e47ba2f16763d16f26e5eb8b5f5800bf50be7b3fbdc",
+    "scripts/jaes_v2/heldout_protocol_audit.py": "ea4c425892da335ef8accf7097430eb02cc26adf64153338b95c39ec88c2ac29",
+    "src/lava/jaes_v2/datasets.py": "3baba910c6e8c1c0ae64c45bdf84126defdaf6eba76175161b4f1be69594d2b1",
+    "src/lava/jaes_v2/provenance.py": "aa37e94337effd8a58639020731986eb8450e559b8415a12ac9488946f9bdd8f",
+    "scripts/jaes_v2/final_score_diagnostic.py": "8280e7fca511fa3f557de605d0a2637c9012de89c5e98f1e8f4660b7284a5ebf",
+    "outputs/jaes_v2/phase10/p10_medium_erm_s9207_v2/scientific/seal.json": "81d2fac533119d238b8da9b90ea942dc7c7af07c234e1eb225ae553ddd9312ea",
+    "outputs/jaes_v2/phase10/p10_medium_channel_s9207_v2/scientific/seal.json": "6ccba2db5e257485431bb0d5c36a8ccc8e35185559de5860d8ed5501897c1c8e"
+  },
+  "source": {
+    "src/lava/jaes_v2/phase8_training.py": "de7ad8eea1c354bbfc91aeea3753fa07235eea25284572eaf690c902504f8bb6",
+    "src/lava/jaes_v2/phase8_objectives.py": "7cbb1dd37f76488d4ce822b72413a397b091361e715f9cecdde44586a87e6685",
+    "src/lava/jaes_v2/phase7_data.py": "a54d02b9dbc43ff389f53eba0ae7177b1bd019c692c37b75398f69e4b15a1769",
+    "src/lava/jaes_v2/c2_data.py": "efb33afa834004cefcc8a1813dbad4b5aa0b12d42bea62b49d53914f720e03f1",
+    "src/lava/jaes_v2/preprocessing.py": "182ba23c6090e86dfb3ce9e4bd81d14dd450423641cc095ee16806192d1cd8ff",
+    "src/lava/jaes_v2/transforms.py": "b7661c247e68b578d2107319c68810ea105f1853452fe5bcbb08b459a3a0c7a3",
+    "src/lava/jaes_v2/controls.py": "a9fc09d358456d765453335cf5e87868a0ec9ad7eb7f50c7e0e22226fa1cc8b3",
+    "src/lava/jaes_v2/rawboost.py": "cf26a87cb94d494989929adc48bfdd210cf0306bdcdba4b3750e56b26e8a099f",
+    "src/lava/jaes_v2/vendor/rawboost/RawBoost.py": "6180282ec0289f26b505cdc5af1c174015bb6679f60615f3ec4e9ad867bdbdc7",
+    "src/preprocessing.py": "a33cd9539f9cf182981b135f1e87fb296d3a7a0d015a3c3b810d87d39e44218d",
+    "src/model.py": "aa80410efcb6b60ea0218ab121a18b1cd1df79be5fbd1e4329e95abaf25cf72b",
+    "config.py": "b9c04ae63e3daf7887f7830d80945e7a7caf9e78654794ca12d467da3e8d4b0d",
+    "ffmpeg_binary": "74db6c184a03dba2bdfe23e1a1f41cf5a8385bc1de6a7a1b26db1dc541abef93",
+    "src/lava/jaes_v2/phase10_training.py": "d30624463f1a784b3f6f326afcebe54b12cd6f776d9b2818275915a4ed43db56",
+    "src/lava/jaes_v2/phase10_validation.py": "f5a74309b74d788c85404aea1f6a24fb31669d6c10ad6b1c12ba8336a13c7e20",
+    "src/lava/jaes_v2/phase10_resources.py": "68a34a308e32e425a75351a27846662d6b9ad51c2731806c547697a89faac8c7",
+    "src/lava/jaes_v2/phase9_protocol.py": "bd77f1cef27864ec05cdf8f18b2074b376d651744d804dbb5b44c76a3e685e0d",
+    "src/lava/jaes_v2/phase7_training.py": "25df5b03a0c1d254e545c25cd68f21e12b76e0912f5eb1085ff26ed72fb00fd3",
+    "src/lava/jaes_v2/evidence.py": "3ef5a469bd80dc8b54c342e506c64d29e10d6275682f1f67e395e58bd453f120",
+    "scripts/jaes_v2/phase10_experiment.py": "64a2f03bdd96a9d206714440b82126365df6715242438c069d70d1cae754877f",
+    "scripts/jaes_v2/phase10_numeric.py": "4f8017a59d96ccc327e235b216f88a8d9f67d177c00bd44d5a206f843769d0e1",
+    "configs/jaes_v2/phase10/qualification_v2.json": "16f860ffdc30d7b203acea7caaccd001b93ee3d3034c76298c0f31a8d857736e"
+  }
+}

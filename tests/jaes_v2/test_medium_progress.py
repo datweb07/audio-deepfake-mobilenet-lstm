@@ -161,3 +161,17 @@ def test_completion_waits_for_seal(tmp_path):
     monitor.monitor(tmp_path,CONFIG,840,monitor.Terminal(log,live=False),once=True)
     assert '100.0%' in log.getvalue() and 'Training completed.' in log.getvalue()
     assert 'Best checkpoint: u000720_e018_c000' in log.getvalue()
+
+
+def test_size1280_monitor_uses_registered_budget(tmp_path, monkeypatch, capsys):
+    experiment = 'p10_size1280_erm_s9207_v1'
+    path = tmp_path / 'size1280_v1' / experiment / 'scientific'
+    write(path / 'status.json', state(80, 1, 0, validation=validation(80, 1)))
+    monkeypatch.setattr(monitor, 'BASE', tmp_path)
+    monkeypatch.setattr(monitor.sys, 'argv', ['monitor', '--experiment', experiment, '--once'])
+    before = (path / 'status.json').read_bytes()
+    monitor.main()
+    log = capsys.readouterr().out
+    assert 'Epoch 1/21' in log and '80/1680' in log
+    assert 'Validation (epoch 1)' in log
+    assert (path / 'status.json').read_bytes() == before
