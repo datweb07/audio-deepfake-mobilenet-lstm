@@ -1,0 +1,3 @@
+# FIX03 locator supplement to the four-point response
+
+The [FIX02 response](RESPONSE_TO_SUPERVISOR_FINAL_4_POINTS.md) records the original four corrections. FIX03 preserves them: (1) §6.2 and Table 7 retain both selected-pair guard failures, with the separate seed-9307 result. (2) §§6.1–6.2 and Tables 8–9 distinguish the held-out REAL increases and decreases. (3) §§6.3–6.4 and Figure 12 retain the attack, post-hoc and order scope. (4) §1, Table 1, Discussion, Conclusion and Acknowledgement retain the agreed framing and UEH wording. FIX03 adds R08 under the earlier conditional external-validity request. Its methods and results are in §§5.8 and 6.5.1 and Table 12.

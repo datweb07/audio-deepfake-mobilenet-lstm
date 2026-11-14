@@ -130,7 +130,12 @@ The score contrasts shown in Fig.~\ref{fig:heldout-order} were also directional,
 
 The direction of the development stress ranking gain and FAKE miss reduction is consistent across all three pairs. The magnitude of the gain, as well as the direction of false-alarm results, varies according to the selected pair. Common development data allow for a comparison of initializations using the protocol described above, in which case speaker uncertainty is computed in each pair separately.
 
-The fixed epoch size experiment includes a development-only comparison for seed 9207. The three initializations correspond to 640 recordings. The held-out evaluation evaluates the original 640 recording model corresponding to seeds 9107 and 9207 using additional ASVspoof 2019 LA speakers. Cross-corpus robustness remains untested.
+The fixed epoch size experiment includes a development-only comparison for seed 9207. The three initializations correspond to 640 recordings. The held-out evaluation evaluates the original 640 recording model corresponding to seeds 9107 and 9207 using additional ASVspoof 2019 LA speakers. The native-view external diagnostic is reported below.
+
+\subsubsection{Cross-Dataset Diagnostic on In-the-Wild}\label{sec:r08-results}
+\input{tables/r08_external}
+
+In Table~\ref{tab:r08-external}, Channel increased ROC-AUC relative to ERM by 0.1936, 0.0994 and 0.0892 at seeds 9107, 9207 and 9307, respectively. All six ROC-AUC values were below 0.5. REAL false alarms fell in each pair, but the absolute false-alarm rates ranged from 78.12\% to 92.97\%. FAKE misses fell in two pairs and rose from 66/256 to 67/256 at seed 9207. The external ranking was substantially weaker than on clean development or clean locked within-release audio. These comparisons describe different recording populations. The native external views provide no matched ASVspoof attack-family or noise/Opus-order contrast.
 
 \begin{figure*}[t]
 \centering

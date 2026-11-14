@@ -12,6 +12,14 @@
 
 The experiment registries, per-source scores, checkpoint seals, and speaker-bootstrap outputs document eight development fits and the original four-model locked evaluation. The supplement identifies the four selected seed-9207 checkpoints used for the size contrast and provides the registered endpoints, pointwise speaker intervals, order transitions and execution costs. The analysis code reproduces the size contrast from the sealed development scores. It also records the three-seed 640 analysis and the retrospective threshold and standalone component diagnostics. Section~\ref{sec:setup} defines the evaluation populations.
 
+The locked protocol \texttt{r08\_external\_v1} records the release, the selection seed and the hashes of the 512 recordings and six selected checkpoints. The selected-row SHA-256 is \texttt{51cd5643}\allowbreak \texttt{dbf6df7c}\allowbreak \texttt{6f6cfe2d}\allowbreak \texttt{3dfa8e8a}\allowbreak \texttt{d0371fa0}\allowbreak \texttt{d5d6d900}\allowbreak \texttt{687adeb5}\allowbreak \texttt{38ed3e38}. The registered run records P0, the 0.5 decision threshold, source-level scores and a verified seal for 3,072 predictions and two aggregate files. The metadata do not resolve original parent-source relationships.
+
+\section*{Data Availability}
+ASVspoof 2019 LA is third-party data distributed by the \href{https://doi.org/10.7488/ds/2555}{University of Edinburgh}. The pinned In-the-Wild release is distributed through the \href{https://huggingface.co/datasets/mueller91/In-The-Wild/tree/eee168f92c367f8c82ff2cf42b6f61e362fd6211}{dataset repository} \cite{wild}. Distributor terms permit local evaluation and reporting of aggregate results. The project retains raw external WAV files locally. Author-generated manifests and predictions are archived with the run, and their sharing is subject to the applicable dataset conditions.
+
+\section*{Code Availability}
+The project source and reproducibility scripts are available in the \href{https://github.com/datweb07/audio-deepfake-mobilenet-lstm}{project repository}. Reproduction also requires separately acquired source audio, the registered manifests, the selected checkpoints and the specified runtime. These run artifacts are retained locally.
+
 \section*{Acknowledgement}
 
 This research was supported by the University of Economics Ho Chi Minh City (UEH), Vietnam.

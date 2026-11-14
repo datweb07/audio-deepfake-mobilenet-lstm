@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Native-view In-the-Wild diagnostic. Each of the six frozen models scores the same 256 REAL and 256 FAKE recordings. Classwise errors use threshold 0.5. EER is reported as a proportion.}\label{tab:r08-external}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Seed & Method & ROC-AUC & EER & REAL false alarms & FAKE misses \\
+\colrule
+9107 & ERM & 0.3061 & 0.6523 & 234/256 (91.41\%) & 94/256 (36.72\%) \\
+9107 & Channel & 0.4997 & 0.5098 & 200/256 (78.12\%) & 73/256 (28.52\%) \\
+9207 & ERM & 0.3370 & 0.6289 & 238/256 (92.97\%) & 66/256 (25.78\%) \\
+9207 & Channel & 0.4364 & 0.5566 & 221/256 (86.33\%) & 67/256 (26.17\%) \\
+9307 & ERM & 0.3742 & 0.5996 & 230/256 (89.84\%) & 84/256 (32.81\%) \\
+9307 & Channel & 0.4635 & 0.5234 & 223/256 (87.11\%) & 63/256 (24.61\%) \\
+\botrule
+\end{tabular}
+\end{table*}
