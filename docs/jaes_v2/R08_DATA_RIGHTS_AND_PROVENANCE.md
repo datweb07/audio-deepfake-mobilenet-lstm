@@ -1,0 +1,5 @@
+# Quyền sử dụng và provenance của In-the-Wild
+
+**DATA_USE_TERMS_SUFFICIENT_FOR_BOUNDED_RESEARCH_EVALUATION.** Nicolas Müller, chủ sở hữu repo, xác nhận trong bình luận đã chỉnh sửa ngày 13/11/2026 rằng CC BY-SA 4.0 áp dụng cho cả WAV và metadata của bản ghim `eee168f92c367f8c82ff2cf42b6f61e362fd6211`. Bình luận hiện hành cho phép tải để đánh giá cục bộ và công bố chỉ số tổng hợp. Giữ WAV ngoài gói bàn giao và trích dẫn bài Interspeech 2022. Email thông báo trước phản ánh phiên bản cũ của bình luận. Đã đối chiếu phiên bản hiện hành qua API của Hugging Face. [Bình luận của chủ sở hữu](https://huggingface.co/datasets/mueller91/In-The-Wild/discussions/1#6af70ed86641b0d793baf337) · [Bài gốc](https://www.isca-archive.org/interspeech_2022/muller22_interspeech.pdf)
+
+Chủ sở hữu xác nhận không có ánh xạ clip tới video gốc hoặc timestamp. Metadata đã kiểm có 54 nhãn speaker. Con số 58 trong bài mô tả số nhân vật. Triển khai hiện tại giới hạn kết luận ở cross-dataset diagnostic và tắt khoảng tin cậy dùng cho công bố vì chưa xác minh được phụ thuộc giữa các clip cùng nguồn.
