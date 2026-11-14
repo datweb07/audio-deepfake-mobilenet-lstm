@@ -1,48 +1,61 @@
 \section{Problem Formulation}\label{sec:background}
-Let \(x_i\) be source recording \(i\), \(g_i\) its speaker, and \(y_i\in\{0,1\}\) its label, with 0 denoting REAL and 1 denoting FAKE. Let \(p_\theta(Tx_i)\in[0,1]\) be the detector score after transformation \(T\). The decision \(\widehat{y}_{i,T}=\mathbf{1}\{p_\theta(Tx_i)\geq0.5\}\) fixes the operating point. The class-conditional risks in a fixed cohort and condition are
+
+Suppose \(x_i\) is recording i from the source domain, \(g_i\) its speaker, and \(y_i\) \ensuremath{\in}\{0, 1\} its class, where 0 corresponds to REAL and 1 to FAKE. Then, let \(p_\theta(Tx_i)\) \ensuremath{\in}[0, 1] be the transformed score by the detector. Thus, the decision rule \(\widehat{y}_{i,T}=\mathbf{1}\{p_\theta(Tx_i)\geq 0.5\}\) determines the operating point. The class-conditional risks for a fixed cohort and condition are
+
 \begin{equation}
  R_0(T)=\frac{\sum_{i:y_i=0}\widehat{y}_{i,T}}{n_0},
  \qquad
  R_1(T)=\frac{\sum_{i:y_i=1}(1-\widehat{y}_{i,T})}{n_1}.
 \end{equation}
-They correspond to false alarms and spoof misses. For a set of stress conditions, an error count adds the numerator across conditions and uses \(n_y\) times the number of conditions as the denominator. It describes risks across repeated views.
 
-Receiver operating characteristic area under the curve (ROC-AUC) compares the ordering of FAKE and REAL scores, crediting half for ties. A monotonic score transformation can preserve ordering and change the number of scores crossing 0.5. Equal error rate (EER) is summarized at the empirical ROC point closest to equality between false-alarm and miss rates, using their mean at that point. Both metrics require support from both classes. The stress macro ROC-AUC is the equally weighted mean of ROC-AUC computed separately for the three registered stress conditions.
+REAL false alarms and FAKE misses correspond to false positives and false negatives, respectively. The formula for computing error rates for a series of stress conditions is to sum up the numerators across all stress conditions while dividing by \(n_y\) multiplied by the number of conditions.
 
-Let \(N_i(x)=x+\nu_i\) denote insertion of the registered fixed-absolute noise for source \(i\), and let \(C\) denote encoding and decoding with Opus. Define \(T_{NC}=C\circ N_i\) and \(T_{CN}=N_i\circ C\). Because \(C\) uses content-dependent analysis and lossy coding, in general \(C(x+\nu_i)\ne C(x)+\nu_i\). In one case the codec processes the added noise, while in the other it does not. The contrast
+The area under ROC curve (ROC-AUC) calculates the rank order of FAKE and REAL with partial credit for ties. A monotonic score transformation can preserve ordering and change the number of scores crossing 0.5. Equal error rate (EER) is summarized at the empirical ROC point closest to equality between false-alarm and miss rates, using their mean at that point. Both metrics require support from both classes. The stress macro ROC-AUC is the equally weighted mean of ROC-AUC computed separately for the three registered stress conditions.
+
+Let \(N_i(x)=x+\nu_i\) denote insertion of the registered fixed-absolute noise for source i, and let C denote encoding and decoding with Opus. Define \(T_{NC}=C\circ N_i\) and \(T_{CN}=N_i\circ C\). Because C uses content-dependent analysis and lossy coding, in general \(C(x+\nu_i)\ne C(x)+\nu_i\). In one case the codec processes the added noise, while in the other it does not. The contrast
+
 \begin{equation}
  d_i=p_\theta(T_{NC}x_i)-p_\theta(T_{CN}x_i)
 \end{equation}
+
 measures a directional score response. A decision transition records which order alone causes an error, if either does. The contrast can reflect altered input features, score placement or cues used by the detector. An independent cue measure would be needed to interpret it as forensic-evidence retention.
 
 \subsection{Ranking and conditional risk estimate different quantities}
+
 For scores \(S_1\) and \(S_0\) drawn from the FAKE and REAL groups of a condition, the population form of the ranking estimand is
+
 \begin{equation}
  \operatorname{AUC}(T)=\Pr(S_1>S_0)+\tfrac{1}{2}\Pr(S_1=S_0).
  \label{eq:auc}
 \end{equation}
-The finite-sample estimate averages this comparison across class pairs \cite{hanley}. Each pair contributes to ranking even when both scores lie on the same side of 0.5. Conversely, a source near 0.5 may change its decision under a small perturbation that changes almost none of the pairwise comparisons. Thus AUC and threshold errors can move in different directions. The macro stress AUC gives each of the three stress conditions equal weight. Pooling scores before ranking would also compare scores across different conditions and would estimate a different quantity.
 
-Let \(D_i^{(m)}(T)\) be the error indicator under method \(m\). The paired contribution to a conditional error difference is \(D_i^{(\mathrm{channel})}(T)-D_i^{(\mathrm{ERM})}(T)\). Its values are \(+1\) for a newly introduced error, \(-1\) for a recovered decision, and zero for agreement in error status. Summing these contributions gives the net count while retaining the ability to distinguish which sources changed in each direction. This matters when equal error counts conceal disjoint sets of failures. For an attack group, the estimand is the miss rate conditional on that FAKE group. Ranking within a single FAKE group against itself has no binary detection interpretation.
+The finite-sample estimate averages this comparison across class pairs \cite{hanley}. Each pair contributes to ranking even when both scores lie on the same side of 0.5. Conversely, a source near 0.5 may change its decision under a small perturbation that changes almost none of the pairwise comparisons. Thus AUC and threshold errors can move in different directions. The macro stress AUC gives each of the three stress conditions equal weight. Averaging scores before ranking would be making comparisons between scores in different situations and would be computing something else. If \(D_i^{(m)}(T)\) is the indicator of error using method \(m\), the contribution to the error difference conditioned on being paired is then \(D_i^{(\mathrm{channel})}(T)-D_i^{(\mathrm{ERM})}(T)\). The values taken on by this indicator are +1 if there is a new error, \ensuremath{-}1 if the decision was recovered, and zero if there was agreement in whether there was an error. By summing these indicators, we get a count that keeps information about which sources have changed which way. This is useful because two equal counts may represent completely different sets of errors. For an attack group, the estimand is the miss rate for that particular FAKE group.
 
 \subsection{Order effects and component diagnostics}
-For a frozen model, let \(p_0,p_N,p_C,p_{NC},p_{CN}\) denote scores from the clean, noise-only, codec-only and two composed inputs. The signed order contrast is \(p_{NC}-p_{CN}\). A complementary descriptive contrast is
+
+For a frozen model, let \(p_0\), \(p_N\), \(p_C\), \(p_{NC}\), \(p_{CN}\) be the respective scores for the clean, noise-only, codec-only and two composed inputs. The signed order contrast is \(p_{NC}-p_{CN}\). A complementary descriptive contrast is
+
 \begin{equation}
  h_i=\tfrac{1}{2}(p_{NC}+p_{CN})-p_N-p_C+p_0 .
  \label{eq:composition}
 \end{equation}
+
 This contrast is zero if the two component changes add on the score scale and the two orders have the same score. Departures may also arise from nonlinear features or the sigmoid score mapping. Consequently the contrast is a diagnostic of output nonadditivity, and no inference about which speech cue was preserved follows from its magnitude. The standalone matched components are available for 9107 and 9207. The registered score and decision order contrasts are available for all three development blocks.
 
 \subsection{Decision costs and attack mixtures}
+
 Suppose a deployment has spoof prevalence \(\pi\) and costs \(c_0\) and \(c_1\) for a REAL false alarm and FAKE miss, respectively. For a fixed channel and threshold, a simple expected error cost is
+
 \begin{equation}
  (1-\pi)c_0 R_0(T)+\pi c_1 R_1(T).
 \end{equation}
-The prevalence and costs are not estimated here. The expression clarifies why neither class-balanced training nor an equal-weight stress macro average specifies an operational decision rule. The 0.5 rule provides a fixed point for a matched comparison and leaves calibration and cost-optimal threshold selection for a separate study.
 
-The attack mixture also affects the observed miss rate. For represented attack IDs \(a\) with class-conditional weights \(w_a\), \(R_1(T)=\sum_a w_a R_{1,a}(T)\). Changing these weights changes the aggregate even if all attack-specific rates stay fixed. In development the mixture comes from the selected sources, and repeated views preserve their attack identity. The reported aggregate therefore pertains to this mixture. Separate attack rows enable comparison without transferring these mixture weights to another population.
+The costs and frequency are not calculated here. The expression helps understand why class-balance training and equal-weight stress macro average are not decision rules. The 0.5 rule gives a reference point for matching and lets calibration and optimal threshold choice be done in a different study.
+
+Attack mixture is important to consider when calculating the miss rate. The formula for the attack mixture for represented attack IDs a with class-conditional weights \(w_a\) is \(R_1(T)=\sum_a w_a R_{1,a}(T)\). The change in weights influences the sum even when attack miss rates are constant. The mixture in development is based on chosen data sources and repeated exposure maintains attacks' identity. So the reported aggregate applies to the mentioned mixture. The attack rows allow comparison without changing mixture weights for another population.
 
 \subsection{Matching the intervention and defining the comparison}
-Let \(b\) index a training seed block, \(m\) index the two fitting policies, and \(s_{ibm}(T)\) denote the FAKE score from the selected checkpoint for recording \(i\) under condition \(T\). A between-arm score difference changes \(m\) while preserving \(i\), \(b\), and \(T\). A within-model order difference instead changes \(T\) while preserving \(i\), \(b\), and \(m\). The first comparison concerns the total effect of the fitting policy followed by checkpoint selection. The second concerns the detector response to a specified input manipulation. Interpreting one as the other would conflate changes in learned weights with changes in input.
 
-A threshold transition can be analyzed without introducing a second operating point. For a REAL source, crossing from below to above 0.5 introduces a false alarm. For a FAKE source, the same crossing repairs a miss. A directional shift can therefore move the two risks in opposite directions even when its sign is common across classes. The empirical question is where each distribution lies relative to the fixed threshold and how its ordering changes relative to the other class.
+For each training seed block indexed by b, fitting policy m, and recording i under condition T, let \(s_{ibm}(T)\) be the FAKE score obtained from the selected checkpoint. A between-arm order difference differs from m but leaves i, b, and T unchanged. A within-model order difference, on the other hand, differs in T but leaves i, b, and m unchanged. The former measures the combined influence of the fitting policy and then the checkpoint choice. The latter measures the detector's reaction to the input manipulation. Mistaking the one for the other is to mistake changes in the learned weights for changes in the inputs.
+
+A threshold transition does not require a second operating point for analysis. In the case of a REAL source, going from below to above 0.5 results in a false alarm. On the other hand, for a FAKE source, the same transition corrects a miss. As such, a directional transition can affect the two types of errors in opposite ways even if the direction is the same in both cases. The empirical problem is to know the position of each relative to the fixed threshold.

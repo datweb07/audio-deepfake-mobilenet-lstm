@@ -1,57 +1,100 @@
 \section{Results}\label{sec:results}
-\subsection{Overall Robustness under Channel Augmentation}
-Table~\ref{tab:development} reports the six 640-recording development fits. Macro stress ROC-AUC increases by 0.1312, 0.1893 and 0.2436 for 9107, 9207 and 9307, respectively. The mean and sample SD across seeds are $0.6053\pm0.0616$ for ERM, $0.7933\pm0.0094$ for channel, and $+0.1880\pm0.0562$ for their paired difference. The clean AUC difference is negative in the first two seeds and positive in 9307. Figure~\ref{fig:aggregate} links the two arms within each seed.
+
+\input{tables/development_v5}
+
+\input{tables/uncertainty_v5}
+
+\subsection{Overall Robustness with Channel Augmentation}
+
+Table~\ref{tab:development} summarizes the six 640-record development curves. Macro stress ROC-AUC increases by 0.1312, 0.1893 and 0.2436 for 9107, 9207 and 9307, respectively. The mean and sample SD across seeds are 0.6053 \ensuremath{\pm} 0.0616 for ERM, 0.7933 \ensuremath{\pm} 0.0094 for channel, and +0.1880 \ensuremath{\pm} 0.0562 for their paired difference. The clean AUC difference is negative in the first two seeds and positive in 9307. Figure~\ref{fig:aggregate} links the two arms within each seed.
 
 Clean A REAL false alarms tie in the first two pairs and increase from 4 to 6 of 112 in 9307. Clean A FAKE misses increase from 6 to 9 in 9107, tie at 9 in 9207, and decrease from 10 to 8 in 9307. Clean B REAL false alarms increase in 9107 and 9307 and decrease in 9207. Table~\ref{tab:uncertainty} separates within-seed speaker intervals from descriptive variation across fitted pairs.
 
-\input{tables/development_v5}
-\input{tables/uncertainty_v5}
+All three 640-recording development A macro stress AUC intervals exclude zero. In 9307 the paired interval is [0.1884, 0.3071]. The 9207 stress miss interval includes zero. These intervals quantify speaker resampling conditional on each fitted pair and shared development protocol.
+
+In the nested seed-9207 comparison, the channel-minus-ERM macro stress AUC gain decreases from +0.1893 at 640 recordings to +0.1081 at 1,280 (Table~\ref{tab:size-sensitivity}). Equation~\eqref{eq:size-contrast} gives a difference of \ensuremath{-}0.0812, with a pointwise 95\% paired speaker interval of [\ensuremath{-}0.1421, \ensuremath{-}0.0148]. Both fitted pairs gain in ranking. The gain is smaller under the larger fixed-epoch protocol, which also uses twice as many optimizer updates.
+
 \input{tables/conditions}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.89\textwidth]{aggregate_v5.pdf}
 \caption{Development macro stress ROC-AUC for the three initialization blocks. Lines connect the two arms within a seed.}\label{fig:aggregate}
 \end{figure*}
 
-All three 640-recording development A macro stress AUC intervals exclude zero. In 9307 the paired interval is [0.1884, 0.3071]. The 9207 stress miss interval includes zero. These intervals quantify speaker resampling conditional on each fitted pair and shared development protocol.
+The locked evaluation completed 17,408 predictions for the original four selected models. Table~\ref{tab:heldout-endpoints} reports aggregate results and Table~\ref{tab:heldout-conditions} separates the conditions. Macro stressed ROC-AUC increased in both seed blocks, from 0.8308 to 0.8875 in 9107 and from 0.7498 to 0.8948 in 9207. The corresponding paired speaker-cluster intervals for channel minus ERM were [0.0296, 0.0842] and [0.1158, 0.1752]. These positive differences were smaller than the development A contrasts. Figure~\ref{fig:heldout-contrasts} compares the predefined endpoints across partitions. Figure~\ref{fig:heldout-roc} shows the score-level ranking under each held-out condition.
 
-In the nested seed-9207 comparison, the channel-minus-ERM macro stress AUC gain decreases from \(+0.1893\) at 640 recordings to \(+0.1081\) at 1,280 (Table~\ref{tab:size-sensitivity}). Equation~\eqref{eq:size-contrast} gives a difference of \(-0.0812\), with a pointwise 95\% paired speaker interval of \([-0.1421,-0.0148]\). Both fitted pairs gain in ranking. The gain is smaller under the larger fixed-epoch protocol, which also uses twice as many optimizer updates.
+Stressed FAKE misses fell from 1,370 to 587 in 9107 and from 815 to 453 in 9207, each out of 2,496 views from 832 FAKE sources. The rate differences were \ensuremath{-}31.37 points [\ensuremath{-}33.41, \ensuremath{-}29.36] and \ensuremath{-}14.50 points [\ensuremath{-}17.38, \ensuremath{-}11.67]. Stressed REAL false alarms increased by one in 9107, from 80/768 to 81/768 (+0.13 points), and fell from 322/768 to 136/768 in 9207. The 768 views in each comparison came from 256 REAL sources. The paired intervals were [\ensuremath{-}3.23, +3.76] and [\ensuremath{-}29.07, \ensuremath{-}19.03] percentage points. All endpoint and attack intervals used 10,000 valid draws.
 
 \input{tables/size_sensitivity_v7}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.97\textwidth]{size_sensitivity_v7.pdf}
 \caption{Seed-9207 development A results on the same recordings at both training sizes. Macro stress ROC-AUC averages three condition-level AUCs. Each pooled error rate uses 336 views from 112 sources of its class at threshold 0.5. Bars show observed values. Table~\ref{tab:size-sensitivity} gives counts and the text reports the paired intervals.}\label{fig:size-sensitivity}
 \end{figure*}
 
-The locked evaluation completed 17,408 predictions for the original four selected models. Table~\ref{tab:heldout-endpoints} reports aggregate results and Table~\ref{tab:heldout-conditions} separates the conditions. Macro stressed ROC-AUC increased in both seed blocks, from 0.8308 to 0.8875 in 9107 and from 0.7498 to 0.8948 in 9207. The corresponding paired speaker-cluster intervals for channel minus ERM were [0.0296, 0.0842] and [0.1158, 0.1752]. These positive differences were smaller than the development A contrasts. Figure~\ref{fig:heldout-contrasts} compares the predefined endpoints across partitions. Figure~\ref{fig:heldout-roc} shows the score-level ranking under each held-out condition.
+\subsection{Class-Asymmetric Errors and Operating-Point Trade-offs}
+
+With 1,280 samples, Channel improves stressed FAKE misses from 248 to 64 out of 336 (\ensuremath{-}54.76 points) and increases stressed REAL false alarms from 5 to 161 out of 336 (+46.43 points). With 640 samples, the respective contrast for REAL false alarms is \ensuremath{-}28.87 points, leading to a size contrast of +75.30 points (pointwise 95\% speaker interval [62.50, 87.80]). Figure~\ref{fig:size-sensitivity} illustrates that better ranking is accompanied by switching the class of errors at the threshold 0.5.
+
+The selected 1,280 Channel checkpoint violates both registered +2-point clean-risk guards. Development A clean FAKE misses rose from 3/112 to 8/112 (+4.46 points) and B clean REAL false alarms rose from 18/144 to 22/144 (+2.78 points). Pointwise 95\% speaker intervals were [1.79, 6.25] and [\ensuremath{-}4.86, 11.81] percentage points. The B interval includes zero. The guards use the observed differences for the pair selected by clean BCE, so both exceed the tolerance.
+
+Table~\ref{tab:conditions} breaks down the parts of the macro stress outcome. The table and ROC figure detail the first two seeds. The channel arm also increases AUC under all registered stress conditions in 9307. Figure~\ref{fig:roc} depicts the complete ROC curves associated with these AUCs. Fixed-threshold changes remain heterogeneous. Under Noise5, FAKE misses fall from 99 to 64 in 9107 and from 77 to 56 in 9207. The corresponding REAL false-alarm counts rise from 1 to 8 in 9107 and fall from 22 to 13 in 9207.
 
 \input{tables/heldout_endpoints}
+
 \input{tables/heldout_conditions}
+
+The larger 9207 REAL benefit under the two compositions is visible in the per-condition counts. Noise-to-Opus false alarms fall from 104 to 44, while its FAKE misses increase from 13 to 26. By way of contrast, REAL false alarms go from 41 down to 13, while FAKE misses go from 53 down to 52. Both counts have denominator 112. The starting point with the high number of REAL false alarms for the condition of Noise-to-Opus allows a sizable decrease in this operating point. It would not be accurate to refer to the decrease itself as an advantage across classes.
+
+For the stress results, gain controls and Opus64 for the two development seeds give some perspective. For quarter gain, the channel arm has fewer false alarms and higher AUC in both blocks. For standalone Opus64, the channel arm has fewer false alarms but higher FAKE misses in both blocks. The control of 64 kb/s uses a different rate from the compositions of 24 kb/s. It is listed as a separate condition, and any comparison against the chains would alter the codec and noise conditions as well. The 24 kb/s control is the correct one for standalone comparison against 9107 and 9207.
+
+In 9307, stress FAKE misses fall from 266 to 119 of 336 while REAL false alarms rise from 44 to 61 of 336. This contrasts with fewer stressed REAL false alarms in 9107 and 9207. The 9307 stress miss contrast is \ensuremath{-}43.75 percentage points (95\% speaker interval [\ensuremath{-}47.92, \ensuremath{-}39.58]). The contrast for its stress REAL false alarm is +5.06 points (interval [\ensuremath{-}1.79, +10.42]). B clean false alarms increase from 21 to 30 out of 144, which is a change of +6.25 points (95\% speaker interval [\ensuremath{-}1.39, +15.28]). The difference is greater than the registered +2-point guard for the selected CLEAN\_BCE pair. The interval represents speaker resampling in the pair and does not affect the observed guard choice.
+
+In 9207, decreases in other attack instances balance 24 extra A05 and A06 missed instances under stress conditions. The A05 and A06 attacks add six extra missed instances in 9107. The differences include transformed views. Table~\ref{tab:attackconditions} gives the number of A05 and A06 attacks that get an additional correct or missed decision in at least one stress condition. Figure~\ref{fig:transitions} provides the paired analysis for both classes under A.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.94\textwidth]{heldout_contrasts.pdf}
 \caption{Channel-minus-ERM contrasts on development A and the locked held-out subset, separately by seed. Held-out segments show 95\% paired speaker-cluster percentile intervals. AUC differences are multiplied by 100. Positive differences indicate better AUC or higher error rates. Cohorts and attack populations differ across partitions.}\label{fig:heldout-contrasts}
 \end{figure*}
+
+Clean REAL false alarms fell from 25 to 19 in 9107 and from 22 to 16 in 9207, out of 256 sources per arm. Clean FAKE misses increased from 125 to 129 and from 127 to 147 out of 832, while clean ROC-AUC declined from 0.9534 to 0.9436 and from 0.9507 to 0.9410. The 9207 clean FAKE miss increase was 2.40 percentage points [1.15, 3.86]. Development B showed opposite false-alarm directions between the two seeds. The cohorts differ in speaker and source support.
+
+The sums for stress reflect the existence of the operating point shift. For Noise5, the misses of FAKE dropped from 701 to 259 and from 492 to 193 out of 832. With respect to Opus and then Noise10, the misses of FAKE dropped from 526 to 185 and from 285 to 167. In case of the reverse sequence, Noise10 followed by Opus, the misses of FAKE remained constant at 143 in 9107 and increased from 38 to 93 in 9207, while the number of REAL false alarms decreased from 226 to 89 out of 256 and AUC increased from 0.8196 to 0.9044.
+
+Post hoc analysis shows that at the threshold of 0.5 the operating point has shifted. When Noise10 and then Opus were applied in 9207, the two algorithms agreed on 85 real false alarms, channel corrected 141 and made four. In case of FAKE, they agreed on 20 misses, channel corrected 18 and introduced 73. In 9107, when the two algorithms were subjected to Noise10 and then Opus, the sum of 143 FAKE misses included 93 shared misses, 50 corrected and 50 introduced. The numbers reflect decision-making on the same sources.
+
+In Fig.~\ref{fig:v4-operating}, the retro-grid ensures that the registered threshold remains at 0.5. On held-out 9207 under Noise10 followed by Opus24, channel augmentation gives fewer false alarms and more misses at every sampled threshold from 0.20 through 0.80. The miss direction reverses at 0.10 and 0.90. For Noise5 and the opposite order, FAKE misses decrease at all 11 sampled thresholds in both seeds, with condition- and seed-dependent REAL errors. FAKE misses cleaned in 9207 rise for all thresholds sampled. These comparisons describe the measured score grid and provide no threshold-selection rule.
+
+Score distributions also change locally around the registered boundary. Under Noise10 followed by Opus24 in 9207, 7 versus 30 of 256 REAL scores and 5 versus 18 of 832 FAKE scores lie within 0.025 of 0.5 for ERM and channel, respectively. The supplement gives the confusion matrices for every arm and condition, empirical curve coordinates and the 0.025 and 0.05 score windows. Development B supplies only REAL scores. Its FNR, ROC-AUC and EER are undefined.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.86\textwidth]{heldout_roc.pdf}
 \caption{Empirical held-out ROC curves for four selected models. Each panel contains 256 REAL and 832 FAKE recordings, evaluated under the named condition. Legends give seed, method, and AUC. The same sources recur across conditions.}\label{fig:heldout-roc}
 \end{figure*}
 
-Stressed FAKE misses decreased from 1,370 to 587 in 9107 and from 815 to 453 in 9207, each out of 2,496 correlated views from 832 FAKE sources. The rate differences were \(-31.37\) percentage points [\(-33.41\), \(-29.36\)] and \(-14.50\) points [\(-17.38\), \(-11.67\)]. Stress REAL false alarms changed from 80 to 81 and from 322 to 136, out of 768 views from 256 sources. The respective intervals were [\(-3.23\), \(+3.76\)] and [\(-29.07\), \(-19.03\)] percentage points. All registered endpoint and attack intervals used 10,000 valid draws with zero invalid draws. These intervals describe speaker resampling within a fitted seed pair.
+\subsection{Attack-Specific Robustness and Failure Modes}
 
-\subsection{Class-Asymmetric Errors and Operating-Point Trade-offs}
-At 1,280 recordings, Channel reduces stressed FAKE misses from 248 to 64 of 336 views (\(-54.76\) percentage points), while stressed REAL false alarms rise from 5 to 161 of 336 (\(+46.43\) points). At 640, the corresponding REAL false-alarm contrast is \(-28.87\) points, giving a size contrast of \(+75.30\) points (pointwise 95\% speaker interval \([62.50,87.80]\)). Figure~\ref{fig:size-sensitivity} shows how improved ranking accompanies a shift in which class bears the errors at threshold 0.5.
+For seed 9207, the A05 contrast changes from 38/54 versus 47/54 at 640 to 50/54 versus 36/54 at 1,280 (ERM versus Channel). A06 changes from 16/54 versus 31/54 to 50/54 versus 11/54. Each denominator represents three correlated stress views from 18 sources. Both training size and update budget changed. Seed 9307 compares initializations at 640. Table~\ref{tab:attack} and Fig.~\ref{fig:attack} show both sign reversals. Channel increases A05 and A06 stress misses in the first two pairs and decreases them in 9307. The latter changes are \ensuremath{-}6/54 and \ensuremath{-}17/54, respectively. The pointwise 9307 speaker intervals are [\ensuremath{-}16.67, \ensuremath{-}5.26] and [\ensuremath{-}43.86, \ensuremath{-}17.54] percentage points, respectively. The 9107 intervals include zero. These within-seed intervals do not establish a stable attack effect across initializations.
 
-The selected 1,280 Channel checkpoint exceeds the registered \(+2\)-point tolerance for both A clean FAKE misses (\(3/112\) to \(8/112\), \(+4.46\) points) and B clean REAL false alarms (\(18/144\) to \(22/144\), \(+2.78\) points). The corresponding pointwise speaker intervals are \([1.79,6.25]\) and \([-4.86,11.81]\) points. The guard applies to the observed contrasts under the registered rule. The B interval includes zero and the observed B contrast still exceeds its tolerance. Checkpoints remain selected by clean BCE, and the guard result applies to this selected pair.
+Table~\ref{tab:attackconditions} details the first two seeds. In 9307, all six A05 recoveries occur in the noise-before-Opus condition. For A06, 18 recoveries and one new miss occur across the three stress views. Net recoveries span five A05 speakers and six A06 speakers. The A06 ERM burden is 16 of 54 in 9207 and 45 of 54 in 9307. Differences in baseline burden and FAKE score crossings describe where the reversal occurs. They leave the underlying model or generator mechanism unresolved.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.91\textwidth]{classwise_errors_v5.pdf}
 \caption{Channel-minus-ERM fixed-threshold error rates by development stratum, class, and seed. Segments show within-seed paired speaker-cluster percentile intervals. REAL errors are false alarms and FAKE errors are misses. Clean A has 112 recordings per class, stress A has 336 views from 112 recordings per class, and clean B has 144 REAL recordings.}\label{fig:classwise}
 \end{figure*}
 
-Table~\ref{tab:conditions} separates the components of the macro stress endpoint. The table and ROC figure detail the first two seeds. The channel arm also improves AUC under each registered stress condition in 9307. Figure~\ref{fig:roc} shows the full ROC curves underlying those AUCs. Fixed-threshold changes remain heterogeneous. Under Noise5, FAKE misses fall from 99 to 64 in 9107 and from 77 to 56 in 9207. The corresponding REAL false-alarm counts rise from 1 to 8 in 9107 and fall from 22 to 13 in 9207.
+\input{tables/attack_v5}
+
+Figure~\ref{fig:speakers} shows that two B speakers contribute 10 of the 12 net additional false alarms in 9107. For 9207, reductions occur across several speakers. B contains only REAL recordings, and the counts are interpreted as false alarms with no B ROC-AUC or EER.
+
+Figure~\ref{fig:heldout-attacks} shows the condition-specific FAKE miss contrasts. Pooled stressed misses fell on A07--A16 and rose on A17--A19 in both blocks. A17, A18 and A19 added 10, 11 and 4 misses in 9107 and 43, 43 and 56 in 9207, each out of 192 views from 64 sources per attack. The pointwise 9107 intervals include zero. The 9207 intervals exclude zero: [15.90, 29.03], [14.12, 30.81] and [20.63, 37.70] percentage points. The development A05/A06 results concern a separate attack set.
+
+In the post-hoc grouping, A07--A16 account for 808 and 504 fewer stressed misses in 9107 and 9207, partly offset by 25 and 142 additional misses on A17--A19. For A17--A19, Noise-to-Opus added 39 misses in 9107. All three stress conditions added misses in 9207. On A19, 43/64 sources acquired a miss in at least one stress condition and 18/64 in multiple conditions. These exploratory groupings were identified after reviewing held-out results. The pointwise intervals have no multiplicity adjustment.
 
 \begin{figure*}[t]
 \centering
@@ -59,13 +102,11 @@ Table~\ref{tab:conditions} separates the components of the macro stress endpoint
 \caption{Empirical ROC curves from the four selected models in the first two seeds on development A. Each panel ranks the same 112 REAL and 112 FAKE recordings under one condition. Legends give the seed, method, and recomputed AUC. The diagonal denotes chance ranking.}\label{fig:roc}
 \end{figure*}
 
-The larger 9207 REAL benefit under the two compositions is visible in the per-condition counts. Noise-to-Opus false alarms fall from 104 to 44, while its FAKE misses increase from 13 to 26. In the reverse order, REAL false alarms fall from 41 to 13, while FAKE misses change from 53 to 52. Each count has denominator 112. The baseline's high REAL false-alarm count under Noise-to-Opus provides room for a large reduction at this operating point. It would be misleading to describe that reduction alone as an across-class benefit for the condition.
+\subsection{Transformation-Order Effects}
 
-The gain controls and Opus64 for the first two development seeds provide context for the stress results. Under quarter gain, the channel arm has fewer false alarms and higher AUC in both blocks. Under standalone Opus64, the channel arm has fewer false alarms but more FAKE misses in both blocks. The 64~kb/s control uses a different rate from the 24~kb/s compositions. It is reported as a distinct condition, and any comparison with the chains also changes the codec setting and presence of noise. The matched 24~kb/s diagnostic is the appropriate standalone component comparison for 9107 and 9207.
+For the same 112 A REAL recordings at seed 9207, the Channel-minus-ERM contrast in the signed order error gap (Noise-to-Opus minus Opus-to-Noise) changes from \ensuremath{-}28.57 points at 640 to +26.79 points at 1,280. The size contrast is +55.36 points (pointwise 95\% speaker interval [32.12, 79.46]). The change in the corresponding signed FAKE-score difference is \ensuremath{-}0.2099 to +0.0764. These paired contrasts measure detector response to the order of processing. See the supplement for the counts exclusive and inclusive to each arm and class. In the first two development blocks, out of 112 A REAL sources, the Noise-to-Opus-only false-alarm counts change from 43 to 19 in 9107 and 63 to 31 in 9207. The opposite order has no exclusive REAL false alarms in A. Among 112 A FAKE sources, Opus-to-Noise alone causes 48 versus 17 misses in 9107 and 40 versus 26 in 9207. The Noise-to-Opus-only FAKE counts are 1 versus 0 and 0 versus 0. In the 9307 pair, there is also the same order asymmetry classwise. Noise-to-Opus-only REAL errors have shifted from 37 to 44, while Opus-to-Noise-only FAKE errors have shifted from 41 to 33, both in a sample of 112. The signed FAKE score gap decreases from 0.2375 to 0.0538 in the median. Figure~\ref{fig:order} represents paired score differences before the thresholding point.
 
-In 9307, stress FAKE misses fall from 266 to 119 of 336 while REAL false alarms rise from 44 to 61 of 336. This contrasts with fewer stressed REAL false alarms in 9107 and 9207. The 9307 stress miss contrast is $-43.75$ percentage points (95\% speaker interval $[-47.92,-39.58]$). Its stress REAL false-alarm contrast is $+5.06$ points (interval $[-1.79,+10.42]$). B clean false alarms rise from 21 to 30 of 144, a difference of $+6.25$ points (95\% speaker interval $[-1.39,+15.28]$). The observed difference exceeds the registered $+2$-point guard for the selected CLEAN\_BCE pair. The interval describes speaker resampling within the fitted pair and leaves the observed guard decision intact.
-
-In 9207, reductions in other attacks offset 24 additional A05 and A06 stressed misses. Those two attacks contribute six additional misses in 9107. These differences count transformed views. Table~\ref{tab:attackconditions} reports how many distinct A05 and A06 recordings gain or lose a correct decision in at least one stress condition. Figure~\ref{fig:transitions} extends the paired accounting to both classes across A.
+9107 retrospective diagnostics produce 1,472 predicted values for Noise10 and Opus24 separately. Matched waveforms help recover not only registered sequences but also selected anchor values that were replayed without drifting. A leave-one-speaker-out nuisance regression yields directional class-discrimination AUCs of 0.538 for ERM and 0.432 for channel on the signed order score. This measures a residual score contrast on the development cohort. The same standalone components were evaluated for seed 9207 on all 368 development sources, adding 1,472 predictions. All 18 clean and ordered score anchors matched their sealed values exactly. On development A, standalone Noise10 FAKE misses decreased from 82 to 54 in 9107 and changed from 47 to 48 in 9207, out of 112 per arm. Under standalone Opus24, 9207 REAL false alarms decreased from 19 to five and FAKE misses increased from two to ten. The 9107 nuisance regression remains a single-seed analysis. These component results constrain interpretation of the compositions and do not identify a forensic mechanism.
 
 \begin{figure*}[t]
 \centering
@@ -73,16 +114,9 @@ In 9207, reductions in other attacks offset 24 additional A05 and A06 stressed m
 \caption{Within-source correctness for the first two seeds at threshold 0.5 on development A. Each row contains 112 recordings of the indicated class. The same recordings contribute to each condition row. The two middle columns identify sources correctly classified by only one method.}\label{fig:transitions}
 \end{figure*}
 
-Clean REAL false alarms decreased from 25 to 19 and from 22 to 16 out of 256. Clean FAKE misses increased from 125 to 129 and from 127 to 147 out of 832, while clean ROC-AUC declined from 0.9534 to 0.9436 and from 0.9507 to 0.9410. In 9207 the clean FAKE miss increase was 2.40 percentage points [1.15, 3.86]. Both held-out pairs had fewer clean REAL false alarms, whereas the development B contrasts differed in sign. The cohorts have different speaker and source support.
+\input{tables/attack_conditions}
 
-The stress totals conceal an operating-point trade-off. Under Noise5, FAKE misses fell from 701 to 259 and from 492 to 193 out of 832. Under Opus followed by Noise10, they fell from 526 to 185 and from 285 to 167. Under the reverse chain, Noise10 followed by Opus, FAKE misses stayed at 143 in 9107 and rose from 38 to 93 in 9207, even as 9207 REAL false alarms fell from 226 to 89 out of 256 and AUC rose from 0.8196 to 0.9044.
-
-A post-hoc paired decomposition shows what changed at 0.5. Under Noise10 followed by Opus in 9207, the two models shared 85 REAL false alarms, channel corrected 141 and introduced four. For FAKE, the models shared 20 misses, channel corrected 18 and introduced 73. In 9107 the tied total of 143 FAKE misses under that chain comprised 93 shared misses, 50 corrected and 50 introduced. These counts compare decisions on identical sources. They describe why equal totals can conceal a change in the affected recordings.
-
-
-The retrospective grid in Fig.~\ref{fig:v4-operating} leaves the registered threshold at 0.5. On held-out 9207 under Noise10 followed by Opus24, channel augmentation gives fewer false alarms and more misses at every sampled threshold from 0.20 through 0.80. The miss direction reverses at 0.10 and 0.90. For Noise5 and the opposite order, FAKE misses decrease at all 11 sampled thresholds in both seeds, with condition- and seed-dependent REAL errors. Clean FAKE misses in 9207 increase at all sampled thresholds. These comparisons describe the measured score grid and provide no threshold-selection rule.
-
-Score distributions also change locally around the registered boundary. Under Noise10 followed by Opus24 in 9207, 7 versus 30 of 256 REAL scores and 5 versus 18 of 832 FAKE scores lie within 0.025 of 0.5 for ERM and channel, respectively. The supplement gives the confusion matrices for every arm and condition, empirical curve coordinates and the 0.025 and 0.05 score windows. Development B supplies only REAL scores. Its FNR, ROC-AUC and EER are undefined.
+Source-linked order asymmetry persisted. In 9107, REAL sources wrong only under noise-to-Opus numbered 72 for ERM and 37 for channel, with zero exclusive errors in the reverse direction. In 9207 the corresponding counts were 158 and 68, while exclusive reverse-order errors numbered zero and one. Among FAKE sources, reverse-order-only misses numbered 384 and 43 in 9107 and 247 and 74 in 9207. The opposite exclusive FAKE miss counts were one and one in 9107, and zero and zero in 9207. Each model uses the same 256 REAL and 832 FAKE sources in the order comparison.
 
 \begin{figure*}[t]
 \centering
@@ -90,30 +124,31 @@ Score distributions also change locally around the registered boundary. Under No
 \caption{Held-out seed 9207 under Noise10 followed by Opus24. Top left shows exploratory FPR and FNR at 11 thresholds. Top right shows class-specific empirical CDFs. Bottom panels show empirical ROC and DET. DET axes use a normal quantile transform and clip endpoint rates at half an event per class. The vertical lines identify the registered threshold of 0.5. Each arm has 256 REAL and 832 FAKE sources.}\label{fig:v4-operating}
 \end{figure*}
 
-\subsection{Attack-Specific Robustness and Failure Modes}
-For seed 9207, the A05 contrast changes from \(38/54\) versus \(47/54\) at 640 to \(50/54\) versus \(36/54\) at 1,280 (ERM versus Channel). A06 changes from \(16/54\) versus \(31/54\) to \(50/54\) versus \(11/54\). Each denominator represents three correlated stress views from 18 sources. The reversals compare two training protocols at one seed. The 9307 reversal below compares different initializations at 640.
-Table~\ref{tab:attack} and Fig.~\ref{fig:attack} show a sign reversal for both development attacks. Channel increases A05 and A06 stress misses in the first two pairs and decreases them in 9307. The latter changes are $-6/54$ and $-17/54$, respectively. The pointwise 9307 speaker intervals are $[-16.67,-5.26]$ and $[-43.86,-17.54]$ percentage points, respectively. The 9107 intervals include zero. These within-seed intervals do not establish a stable attack effect across initializations.
+The score contrasts shown in Fig.~\ref{fig:heldout-order} were also directional, with reduced median FAKE scores following channel adaptation. The median score contrasts in FAKE became 0.3454 and 0.0063 in 9107, 0.2419 and 0.0076 in 9207. However, small score contrasts cannot automatically be assumed to reflect a superior decision rule, in view of the fact that attack-specific misses occurred. Speaker-related scores exhibit the same order error pattern distribution. In the case of ERM 9107, the reverse-minus-forward FAKE error contrast was 16 out of 21 FAKE recordings for speaker LA\_0045 and 13 out of 21 for speaker LA\_0046.
 
-Table~\ref{tab:attackconditions} details the first two seeds. In 9307, all six A05 recoveries occur in the noise-before-Opus condition. For A06, 18 recoveries and one new miss occur across the three stress views. Net recoveries span five A05 speakers and six A06 speakers. The A06 ERM burden is 16 of 54 in 9207 and 45 of 54 in 9307. Differences in baseline burden and FAKE score crossings describe where the reversal occurs. They leave the underlying model or generator mechanism unresolved.
+\subsection{Robustness, Stability and Generalization}
 
-Figure~\ref{fig:speakers} shows that two B speakers contribute 10 of the 12 net additional false alarms in 9107. For 9207, reductions occur across several speakers. B contains only REAL recordings, and the counts are interpreted as false alarms with no B ROC-AUC or EER.
+The direction of the development stress ranking gain and FAKE miss reduction is consistent across all three pairs. The magnitude of the gain, as well as the direction of false-alarm results, varies according to the selected pair. Common development data allow for a comparison of initializations using the protocol described above, in which case speaker uncertainty is computed in each pair separately.
 
-\input{tables/attack_v5}
-\input{tables/attack_conditions}
+The fixed epoch size experiment includes a development-only comparison for seed 9207. The three initializations correspond to 640 recordings. The held-out evaluation evaluates the original 640 recording model corresponding to seeds 9107 and 9207 using additional ASVspoof 2019 LA speakers. Cross-corpus robustness remains untested.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.79\textwidth]{attack_changes_v5.pdf}
 \caption{Development A05/A06 stressed FAKE miss changes by seed. Positive values indicate more misses. Intervals resample speakers within a seed. Each attack contributes 54 views from 18 recordings.}\label{fig:attack}
 \end{figure*}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=.89\textwidth]{speaker_counts.pdf}
 \caption{Clean REAL false alarms by speaker on development B for the first two seeds. Each of nine speakers contributes 16 recordings, for 144 recordings per arm and seed.}\label{fig:speakers}
 \end{figure*}
 
-Figure~\ref{fig:heldout-attacks} shows the condition-specific changes for A07--A19. Stress misses declined on A07--A16 in both blocks. They increased on A17, A18 and A19 in both blocks, by 10, 11 and four views in 9107 and by 43, 43 and 56 views in 9207. Each attack contributes 64 sources and 192 stressed views. The 9107 intervals for these three increases include zero, while the 9207 intervals are [15.90, 29.03], [14.12, 30.81] and [20.63, 37.70] percentage points. These descriptive attack contrasts expose adverse subgroups alongside the pooled improvement. The development A05/A06 observations and held-out A17--A19 observations refer to different attack sets.
+\subsection{Practical Implications and Limitations}
 
-In the post-hoc breakdown, A07--A16 contribute net reductions of 808 and 504 stressed misses, partially offset by increases of 25 and 142 on A17--A19. In 9107 the adverse net increases are driven by Noise10 followed by Opus, which adds 13 misses to each group. In 9207 all three stress conditions add misses on these attacks. For A19, 43 of 64 distinct sources acquire at least one new stressed miss and 18 acquire new misses under multiple conditions in 9207. These groupings were identified after examining the held-out results. The intervals are pointwise and are interpreted descriptively.
+In 9307 the recorded optimizer durations were 39.9 minutes for ERM and 78.9 minutes for channel. At 1,280, the seed-9207 optimizer durations were 78.6 and 160.3 minutes, respectively, with validation taking 37.6 and 37.9 minutes. These are local CPU workload measurements. The architecture and parameter count are shared across training sizes.
+
+A bounded inference benchmark used the clean inputs of the first 12 registered development sources, repeated three times after anchor replay, at batch size one on a single CPU thread. Input duration was capped at 3 s. Median preprocessing time was 10.9 ms (interquartile range 10.3--11.2 ms), forward time 91.3 ms (90.5-93.5 ms), and end-to-end time 102.1 ms (101.1-104.2 ms). The timed preprocessing includes decoding, resampling and the P0 input transform on clean input. The separate headroom and channel-transform stages are outside the timed path. The two 9207 exports each contain 1,308,401 parameters, of which 369,281 are updated during warm-up and 646,481 during partial fine-tuning. The exported stage has 661,920 nontrainable parameters. Each export occupies 5,916,699 bytes. Loading time in one process was 3.35 and 2.81 s, where the second loading came after the first loading. The maximum process working set during the timing process was about 475 MiB. The development convenience sample supports an architectural and local runtime description. Mobile, streaming and concurrent performance remain unmeasured.
 
 \begin{figure*}[t]
 \centering
@@ -121,36 +156,4 @@ In the post-hoc breakdown, A07--A16 contribute net reductions of 808 and 504 str
 \caption{Held-out channel-minus-ERM FAKE miss counts by attack, condition and seed. Each cell compares the same 64 sources. Positive counts indicate deterioration and negative counts indicate fewer misses. The full numerical supplement retains both arm counts and stressed attack intervals.}\label{fig:heldout-attacks}
 \end{figure*}
 
-\subsection{Transformation-Order Effects}
-For the same 112 A REAL recordings at seed 9207, the Channel-minus-ERM contrast in the signed order error gap (Noise-to-Opus minus Opus-to-Noise) changes from \(-28.57\) points at 640 to \(+26.79\) points at 1,280. The size contrast is \(+55.36\) points (pointwise 95\% speaker interval \([32.12,79.46]\)). The corresponding signed FAKE-score contrast changes from \(-0.2099\) to \(+0.0764\). These are paired score and decision responses under the registered transformations. The supplement gives the order-exclusive and shared counts for each arm and class.
-In the first two development blocks, among 112 A REAL sources, the Noise-to-Opus-only false-alarm count changes from 43 to 19 in 9107 and from 63 to 31 in 9207. The opposite order has no exclusive REAL false alarms in A. Among 112 A FAKE sources, Opus-to-Noise alone causes 48 versus 17 misses in 9107 and 40 versus 26 in 9207. The Noise-to-Opus-only FAKE counts are 1 versus 0 and 0 versus 0. The 9307 pair shows the same classwise order asymmetry. Noise-to-Opus-only REAL errors change from 37 to 44, and Opus-to-Noise-only FAKE misses change from 41 to 33, each out of 112. The median signed FAKE score gap falls from 0.2375 to 0.0538. Figure~\ref{fig:order} shows the paired score contrasts before the threshold is applied.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=.89\textwidth]{order_scores.pdf}
-\caption{Directional score contrasts for the first two development seeds on the same recording in opposite processing orders. Points are medians, thick segments span quartiles, and thin segments span the 10th to 90th percentiles. Each A class has 112 sources and B has 144 REAL sources. Segments describe score distributions.}\label{fig:order}
-\end{figure*}
-
-A retrospective 9107 diagnostic adds 1,472 predictions for standalone Noise10 and Opus24. Matched waveforms reconstruct both registered chains and selected anchor scores replay without observed drift. A leave-one-speaker-out nuisance regression yields directional class-discrimination AUCs of 0.538 for ERM and 0.432 for channel on the signed order score. This measures a residual score contrast on the development cohort. The same standalone components were evaluated for seed 9207 on all 368 development sources, adding 1,472 predictions. All 18 clean and ordered score anchors matched their sealed values exactly. On development A, standalone Noise10 FAKE misses decreased from 82 to 54 in 9107 and changed from 47 to 48 in 9207, out of 112 per arm. Under standalone Opus24, 9207 REAL false alarms decreased from 19 to five and FAKE misses increased from two to ten. The 9107 nuisance regression remains a single-seed analysis. These component results constrain interpretation of the compositions and do not identify a forensic mechanism.
-
-Source-linked order asymmetry persisted. In 9107, REAL sources wrong only under noise-to-Opus numbered 72 for ERM and 37 for channel, with zero exclusive errors in the reverse direction. In 9207 the corresponding counts were 158 and 68, while exclusive reverse-order errors numbered zero and one. Among FAKE sources, reverse-order-only misses numbered 384 and 43 in 9107 and 247 and 74 in 9207. The opposite exclusive FAKE miss counts were one and one in 9107, and zero and zero in 9207. Each model uses the same 256 REAL and 832 FAKE sources in the order comparison.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=.90\textwidth]{heldout_order.pdf}
-\caption{Held-out same-source FAKE score contrasts between noise-to-Opus and Opus-to-noise. Points are medians, thick segments span quartiles, and thin segments span the 10th to 90th percentiles. REAL and FAKE groups contain 256 and 832 sources. These are distribution summaries of paired scores.}\label{fig:heldout-order}
-\end{figure*}
-
-The score contrasts in Fig.~\ref{fig:heldout-order} also remained directional, with lower FAKE-class medians after channel training. Median FAKE contrasts changed from 0.3454 to 0.0063 in 9107 and from 0.2419 to 0.0076 in 9207. Smaller score contrasts alone do not imply a uniformly better decision rule, as shown by the attack-specific misses. Speaker-linked outputs retain the distribution of order errors. For example, ERM 9107's reverse-minus-forward FAKE error differences were 16 among 21 sources for LA\_0045 and 13 among 21 for LA\_0046. These speaker counts describe concentration within the selected corpus and support no demographic inference.
-
-\subsection{Robustness, Stability and Generalization}
-The direction of the development stress-ranking gain and pooled FAKE miss reduction repeats in all three pairs. The size of each gain and the direction of false-alarm effects depend on the fitted pair. A shared development cohort supports a comparison of initializations under this protocol, with speaker uncertainty measured within each pair.
-
-The fixed-epoch size experiment adds a development-only comparison within seed 9207. The three initialization blocks refer to 640 recordings. The locked held-out result evaluates the original four 640-recording models from seeds 9107 and 9207 on new speakers within ASVspoof 2019 LA. Cross-corpus robustness remains untested.
-
-\subsection{Practical Implications and Limitations}
-In 9307 the recorded optimizer durations were 39.9 minutes for ERM and 78.9 minutes for channel. At 1,280, the seed-9207 optimizer durations were 78.6 and 160.3 minutes, respectively, with validation taking 37.6 and 37.9 minutes. These are local CPU workload measurements. The architecture and parameter count are shared across training sizes.
-
-A bounded inference benchmark used the clean inputs of the first 12 registered development sources, repeated three times after anchor replay, at batch size one on a single CPU thread. Input duration was capped at 3~s. Median preprocessing time was 10.9~ms (interquartile range 10.3--11.2~ms), forward time 91.3~ms (90.5--93.5~ms), and end-to-end time 102.1~ms (101.1--104.2~ms). The timed preprocessing includes decoding, resampling and the P0 input transform on clean input. The separate headroom and channel-transform stages are outside the timed path. The two 9207 exports each contain 1,308,401 parameters, of which 369,281 are updated during warm-up and 646,481 during partial fine-tuning. The exported stage has 661,920 nontrainable parameters. Each export occupies 5,916,699 bytes. Load times in one process were 3.35 and 2.81~s, with the second load following the first. Peak process working set through the timing snapshot was approximately 475~MiB. The development convenience sample supports an architectural and local runtime description. Mobile, streaming and concurrent performance remain unmeasured.
-
-The error curves illustrate why a new operating point requires independent validation with costs and traffic prevalence appropriate to the deployment. The ordered chains further motivate validating the location at which noise is introduced relative to codec processing.
+The error curves illustrate why a new operating point requires independent validation with costs and traffic prevalence appropriate to the deployment. The ordered chains make it more imperative to validate the position where noise is added vis-a-vis codec operations.

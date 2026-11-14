@@ -1,0 +1,15 @@
+{
+  "R08_PROTECTED_FILES_UNCHANGED": true,
+  "protected_files": 405,
+  "direct_r08_files": 18,
+  "missing": [],
+  "changed": [],
+  "new_r08_runtime_artifacts": [],
+  "tracked_diff": [],
+  "head": "917ee0127ba6077903f3258b096f8cf9a2f8f3c7",
+  "head_unchanged": true,
+  "manifest_sha256": "5f3e3709fe32adf9a807e3d5efe5f05783f5971244615bae535dbaaf40473cb2",
+  "inference_executed": false,
+  "training_executed": false,
+  "downloaded_wav": false
+}
